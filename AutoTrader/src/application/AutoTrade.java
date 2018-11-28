@@ -153,10 +153,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			primaryStage.show();
 			
 			//test
-			Rectangle rect = ZoneDAOFactory.getZoneDAO().getRectByName("swim_price");
-	    	Util.createScreenShotByRect(rect,
-	    			SystemConfig.DOC_PATH + "//" + "temp.png",
-	    			"png");
+			//code here for test
 			
 			ScenarioService scenarioService = ScenarioService.getInstance();
 			if(scenarioService.getActiveScenarioList().size() == 0) {
