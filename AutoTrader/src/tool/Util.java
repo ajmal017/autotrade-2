@@ -249,10 +249,14 @@ public class Util {
     
     public static double getPriceByString(String str) {
     	
-    	if (str.contains(".")) {
-    		return Double.valueOf(str).doubleValue();
+    	if(str.length() == 0) 
+    		return 0;
+    	
+    	if(str.contains(",")) {
+    		String[] sourceStrArray = str.split(",");
+        	return Double.valueOf(sourceStrArray[0] + "." + sourceStrArray[1]).doubleValue();
     	}
-    	String[] sourceStrArray = str.split(",");
-    	return Double.valueOf(sourceStrArray[0] + "." + sourceStrArray[1]).doubleValue(); 
+    	
+    	return Double.valueOf(str).doubleValue();
     }
 }
