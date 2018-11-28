@@ -1,0 +1,258 @@
+package tool;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.imageio.ImageIO;
+
+import systemenum.SystemEnum;
+import systemenum.SystemEnum.Trend;
+
+import java.awt.AWTException;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+
+import config.SystemConfig;
+import net.sourceforge.tess4j.ITesseract;
+import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.TesseractException;
+
+
+public class Util {
+	
+	public static Date getDateByStringAndFormatter(String dateString, String formatter) {
+		
+		try {
+			
+            SimpleDateFormat sdf = new SimpleDateFormat(formatter);
+            Date date = sdf.parse(dateString);
+            sdf.setLenient(false);
+            return date;
+            
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+		
+		return null;
+	}
+	
+	public static String getDateStringByDateAndFormatter(Date date, String formatter) {
+		
+		SimpleDateFormat sdf = new SimpleDateFormat(formatter);
+		String str = sdf.format(date);
+        return str;
+	}
+	
+	public static Enum<SystemEnum.Color> getColorEnumByColorRGB(int red, int green, int blue) {
+		
+		/*
+		 * green(G):	0,102,102     --->  for stock up
+     		red(R):	50,0,0        --->  for stock down
+     		yellow(Y): 153,102,0     --->  for volume_1
+     		white(W):  102,102,102   --->  for volume_2
+     		black(B):	0,0,0         --->  for volume_3
+		*/
+		if (red == 0 && green == 102 && blue == 102) {
+			return SystemEnum.Color.Green;
+		} else if (red == 50 && green == 0 && blue == 0) {
+			return SystemEnum.Color.Red;
+		} else if (red == 153 && green == 102 && blue == 0) {
+			return SystemEnum.Color.Yellow;
+		} else if (red == 102 && green == 102 && blue == 102) {
+			return SystemEnum.Color.White;
+		} else if (red == 0 && green == 0 && blue == 0) {
+			return SystemEnum.Color.Black;
+		} else {
+			return SystemEnum.Color.Default;
+		}
+	}
+	
+	public static void getImagePixel(String image) throws Exception {
+		int[] rgb = new int[3];
+		File file = new File(image);
+		BufferedImage bi = null;
+		try {
+			bi = ImageIO.read(file);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		int width = bi.getWidth();
+		int height = bi.getHeight();
+		int minx = bi.getMinX();
+		int miny = bi.getMinY();
+		System.out.println("width=" + width + ",height=" + height + ".");
+		System.out.println("minx=" + minx + ",miniy=" + miny + ".");
+		for (int i = minx; i < width; i++) {
+			for (int j = miny; j < height; j++) {
+				int pixel = bi.getRGB(i, j); // 下面三行代码将一个数字转换为RGB数字
+				rgb[0] = (pixel & 0xff0000) >> 16;
+				rgb[1] = (pixel & 0xff00) >> 8;
+				rgb[2] = (pixel & 0xff);
+				System.out.println("i=" + i + ",j=" + j + ":(" + rgb[0] + ","
+						+ rgb[1] + "," + rgb[2] + ")");
+			}
+		}
+	}
+
+	
+	public static int getScreenPixel(int x, int y)  { // 函数返回值为颜色的RGB值(负值)。
+		
+		try {
+
+			Robot rb = null; // java.awt.image包中的类，可以用来抓取屏幕，即截屏。
+			rb = new Robot();
+			Toolkit tk = Toolkit.getDefaultToolkit(); // 获取缺省工具包
+			Dimension di = tk.getScreenSize(); // 屏幕尺寸规格
+			System.out.println(di.width);
+			System.out.println(di.height);
+			Rectangle rec = new Rectangle(0, 0, di.width, di.height);
+			BufferedImage bi = rb.createScreenCapture(rec);
+			int pixelColor = bi.getRGB(x, y);
+	 
+			return pixelColor;
+			//return 16777216 + pixelColor; // pixelColor的值为负，经过实践得出：加上颜色最大值就是实际颜色值。
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+		
+		return 0;
+	}
+	
+	public static void createExcel(Map<String, List<String>> map, String[] strArray) {
+        // 第一步，创建一个webbook，对应一个Excel文件
+        HSSFWorkbook wb = new HSSFWorkbook();
+        // 第二步，在webbook中添加一个sheet,对应Excel文件中的sheet
+        HSSFSheet sheet = wb.createSheet("sheet1");
+        sheet.setDefaultColumnWidth(20);// 默认列宽
+        // 第三步，在sheet中添加表头第0行,注意老版本poi对Excel的行数列数有限制short
+        HSSFRow row = sheet.createRow((int) 0);
+        // 第四步，创建单元格，并设置值表头 设置表头居中
+        HSSFCellStyle style = wb.createCellStyle();
+        // 创建一个居中格式
+   //     style.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+
+        // 添加excel title
+        HSSFCell cell = null;
+        for (int i = 0; i < strArray.length; i++) {
+            cell = row.createCell((short) i);
+            cell.setCellValue(strArray[i]);
+            cell.setCellStyle(style);
+        }
+
+        // 第五步，写入实体数据 实际应用中这些数据从数据库得到,list中字符串的顺序必须和数组strArray中的顺序一致
+        int i = 0;
+        for (String str : map.keySet()) {
+            row = sheet.createRow((int) i + 1);
+            List<String> list = map.get(str);
+
+            // 第四步，创建单元格，并设置值
+            for (int j = 0; j < strArray.length; j++) {
+                row.createCell((short) j).setCellValue(list.get(j));
+            }
+
+            // 第六步，将文件存到指定位置
+            try {
+                FileOutputStream fout = new FileOutputStream(SystemConfig.DOC_PATH + "//" + SystemConfig.TREND_XLS);
+                wb.write(fout);
+                fout.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            i++;
+        }
+    }
+	
+	public static String getTrendTextByEnum(Enum<SystemEnum.Trend> trend) {
+		Trend t  = (Trend) trend;
+		switch (t) {
+		case Up:
+			return "up";
+		case Down:
+			return "down";
+		default:
+			return "wobble";
+		}
+	}
+	
+	public static Enum<SystemEnum.Trend> getTrendEnumByText(String trend) {
+		switch (trend) {
+		case "up":
+			return SystemEnum.Trend.Up;
+		case "down":
+			return SystemEnum.Trend.Down;
+		default:
+			return SystemEnum.Trend.Default;
+		}
+	}
+	
+	public static double getProfit(double prePrice, double newPrice, Enum<SystemEnum.Trend> preTrend) {
+		
+		double profit = 0;
+		if (preTrend == SystemEnum.Trend.Up) {
+			profit = newPrice - prePrice;
+		} else if (preTrend == SystemEnum.Trend.Down) {
+			profit = prePrice - newPrice;
+		}
+		return profit;
+	}
+
+	public static void createScreenShotByRect(Rectangle rect, String filepath, String filetype) {
+		
+		try {
+			BufferedImage image = new Robot().createScreenCapture(rect);
+			ImageIO.write(image, filetype, new File(filepath));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+    public static String getStringByScreenShotPng(String docpath, String filename) {
+    	
+    	File file = new File(docpath + "//" + filename);
+        ITesseract instance = new Tesseract();
+        File directory = new File(docpath);
+        String courseFile = null;
+
+        try {
+            courseFile = directory.getCanonicalPath();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        instance.setDatapath(courseFile + "//tessdata");
+        instance.setLanguage("eng");
+
+        String result = null;
+        try {
+            result =  instance.doOCR(file);
+            return result;
+        } catch (TesseractException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+    
+    public static double getPriceByString(String str) {
+    	
+    	if (str.contains(".")) {
+    		return Double.valueOf(str).doubleValue();
+    	}
+    	String[] sourceStrArray = str.split(",");
+    	return Double.valueOf(sourceStrArray[0] + "." + sourceStrArray[1]).doubleValue(); 
+    }
+}
