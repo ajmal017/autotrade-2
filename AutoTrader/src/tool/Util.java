@@ -232,7 +232,6 @@ public class Util {
 	
     public static String getStringByScreenShotPng(String docpath, String filename) {
     	
-    	File file = new File(docpath + "//" + filename);
         ITesseract instance = new Tesseract();
         File directory = new File(docpath);
         String courseFile = null;
@@ -248,6 +247,8 @@ public class Util {
 
         String result = null;
         try {
+
+        	File file = new File(docpath + "//" + filename);
             result =  instance.doOCR(file);
             return result;
         } catch (TesseractException e) {
@@ -257,8 +258,8 @@ public class Util {
     }
     
     public static double getPriceByString(String str) {
-    	
-    	if (str.contains(",")) {
+    	if (str == null || str.length() == 0) return 0;
+    	if (str.contains(",")) { 
     		str = str.replace(",", ".");
     	}
     	if (str.contains(".")) {

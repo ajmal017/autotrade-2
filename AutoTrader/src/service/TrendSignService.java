@@ -1,6 +1,8 @@
 package service;
 
+import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,7 +23,7 @@ public class TrendSignService {
 	private volatile static TrendSignService instance;
 	private ArrayList<TrendSign> dailySignList;
 	private double closePriceSwim;
-	private double closePriceIB; //todo
+	private double closePriceIB;
 	
 	//初始化函数
     private TrendSignService ()  {
@@ -71,7 +73,23 @@ public class TrendSignService {
     
     public void pushNewTrendSign (String scenario, Enum<SystemEnum.Trend> trend, int green, int red) {
     	
-    	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, 110.11, 110.11, "", 0, 0); //todo
+    	Rectangle rect = ZoneDAOFactory.getZoneDAO().getRectByName("swim_price");
+    	Util.createScreenShotByRect(rect,
+    			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
+    			"png");
+    	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    	Rectangle screenRectangle = new Rectangle(screenSize);
+    	String shotPath = SystemConfig.DOC_PATH + "//screenshot//" + 
+    					  Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") + "//"+ 
+    					  scenario + "//" + 
+    					  scenario + "_" + Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + ".png";
+    	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
+    	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
+    	double priceSwim = Util.getPriceByString(swimPriceStr);
+    	
+    	double priceIB = 110.11; //todo
+    	
+    	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, priceIB, "", 0, 0);
 
     	getDailySignList().add(newSign);
     	TrendSignDAOFactory.getTrendSignDAO().insertNewTrendSign(newSign);
