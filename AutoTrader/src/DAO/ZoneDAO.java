@@ -11,4 +11,16 @@ public interface ZoneDAO {
 	ArrayList<Zone> getRelatedZoneListByScenario(ArrayList<Scenario> scenarioList);
 	ArrayList<String> getOnlyActiveZoneListByScenarioArea(String scenario, String startTime, String area);
 	Rectangle getRectByName(String name);
+	
+	void cleanAreaZone();
+	void cleanXYCoords();
+	void cleanMyFrame();
+	
+	void insertAreaZone(String scenario, 
+						String starttime, 
+						String area,
+						String zone,
+						int active);
+	void insertXYCoords(String zone, int x, int y);
+	void insertMyFrame(String name, int x, int y, int width, int height);
 }

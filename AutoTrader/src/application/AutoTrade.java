@@ -34,6 +34,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import service.IBService;
+import service.MainService;
 import service.ScenarioService;
 import service.TrendSignService;
 import service.ZoneColorInfoService;
@@ -155,6 +156,11 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			//test
 			//code here for test
 			
+			
+			//init data from CSV file
+			MainService mainService = MainService.getInstance();
+			mainService.refreshDBdataFromCSV();
+			
 			ScenarioService scenarioService = ScenarioService.getInstance();
 			if(scenarioService.getActiveScenarioList().size() == 0) {
 				//none active scenario
@@ -268,6 +274,8 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
 		TrendSignService trendService = TrendSignService.getInstance(); 
 
+		/* now update the CSV files and must restart the app again.
+		 * 
 		//check active scenario update(24h working, update scenario active in night)
 		if(scenarioService.activeScenarioDidChanged()) {
 			scenarioService.reloadAllScenarioIfNeeded();
@@ -278,6 +286,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 				getSceTrendList().add(trend);
 			}
 		}
+		*/
 		
 		if (scenarioService.getActiveScenarioList().size() == 0 ||
 				scenarioService.getSceRefreshPlan().size() == 0) {

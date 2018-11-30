@@ -132,4 +132,89 @@ public class ScenarioDAOSQL implements ScenarioDAO {
 		}
 		return list;
 	}
+
+	@Override
+	public void cleanScenarioActiveData() {
+		final String sqlString = "delete from scenario_active";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+	}
+
+	@Override
+	public void cleanScenarioData() {
+		final String sqlString = "delete from scenario";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+		
+	}
+
+	@Override
+	public void insertScenarioActive(String scenario, int active) {
+		final String sqlString = "insert into scenario_active values (?,?)";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setString(1,scenario);
+			stmt.setInt(2, active);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+		
+	}
+
+	@Override
+	public void insertScenario(String scenario, String starttime, String endtime, String area, int percent) {
+		final String sqlString = "insert into scenario values (?,?,?,?,?)";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setString(1,scenario);
+			stmt.setString(2,starttime);
+			stmt.setString(3,endtime);
+			stmt.setString(4,area);
+			stmt.setInt(5, percent);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+	}
 }

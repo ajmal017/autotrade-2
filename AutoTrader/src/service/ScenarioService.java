@@ -13,7 +13,7 @@ import entity.*;
 
 public class ScenarioService {
 	
-    private volatile static ScenarioService instance; 
+    private volatile static ScenarioService instance;
     
     //active scenario names
     private ArrayList<String> activeScenarioList;

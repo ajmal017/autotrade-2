@@ -1,5 +1,6 @@
 package tool;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -15,8 +16,10 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -35,6 +38,8 @@ import net.sourceforge.tess4j.TesseractException;
 
 public class Util {
 	
+	private static BufferedReader bReader;
+
 	public static Date getDateByStringAndFormatter(String dateString, String formatter) {
 		
 		try {
@@ -167,7 +172,11 @@ public class Util {
 
             // 第六步，将文件存到指定位置
             try {
-                FileOutputStream fout = new FileOutputStream(SystemConfig.DOC_PATH + "//" + SystemConfig.TREND_XLS);
+                FileOutputStream fout = new FileOutputStream(SystemConfig.DOC_PATH + 
+                		"//" + 
+                		Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") +  
+                		"//" + 
+                		SystemConfig.TREND_XLS);
                 wb.write(fout);
                 fout.close();
             } catch (Exception e) {
@@ -249,14 +258,41 @@ public class Util {
     
     public static double getPriceByString(String str) {
     	
-    	if(str.length() == 0) 
-    		return 0;
+    	if (str.contains(",")) {
+    		str = str.replace(",", ".");
+    	}
+    	if (str.contains(".")) {
+    		String[] sourceStrArray = str.split(".");
+    		StringBuilder sBuilder = new StringBuilder(sourceStrArray[0]);
+    		if(sourceStrArray.length>1) sBuilder.append("."+sourceStrArray[1]);
+    		return Double.valueOf(sBuilder.toString()).doubleValue();
+    	}
+    	return Double.valueOf(str).doubleValue();
+    }
+    
+    public static ArrayList<String[]> readCSVFile(String filename) {
+
+    	ArrayList<String[]> resultList = new ArrayList<String[]>();
     	
-    	if(str.contains(",")) {
-    		String[] sourceStrArray = str.split(",");
-        	return Double.valueOf(sourceStrArray[0] + "." + sourceStrArray[1]).doubleValue();
+    	String path = SystemConfig.DOC_PATH + 
+				"//csv//" + 
+				filename + 
+				".csv";
+    	File file = new File(path);
+    	if (!file.exists()) return resultList;
+    	
+    	try {
+    		bReader = new BufferedReader(new FileReader(path));
+    		String line = null;
+    		while((line=bReader.readLine())!=null && line.length() > 0){
+    			String item[] = line.split(",");
+    			resultList.add(item);              
+    		}
+        	return resultList;
+    	} catch (Exception e) {
+    		e.printStackTrace();
     	}
     	
-    	return Double.valueOf(str).doubleValue();
+    	return resultList;
     }
 }
