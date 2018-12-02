@@ -1,5 +1,8 @@
 /DAO/
 /application/
-/service/
+/category/
 /config/
+/entity/
+/service/
+/systemenum/
 /tool/

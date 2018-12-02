@@ -12,6 +12,7 @@ import java.util.Map;
 
 import DAO.TrendSignDAO;
 import DAO.TrendSignDAOFactory;
+import DAO.ZoneDAO;
 import DAO.ZoneDAOFactory;
 import config.SystemConfig;
 import entity.*;
@@ -31,91 +32,6 @@ public class TrendSignService {
     	this.dailySignList = new ArrayList<TrendSign>();
     } 
 	
-    public void checkScenarioTrend() {
-		
-    	ScenarioService scenarioService = ScenarioService.getInstance();
-    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-    	
-    	for (Scenario s : scenarioService.getWorkingScenarioList()) {
-    		
-    		int scenarioGreen = 0;
-    		int scenarioRed = 0;
-    		boolean trendAppear = true;
-    		
-			for (Area a : s.getAreaList()) {
-				int areaGreen = 0;
-				int areaRed = 0;
-				for (String zone : a.getZoneList()) {
-					Enum<SystemEnum.Color> c = colorService.getColorByZone(zone);
-					if (c == SystemEnum.Color.Green) {scenarioGreen++; areaGreen++;}
-					if (c == SystemEnum.Color.Red) {scenarioRed++; areaRed++;}
-				}
-				if ((areaGreen > areaRed && areaRed <= a.getPercent()) ||
-				    (areaRed > areaGreen && areaGreen <= a.getPercent())) {
-					trendAppear = trendAppear & true; 
-				} else {
-					trendAppear = trendAppear & false;
-				}
-			}
-			
-			if (trendAppear) {
-				if(scenarioGreen > scenarioRed && s.getTrend() != SystemEnum.Trend.Up) {
-					s.setTrend(SystemEnum.Trend.Up);
-					pushNewTrendSign(s.getScenario(),s.getTrend(),scenarioGreen,scenarioRed);
-				}
-				if(scenarioGreen < scenarioRed && s.getTrend() != SystemEnum.Trend.Down) {
-					s.setTrend(SystemEnum.Trend.Down);
-					pushNewTrendSign(s.getScenario(),s.getTrend(),scenarioGreen,scenarioRed);
-				}
-			}
-		}
-	}
-    
-    public void pushNewTrendSign (String scenario, Enum<SystemEnum.Trend> trend, int green, int red) {
-    	
-    	Rectangle rect = ZoneDAOFactory.getZoneDAO().getRectByName("swim_price");
-    	Util.createScreenShotByRect(rect,
-    			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
-    			"png");
-    	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    	Rectangle screenRectangle = new Rectangle(screenSize);
-    	String shotPath = SystemConfig.DOC_PATH + "//screenshot//" + 
-    					  Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") + "//"+ 
-    					  scenario + "//" + 
-    					  scenario + "_" + Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + ".png";
-    	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
-    	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
-    	double priceSwim = Util.getPriceByString(swimPriceStr);
-    	
-    	double priceIB = 110.11; //todo
-    	
-    	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, priceIB, "", 0, 0);
-
-    	getDailySignList().add(newSign);
-    	TrendSignDAOFactory.getTrendSignDAO().insertNewTrendSign(newSign);
-    }
-    
-    public void todayScenarioIsFinished () {
-    	
-    	Rectangle rect = ZoneDAOFactory.getZoneDAO().getRectByName("swim_price");
-    	Util.createScreenShotByRect(rect,
-    			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
-    			"png");
-    	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
-    	closePriceSwim = Util.getPriceByString(swimPriceStr);
-    	//TODO
-    	closePriceIB = 111.01;
-    	
-    	//checkout sign records
-    	Map<String, List<String>> recordMap = getTrendRecordWithProfit();
-        String[] strArray = excelTitle();
-        Util.createExcel(recordMap, strArray);
-        
-    	getDailySignList().clear(); //清空当日记录
-    	closePriceSwim = 0;
-    	closePriceIB = 0;
-    }
-    
     private Map<String, List<String>> getTrendRecordWithProfit() {
     	
     	//根据scenario分组重排
@@ -192,6 +108,130 @@ public class TrendSignService {
     private String[] excelTitle() {
         String[] strArray = { "no", "time", "scenario", "trend", "green", "red", "price_swim", "price_ib", "profit_swim", "profit_ib", "desc"};
         return strArray;
+    }
+    
+    private int getGreenCountByZoneList(ArrayList<Zone> zoneList) {
+
+    	int g = 0;
+    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
+    	for(Zone zone : zoneList) {
+    		Enum<SystemEnum.Color> c = colorService.getColorByZone(zone.getZone());
+    		if (c == SystemEnum.Color.Green) {g++;}
+    	}
+    	return g;
+    }
+    
+    private int getRedCountByZoneList(ArrayList<Zone> zoneList) {
+
+    	int r = 0;
+    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
+    	for(Zone zone : zoneList) {
+    		Enum<SystemEnum.Color> c = colorService.getColorByZone(zone.getZone());
+    		if (c == SystemEnum.Color.Red) {r++;}
+    	}
+    	return r;
+    }
+    
+    public void checkScenarioTrend() {
+		
+    	ScenarioService scenarioService = ScenarioService.getInstance();
+    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
+    	ZoneDAO zoneDao = ZoneDAOFactory.getZoneDAO();
+    	
+    	for (Scenario scenario : scenarioService.getWorkingScenarioList()) {
+    		
+    		boolean trendAppear = true;
+    		
+			for (Area area : scenario.getAreaList()) {
+				int areaGreen = 0;
+				int areaRed = 0;
+				for (String zone : area.getZoneList()) {
+					Enum<SystemEnum.Color> c = colorService.getColorByZone(zone);
+					if (c == SystemEnum.Color.Green) {areaGreen++;}			
+					if (c == SystemEnum.Color.Red) {areaRed++;}
+				}
+				if ((areaGreen + areaRed == area.getZoneList().size() && areaGreen > areaRed && areaRed <= area.getPercent()) ||
+				    (areaGreen + areaRed == area.getZoneList().size() && areaRed > areaGreen && areaGreen <= area.getPercent())) {
+					trendAppear = trendAppear & true; 
+				} else {
+					trendAppear = trendAppear & false;
+				}
+			}
+			if (trendAppear) {
+				ArrayList<Scenario> ss = new ArrayList<Scenario>();
+				ss.add(scenario);
+				ArrayList<Zone> zones = zoneDao.getRelatedZoneListByScenarioList(ss);
+				int scenarioGreen = getGreenCountByZoneList(zones);
+				int scenarioRed = getRedCountByZoneList(zones);
+				if(scenarioGreen > scenarioRed && scenario.getTrend() != SystemEnum.Trend.Up) {
+					scenario.setTrend(SystemEnum.Trend.Up);
+					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
+				}
+				if(scenarioGreen < scenarioRed && scenario.getTrend() != SystemEnum.Trend.Down) {
+					scenario.setTrend(SystemEnum.Trend.Down);
+					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
+				}
+			}
+		}
+	}
+    
+    public void pushNewTrendSign (String scenario, Enum<SystemEnum.Trend> trend, int green, int red) {
+    	
+    	//screen shot
+    	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+    	Rectangle screenRectangle = new Rectangle(screenSize);
+    	String shotPath = SystemConfig.DOC_PATH + "//screenshot//" + 
+    					  Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") + "//"+ 
+    					  scenario + "//" + 
+    					  scenario + "_" + Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + ".png";
+    	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
+    	/*
+    	//swim price
+    	Rectangle rect = ZoneDAOFactory.getZoneDAO().getRectByName("swim_price");
+    	Util.createScreenShotByRect(rect,
+    			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
+    			"png");
+    	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
+    	*/
+    	double priceSwim = 0.0;
+    	/*
+    	if(swimPriceStr != null && swimPriceStr.length() > 0) {
+    		priceSwim = Util.getPriceByString(swimPriceStr);
+    	}
+    	*/
+    	double priceIB = 110.11; //todo
+    	
+    	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, priceIB, "", 0, 0);
+
+    	getDailySignList().add(newSign);
+    	TrendSignDAOFactory.getTrendSignDAO().insertNewTrendSign(newSign);
+    }
+    
+    public void todayScenarioIsFinished () {
+    	
+    	Rectangle rect = ZoneDAOFactory.getZoneDAO().getRectByName("swim_price");
+    	Util.createScreenShotByRect(rect,
+    			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
+    			"png");
+    	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
+    	if(swimPriceStr != null && swimPriceStr.length() > 0) {
+    		closePriceSwim = Util.getPriceByString(swimPriceStr);
+    	}
+    	//TODO
+    	closePriceIB = 111.01;
+    	
+    	//checkout sign records
+    	Map<String, List<String>> recordMap = getTrendRecordWithProfit();
+        String[] strArray = excelTitle();
+        String path = SystemConfig.DOC_PATH + 
+        		"//trendprofit//" +
+        		Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") +  
+        		".xls";
+        Util.createExcel(recordMap, strArray, path);
+        
+    	getDailySignList().clear(); //清空当日记录
+    	closePriceSwim = 0;
+    	closePriceIB = 0;
     }
     
     public Enum<SystemEnum.Trend> getTodayLastTrendByScenario(String scenario) {

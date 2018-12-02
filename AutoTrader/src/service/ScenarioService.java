@@ -77,7 +77,8 @@ public class ScenarioService {
     		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
     		if (dDate.before(new Date())) {
     			refresh.setPassed(true); //需要把已经过去的时间节点打上标记（如果在开盘后启动)
-    			setPassedRefreshPlanCount(getPassedRefreshPlanCount() + 1);
+    			int passed = getPassedRefreshPlanCount() + 1;
+    			setPassedRefreshPlanCount(passed);
 			} else {
 				refresh.setPassed(false);
 			}
@@ -138,7 +139,7 @@ public class ScenarioService {
 		}
     	
     	//get new related zone by new scenario
-    	ArrayList<Zone> relatedZones = zoneDAO.getRelatedZoneListByScenario(tempScenarioList);
+    	ArrayList<Zone> relatedZones = zoneDAO.getRelatedZoneListByScenarioList(tempScenarioList);
     	
     	//add area to new scenario
     	for (Scenario s : tempScenarioList) {
@@ -151,6 +152,7 @@ public class ScenarioService {
     				area.getZoneList().add(z);
     			}
 			}
+    		s.setAreaList(areaList);
 		}
     	
     	//update working scenario memory

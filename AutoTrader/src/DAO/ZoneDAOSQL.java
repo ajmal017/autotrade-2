@@ -14,7 +14,7 @@ public class ZoneDAOSQL implements ZoneDAO {
 
 	@Override
 
-	public ArrayList<Zone> getRelatedZoneListByScenario(ArrayList<Scenario> scenarioList) {
+	public ArrayList<Zone> getRelatedZoneListByScenarioList(ArrayList<Scenario> scenarioList) {
 		
 		StringBuilder sBuilder = new StringBuilder();
 		sBuilder.append("select * from xy_coords where zone in (SELECT distinct(zone) FROM area_zone where ");
@@ -26,6 +26,7 @@ public class ZoneDAOSQL implements ZoneDAO {
 			}
 		}
 		sBuilder.append(")");
+		
 		ArrayList<Zone> list = new ArrayList<>();
 		Connection conn = null;
         PreparedStatement stmt = null;

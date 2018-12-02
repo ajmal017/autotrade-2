@@ -87,7 +87,7 @@ public class Util {
 		}
 	}
 	
-	public static void getImagePixel(String image) throws Exception {
+	public static void getImagePixel(String image) {
 		int[] rgb = new int[3];
 		File file = new File(image);
 		BufferedImage bi = null;
@@ -100,8 +100,6 @@ public class Util {
 		int height = bi.getHeight();
 		int minx = bi.getMinX();
 		int miny = bi.getMinY();
-		System.out.println("width=" + width + ",height=" + height + ".");
-		System.out.println("minx=" + minx + ",miniy=" + miny + ".");
 		for (int i = minx; i < width; i++) {
 			for (int j = miny; j < height; j++) {
 				int pixel = bi.getRGB(i, j); // 下面三行代码将一个数字转换为RGB数字
@@ -138,7 +136,7 @@ public class Util {
 		return 0;
 	}
 	
-	public static void createExcel(Map<String, List<String>> map, String[] strArray) {
+	public static void createExcel(Map<String, List<String>> map, String[] strArray, String path) {
         // 第一步，创建一个webbook，对应一个Excel文件
         HSSFWorkbook wb = new HSSFWorkbook();
         // 第二步，在webbook中添加一个sheet,对应Excel文件中的sheet
@@ -173,10 +171,9 @@ public class Util {
             // 第六步，将文件存到指定位置
             try {
                 FileOutputStream fout = new FileOutputStream(SystemConfig.DOC_PATH + 
-                		"//" + 
+                		"//trendprofit//" +
                 		Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") +  
-                		"//" + 
-                		SystemConfig.TREND_XLS);
+                		".xls");
                 wb.write(fout);
                 fout.close();
             } catch (Exception e) {
@@ -268,7 +265,7 @@ public class Util {
     		if(sourceStrArray.length>1) sBuilder.append("."+sourceStrArray[1]);
     		return Double.valueOf(sBuilder.toString()).doubleValue();
     	}
-    	return Double.valueOf(str).doubleValue();
+    	return 0;
     }
     
     public static ArrayList<String[]> readCSVFile(String filename) {
@@ -296,4 +293,60 @@ public class Util {
     	
     	return resultList;
     }
+    
+    public static boolean createFile(String destFileName) {
+        File file = new File(destFileName);
+        if(file.exists()) {
+            System.out.println("创建单个文件" + destFileName + "失败，目标文件已存在！");
+            return false;
+        }
+        if (destFileName.endsWith(File.separator)) {
+            System.out.println("创建单个文件" + destFileName + "失败，目标文件不能为目录！");
+            return false;
+        }
+        //判断目标文件所在的目录是否存在
+        if(!file.getParentFile().exists()) {
+            //如果目标文件所在的目录不存在，则创建父目录
+            System.out.println("目标文件所在目录不存在，准备创建它！");
+            if(!file.getParentFile().mkdirs()) {
+                System.out.println("创建目标文件所在目录失败！");
+                return false;
+            }
+        }
+        //创建目标文件
+        try {
+            if (file.createNewFile()) {
+                System.out.println("创建单个文件" + destFileName + "成功！");
+                return true;
+            } else {
+                System.out.println("创建单个文件" + destFileName + "失败！");
+                return false;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("创建单个文件" + destFileName + "失败！" + e.getMessage());
+            return false;
+        }
+    }
+   
+   
+    public static boolean createDir(String destDirName) {
+        File dir = new File(destDirName);
+        if (dir.exists()) {
+            System.out.println("创建目录" + destDirName + "失败，目标目录已经存在");
+            return false;
+        }
+        if (!destDirName.endsWith(File.separator)) {
+            destDirName = destDirName + File.separator;
+        }
+        //创建目录
+        if (dir.mkdirs()) {
+            System.out.println("创建目录" + destDirName + "成功！");
+            return true;
+        } else {
+            System.out.println("创建目录" + destDirName + "失败！");
+            return false;
+        }
+    }
+    
 }

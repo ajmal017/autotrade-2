@@ -55,7 +55,6 @@ public class ZoneColorInfoService {
 	public void updateZoneColorByTimer(AutoTradeCallBackInterface obj) {
 
 		if (getZoneColors().isEmpty()) {
-			obj.AutoTradeCallBackUpdateGreenAndRed(0, 0);
 			return;
 		}
 
@@ -91,11 +90,12 @@ public class ZoneColorInfoService {
 				}
 			}
 			
+			return;
+			
 		} catch (AWTException e) {
 			e.printStackTrace();
 		}
-
-		obj.AutoTradeCallBackUpdateGreenAndRed(green, red);
+        
 	}
 	
 	public Enum<SystemEnum.Color> getColorByZone(String zone) {

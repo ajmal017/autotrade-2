@@ -8,7 +8,7 @@ import entity.Zone;
 
 public interface ZoneDAO {
 	
-	ArrayList<Zone> getRelatedZoneListByScenario(ArrayList<Scenario> scenarioList);
+	ArrayList<Zone> getRelatedZoneListByScenarioList(ArrayList<Scenario> scenarioList);
 	ArrayList<String> getOnlyActiveZoneListByScenarioArea(String scenario, String startTime, String area);
 	Rectangle getRectByName(String name);
 	

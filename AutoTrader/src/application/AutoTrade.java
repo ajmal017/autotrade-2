@@ -6,6 +6,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -16,9 +20,12 @@ import entity.Scenario;
 import entity.ScenarioTrend;
 import entity.TrendSign;
 import entity.TrendTableItem;
+import entity.Zone;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
 import javafx.scene.Group;
@@ -38,6 +45,7 @@ import service.MainService;
 import service.ScenarioService;
 import service.TrendSignService;
 import service.ZoneColorInfoService;
+import systemenum.SystemEnum;
 import tool.AePlayWave;
 import tool.Util;
 
@@ -114,16 +122,17 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	        trendCol.setPrefWidth(50);
 	        trendCol.setCellValueFactory(
 	                new PropertyValueFactory<>("trend"));
+
+	        TableColumn greenCol = new TableColumn("Green");
+	        greenCol.setPrefWidth(50);
+	        greenCol.setCellValueFactory(
+	                new PropertyValueFactory<>("greenCount"));
 	        
 	        TableColumn redCol = new TableColumn("Red");
 	        redCol.setPrefWidth(50);
 	        redCol.setCellValueFactory(
 	                new PropertyValueFactory<>("redCount"));
 	        
-	        TableColumn greenCol = new TableColumn("Green");
-	        greenCol.setPrefWidth(50);
-	        greenCol.setCellValueFactory(
-	                new PropertyValueFactory<>("greenCount"));
 	        
 	        TableColumn swimCol = new TableColumn("SwPr");
 	        swimCol.setPrefWidth(60);
@@ -136,7 +145,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	                new PropertyValueFactory<>("ibPrice"));
 	        
 	        trendTable.setItems(trendData);
-	        trendTable.getColumns().addAll(timeCol, scenarioCol, trendCol,redCol,greenCol,swimCol,ibCol);
+	        trendTable.getColumns().addAll(timeCol, scenarioCol, trendCol,greenCol,redCol,swimCol,ibCol);
 	        
 	        final VBox vbox = new VBox();
 	        vbox.setMaxSize(390, 200);
@@ -153,118 +162,131 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			primaryStage.setScene(scene);
 			primaryStage.show();
 			
-			//test
-			//code here for test
-			
-			
-			//init data from CSV file
-			MainService mainService = MainService.getInstance();
-			mainService.refreshDBdataFromCSV();
-			
-			ScenarioService scenarioService = ScenarioService.getInstance();
-			if(scenarioService.getActiveScenarioList().size() == 0) {
-				//none active scenario
-				Alert alert = new Alert(AlertType.INFORMATION);
-				alert.setTitle("Warning");
-				alert.setHeaderText(null);
-				alert.setContentText("none active scenario");
-				alert.showAndWait();
-				return;
-			}
-			//get all daily active scenario
-			for (String s : scenarioService.getActiveScenarioList()) {
-				ScenarioTrend trend  =  new ScenarioTrend();
-				trend.setScenario(s);
-				getSceTrendList().add(trend);
-			};
-			
-			if(scenarioService.getSceRefreshPlan().size() == 0) {
-				//none scenario plan
-				Alert alert = new Alert(AlertType.INFORMATION);
-				alert.setTitle("Warning");
-				alert.setHeaderText(null);
-				alert.setContentText("none scenario plan");
-				alert.showAndWait();
-				return;
-			}
-			
-			//load start end time label
-			ArrayList<DailyScenarioRefresh> plans = scenarioService.getSceRefreshPlan();
-	    	if (plans.size() == 0) {
-				//当日没有任务。
-	    		return;
-			}
-	    	
-			startTimeLbl.setText(plans.get(0).getRefreshTime());
-			endTimeLbl.setText(plans.get(plans.size()-1).getRefreshTime());
-			
-			int didPassedCount =  scenarioService.getPassedRefreshPlanCount();
-			if (didPassedCount == scenarioService.getSceRefreshPlan().size()) {
-				//every plan passed, including the close time
-				//set tomorrow timer
-				StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-	    		str.append(plans.get(0).getRefreshTime());
-	    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
-				secTimer = new Timer();
-				Calendar c = Calendar.getInstance();
-				c.setTime(startTime);
-				c.add(Calendar.DATE, +1); //tomorrow
-				c.add(Calendar.SECOND, +1); //delay 1 sec for swim's refresh
-				startTime = c.getTime();
-				secTimer.scheduleAtFixedRate(new TimerTask() {
-			        public void run() {
-			        	calledBySecondTimer();
-			        }
-				}, startTime, timerRefreshMSec);
-				
-				Alert alert = new Alert(AlertType.INFORMATION);
-				alert.setTitle("Warning");
-				alert.setHeaderText(null);
-				alert.setContentText("every scenario is end");
-				alert.showAndWait();
-				return;
-			} else if (didPassedCount > 0) { 
-				//scenario started
-				
-				//change last plan's passed state to NO, then run following logic
-				DailyScenarioRefresh refresh  =  scenarioService.getSceRefreshPlan().get(didPassedCount-1);
-				refresh.setPassed(false);
-				scenarioService.setPassedRefreshPlanCount(didPassedCount-1);
-				scenarioService.updateWorkingScenarioListByRefreshPlan();
-				
-				//load appeared trend (if app reload during market time)
-				for(ScenarioTrend trend : getSceTrendList()) {
-					trend.setTrend(TrendSignService.getInstance().getTodayLastTrendByScenario(trend.getScenario()));
-				}
-				
-				secTimer = new Timer ();
-				secTimer.scheduleAtFixedRate(new TimerTask() {
-			        public void run() {
-			        	calledBySecondTimer();
-			        }
-				}, 5, timerRefreshMSec);
-				
-			}  else {
-				//scenario did not start
-				StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-	    		str.append(plans.get(0).getRefreshTime());
-	    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
-				secTimer = new Timer ();
-				Calendar c = Calendar.getInstance();
-				c.setTime(startTime);
-				c.add(Calendar.SECOND, +1);
-				startTime = c.getTime();
-				secTimer.scheduleAtFixedRate(new TimerTask() {
-			        public void run() {
-			        	calledBySecondTimer();
-			        }
-				}, startTime, timerRefreshMSec);
-			}
 			
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 		
+
+		//test
+		//code here for test
+		
+		
+		
+		//init data from CSV file
+		MainService mainService = MainService.getInstance();
+		mainService.refreshDBdataFromCSV();
+		
+		ScenarioService scenarioService = ScenarioService.getInstance();
+		ArrayList<String> activeScenariolist = scenarioService.getActiveScenarioList();
+		if(activeScenariolist.size() == 0) {
+			//none active scenario
+			Alert alert = new Alert(AlertType.INFORMATION);
+			alert.setTitle("Warning");
+			alert.setHeaderText(null);
+			alert.setContentText("none active scenario");
+			alert.showAndWait();
+			return;
+		}
+		//create daily path
+		String dataStr = Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd");
+		//screenshot
+		String ssPath = SystemConfig.DOC_PATH + "//screenshot";
+		Util.createDir(ssPath);
+		String dssPath = ssPath + "//" + dataStr;
+		Util.createDir(dssPath);
+		for (String s : activeScenariolist) {
+			Util.createDir(dssPath + "//" + s);
+		}
+		//trendprofit
+		Util.createDir(SystemConfig.DOC_PATH + "//trendprofit");
+		
+		//get all daily active scenario
+		for (String s : activeScenariolist) {
+			ScenarioTrend trend  =  new ScenarioTrend();
+			trend.setScenario(s);
+			getSceTrendList().add(trend);
+		};
+		
+		if(scenarioService.getSceRefreshPlan().size() == 0) {
+			//none scenario plan
+			Alert alert = new Alert(AlertType.INFORMATION);
+			alert.setTitle("Warning");
+			alert.setHeaderText(null);
+			alert.setContentText("none scenario plan");
+			alert.showAndWait();
+			return;
+		}
+		
+		//load start end time label
+		ArrayList<DailyScenarioRefresh> plans = scenarioService.getSceRefreshPlan();    	
+		startTimeLbl.setText(plans.get(0).getRefreshTime());
+		endTimeLbl.setText(plans.get(plans.size()-1).getRefreshTime());
+		
+		int didPassedCount =  scenarioService.getPassedRefreshPlanCount();
+		if (didPassedCount == scenarioService.getSceRefreshPlan().size()) {
+			//every plan passed, including the close time
+			//set tomorrow timer
+			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+    		str.append(plans.get(0).getRefreshTime());
+    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
+			secTimer = new Timer();
+			Calendar c = Calendar.getInstance();
+			c.setTime(startTime);
+			c.add(Calendar.DATE, +1); //tomorrow
+			c.add(Calendar.SECOND, +1); //delay 1 sec for swim's refresh
+			startTime = c.getTime();
+			secTimer.scheduleAtFixedRate(new TimerTask() {
+		        public void run() {
+		        	calledBySecondTimer();
+		        }
+			}, startTime, timerRefreshMSec);
+			
+			Alert alert = new Alert(AlertType.INFORMATION);
+			alert.setTitle("Warning");
+			alert.setHeaderText(null);
+			alert.setContentText("every scenario is end");
+			alert.showAndWait();
+			return;
+		} else if (didPassedCount > 0) { 
+			//scenario started
+			
+			//change last plan's passed state to NO, then run following logic
+			DailyScenarioRefresh refresh  =  scenarioService.getSceRefreshPlan().get(didPassedCount-1);
+			refresh.setPassed(false);
+			scenarioService.setPassedRefreshPlanCount(didPassedCount-1);
+			scenarioService.updateWorkingScenarioListByRefreshPlan();
+			
+			//load appeared trend (if app reload during market time)
+			for(ScenarioTrend trend : getSceTrendList()) {
+				trend.setTrend(TrendSignService.getInstance().getTodayLastTrendByScenario(trend.getScenario()));
+			}
+			
+			secTimer = new Timer ();
+			secTimer.scheduleAtFixedRate(new TimerTask() {
+		        public void run() {
+		        	calledBySecondTimer();
+		        	
+		        }
+			}, 5, timerRefreshMSec);
+			
+		}  else {
+			//scenario did not start
+			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+    		str.append(plans.get(0).getRefreshTime());
+    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
+			secTimer = new Timer ();
+			Calendar c = Calendar.getInstance();
+			c.setTime(startTime);
+			c.add(Calendar.SECOND, +1);
+			startTime = c.getTime();
+			secTimer.scheduleAtFixedRate(new TimerTask() {
+		        public void run() {
+		        	calledBySecondTimer();
+		        	
+		        }
+			}, startTime, timerRefreshMSec);
+		}
 		
 	}
 	
@@ -325,9 +347,11 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			//check trend
 			trendService.checkScenarioTrend();
 			
+			//table
 			//check and update trend
 			for (ScenarioTrend oldTrend : sceTrendList) {
 				for (Scenario scenario : scenarioService.getWorkingScenarioList()) {
+					
 					if(oldTrend.getScenario().equals(scenario.getScenario()) && 
 							oldTrend.getTrend() != scenario.getTrend()) {
 						
@@ -381,6 +405,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		new AePlayWave("resource/sign_bg.wav").start();
 	}
 	
+	
 	public static void main(String[] args) {
 		launch(args);
 	}
@@ -392,11 +417,5 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	public void setSceTrendList(ArrayList<ScenarioTrend> sceTrendList) {
 		this.sceTrendList = sceTrendList;
 	}
-
-	@Override
-	public void AutoTradeCallBackUpdateGreenAndRed(int green, int red) {
-		
-		greenCountLbl.setText(""+green);
-		redCountLbl.setText(""+red);
-	}
+	
 }
