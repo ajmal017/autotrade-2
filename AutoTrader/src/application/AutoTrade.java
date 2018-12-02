@@ -1,7 +1,10 @@
 package application;
 
 import java.awt.Rectangle;
+import java.io.File;
 import java.io.FileInputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -12,6 +15,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import javax.swing.JApplet;
+
+import com.sun.media.jfxmedia.AudioClip;
 
 import DAO.ZoneDAOFactory;
 import config.SystemConfig;
@@ -46,8 +53,8 @@ import service.ScenarioService;
 import service.TrendSignService;
 import service.ZoneColorInfoService;
 import systemenum.SystemEnum;
-import tool.AePlayWave;
 import tool.Util;
+import tool.MP3Player;
 
 
 public class AutoTrade extends Application implements AutoTradeCallBackInterface  {
@@ -172,7 +179,6 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		//code here for test
 		
 		
-		
 		//init data from CSV file
 		MainService mainService = MainService.getInstance();
 		mainService.refreshDBdataFromCSV();
@@ -290,7 +296,32 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		
 	}
 	
+	private int getGreen() {
+		
+		int green = 0;
+		Enumeration<Zone> e = ZoneColorInfoService.getInstance().getZoneColors().elements();
+		while( e. hasMoreElements() ){
+			
+			Zone zone = e.nextElement();
+			if (zone.getColor() == SystemEnum.Color.Green) {green++;}
+		}
+		return green;
+	}
+	
+	private int getRed() {
+		
+		int red = 0;
+		Enumeration<Zone> e = ZoneColorInfoService.getInstance().getZoneColors().elements();
+		while( e. hasMoreElements() ){
+			
+			Zone zone = e.nextElement();
+			if (zone.getColor() == SystemEnum.Color.Red) {red++;}
+		}
+		return red;
+	}
+	
 	private void calledBySecondTimer () {
+		
 		
 		ScenarioService scenarioService = ScenarioService.getInstance();
 		ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
@@ -347,6 +378,8 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			//check trend
 			trendService.checkScenarioTrend();
 			
+			Platform.runLater(()->greenCountLbl.setText(""+getGreen()));
+			Platform.runLater(()->redCountLbl.setText(""+getRed()));
 			//table
 			//check and update trend
 			for (ScenarioTrend oldTrend : sceTrendList) {
@@ -402,7 +435,9 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	
 	private void playSignAlertMusic () {
 		
-		new AePlayWave("resource/sign_bg.wav").start();
+		MP3Player mp3 = new MP3Player("c://autotradedoc//sign_bg.mp3");
+        mp3.play();
+        
 	}
 	
 	

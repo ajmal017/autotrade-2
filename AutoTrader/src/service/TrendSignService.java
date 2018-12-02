@@ -185,20 +185,20 @@ public class TrendSignService {
     					  scenario + "//" + 
     					  scenario + "_" + Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + ".png";
     	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
-    	/*
+    	
     	//swim price
     	Rectangle rect = ZoneDAOFactory.getZoneDAO().getRectByName("swim_price");
     	Util.createScreenShotByRect(rect,
     			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
     			"png");
     	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
-    	*/
+    	
     	double priceSwim = 0.0;
-    	/*
+    	
     	if(swimPriceStr != null && swimPriceStr.length() > 0) {
     		priceSwim = Util.getPriceByString(swimPriceStr);
     	}
-    	*/
+    	
     	double priceIB = 110.11; //todo
     	
     	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, priceIB, "", 0, 0);
