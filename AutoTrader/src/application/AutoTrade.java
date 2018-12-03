@@ -11,6 +11,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -36,6 +37,7 @@ import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
@@ -69,14 +71,46 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	private final Label greenCountLbl = new Label();
 	private final Label redCountLbl = new Label();
 	
-	private final TableView<TrendTableItem> trendTable = new TableView<>();
-    private final ObservableList<TrendTableItem> trendData =
-            FXCollections.observableArrayList();
+	private Hashtable<String,Object> tbDataHash;
+	
     
 	@Override
 	public void start(Stage primaryStage) {
 		
 		sceTrendList = new ArrayList<ScenarioTrend>();
+		tbDataHash = new Hashtable<String,Object>();
+		
+		
+
+		//test
+		//code here for test
+		/*
+		String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
+		System.out.println("swimPriceStr:"+swimPriceStr);
+		double priceSwim = 0.0;
+    	if(swimPriceStr != null && swimPriceStr.length() > 0) {
+    		priceSwim = Util.getPriceByString(swimPriceStr);
+    		System.out.println("priceSwim:"+priceSwim);
+    	}
+    	*/
+		
+		
+ //   	/*
+		//init data from CSV file
+		MainService mainService = MainService.getInstance();
+		mainService.refreshDBdataFromCSV();
+		
+		ScenarioService scenarioService = ScenarioService.getInstance();
+		ArrayList<String> activeScenariolist = scenarioService.getActiveScenarioList();
+		if(activeScenariolist.size() == 0) {
+			//none active scenario
+			Alert alert = new Alert(AlertType.INFORMATION);
+			alert.setTitle("Warning");
+			alert.setHeaderText(null);
+			alert.setContentText("none active scenario");
+			alert.showAndWait();
+			return;
+		}
 		
 		try {
 			
@@ -91,7 +125,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	        hb1.setSpacing(3);
 	        
 	        final HBox hb2 = new HBox();
-	        hb2.setPrefSize(400, 15);
+	        hb2.setPrefSize(300, 15);
 	        final Label gTitle = new Label("Green:");
 	        final Label rTitle = new Label("Red:");
 	        greenCountLbl.setPrefWidth(60);
@@ -110,55 +144,66 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	        greenCountLbl.setFont(new Font(12));
 	        redCountLbl.setFont(new Font(12));
 	        
-	        //table
-	        trendTable.setEditable(false);
-	        trendTable.setMinHeight(200);
-	        trendTable.setFixedCellSize(22);
+	        final VBox vbox = new VBox();
+	        vbox.setMinSize(400, 400);
+	        vbox.setSpacing(5);
+	        vbox.setPadding(new Insets(10, 0, 0, 10));
+	        vbox.getChildren().addAll(hb1,hb2);
 	        
-	        TableColumn timeCol = new TableColumn("Time");
-	        timeCol.setPrefWidth(65);
-	        timeCol.setCellValueFactory(
+	        //table
+
+	        for (String scenario : activeScenariolist) {
+	        
+	        	TableView<TrendTableItem> trendTable = new TableView<>();
+	        	ObservableList<TrendTableItem> trendData =
+	                FXCollections.observableArrayList();
+	        	
+	        	trendTable.setEditable(false);
+	        	trendTable.setMaxHeight(120);
+	        	trendTable.setFixedCellSize(22);
+	        
+	        	TableColumn timeCol = new TableColumn("Time");
+	        	timeCol.setPrefWidth(65);
+	        	timeCol.setCellValueFactory(
 	                new PropertyValueFactory<>("time"));
 
-	        TableColumn scenarioCol = new TableColumn("T");
-	        scenarioCol.setPrefWidth(40);
-	        scenarioCol.setCellValueFactory(
+	        	TableColumn scenarioCol = new TableColumn("T");
+	        	scenarioCol.setPrefWidth(40);
+	        	scenarioCol.setCellValueFactory(
 	                new PropertyValueFactory<>("scenario"));
 
-	        TableColumn trendCol = new TableColumn("Trend");
-	        trendCol.setPrefWidth(50);
-	        trendCol.setCellValueFactory(
+	        	TableColumn trendCol = new TableColumn("Trend");
+	        	trendCol.setPrefWidth(50);
+	        	trendCol.setCellValueFactory(
 	                new PropertyValueFactory<>("trend"));
 
-	        TableColumn greenCol = new TableColumn("Green");
-	        greenCol.setPrefWidth(50);
-	        greenCol.setCellValueFactory(
+	        	TableColumn greenCol = new TableColumn("Green");
+	        	greenCol.setPrefWidth(50);
+	        	greenCol.setCellValueFactory(
 	                new PropertyValueFactory<>("greenCount"));
 	        
-	        TableColumn redCol = new TableColumn("Red");
-	        redCol.setPrefWidth(50);
-	        redCol.setCellValueFactory(
+	        	TableColumn redCol = new TableColumn("Red");
+	        	redCol.setPrefWidth(50);
+	        	redCol.setCellValueFactory(
 	                new PropertyValueFactory<>("redCount"));
 	        
 	        
-	        TableColumn swimCol = new TableColumn("SwPr");
-	        swimCol.setPrefWidth(60);
-	        swimCol.setCellValueFactory(
+	        	TableColumn swimCol = new TableColumn("SwPr");
+	        	swimCol.setPrefWidth(60);
+	        	swimCol.setCellValueFactory(
 	                new PropertyValueFactory<>("swimPrice"));
 	        
-	        TableColumn ibCol = new TableColumn("IBPr");
-	        ibCol.setPrefWidth(60);
-	        ibCol.setCellValueFactory(
+	        	TableColumn ibCol = new TableColumn("IBPr");
+	        	ibCol.setPrefWidth(60);
+	        	ibCol.setCellValueFactory(
 	                new PropertyValueFactory<>("ibPrice"));
 	        
-	        trendTable.setItems(trendData);
-	        trendTable.getColumns().addAll(timeCol, scenarioCol, trendCol,greenCol,redCol,swimCol,ibCol);
-	        
-	        final VBox vbox = new VBox();
-	        vbox.setMaxSize(390, 200);
-	        vbox.setSpacing(5);
-	        vbox.setPadding(new Insets(10, 0, 0, 10));
-	        vbox.getChildren().addAll(hb1,hb2,trendTable);
+	        	trendTable.setItems(trendData);
+	        	trendTable.getColumns().addAll(timeCol, scenarioCol, trendCol,greenCol,redCol,swimCol,ibCol);
+	        	vbox.getChildren().addAll(trendTable);
+	        	
+	        	tbDataHash.put(scenario, trendData);
+	        }
 	        
 			BorderPane root = new BorderPane();
 			root.setMinSize(400, 400);
@@ -174,26 +219,6 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			e.printStackTrace();
 		}
 		
-
-		//test
-		//code here for test
-		
-		
-		//init data from CSV file
-		MainService mainService = MainService.getInstance();
-		mainService.refreshDBdataFromCSV();
-		
-		ScenarioService scenarioService = ScenarioService.getInstance();
-		ArrayList<String> activeScenariolist = scenarioService.getActiveScenarioList();
-		if(activeScenariolist.size() == 0) {
-			//none active scenario
-			Alert alert = new Alert(AlertType.INFORMATION);
-			alert.setTitle("Warning");
-			alert.setHeaderText(null);
-			alert.setContentText("none active scenario");
-			alert.showAndWait();
-			return;
-		}
 		//create daily path
 		String dataStr = Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd");
 		//screenshot
@@ -293,7 +318,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		        }
 			}, startTime, timerRefreshMSec);
 		}
-		
+//		*/
 	}
 	
 	private int getGreen() {
@@ -373,13 +398,14 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 				scenarioService.updateWorkingScenarioListByRefreshPlan();
 			}
 			//get screen color
-			colorService.updateZoneColorByTimer(this);
+			colorService.updateZoneColorByTimer();
 			
 			//check trend
 			trendService.checkScenarioTrend();
 			
 			Platform.runLater(()->greenCountLbl.setText(""+getGreen()));
 			Platform.runLater(()->redCountLbl.setText(""+getRed()));
+			
 			//table
 			//check and update trend
 			for (ScenarioTrend oldTrend : sceTrendList) {
@@ -405,8 +431,8 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 										""+lastSign.getRedCount(), 
 										""+lastSign.getPriceSwim(), 
 										""+lastSign.getPriceIB());
+								ObservableList<TrendTableItem> trendData = (ObservableList<TrendTableItem>) tbDataHash.get(lastSign.getScenario());
 								trendData.add(trendItem);
-								
 								break;
 							}
 						}

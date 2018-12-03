@@ -12,6 +12,8 @@ import systemenum.SystemEnum.Trend;
 
 import java.awt.AWTException;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
@@ -229,6 +231,25 @@ public class Util {
 	
     public static String getStringByScreenShotPng(String docpath, String filename) {
     	
+        try {
+        	BufferedImage src = ImageIO.read(new File(docpath+"//"+filename)); // 读入文件
+            int width = src.getWidth(); // 得到源图宽
+            int height = src.getHeight(); // 得到源图长
+            // 放大
+            
+            width = width * 2;
+            height = height * 2;
+            Image image = src.getScaledInstance(width, height, Image.SCALE_DEFAULT);
+            BufferedImage tag = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+            Graphics g = tag.getGraphics();
+            g.drawImage(image, 0, 0, null); // 绘制缩小后的图
+            g.dispose();
+            ImageIO.write(tag, "PNG", new File(docpath+"//"+filename));// 输出到文件流
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
         ITesseract instance = new Tesseract();
         File directory = new File(docpath);
         String courseFile = null;
@@ -255,14 +276,17 @@ public class Util {
     }
     
     public static double getPriceByString(String str) {
+    	str = str.replace("\n","");
     	if (str == null || str.length() == 0) return 0;
     	if (str.contains(",")) { 
     		str = str.replace(",", ".");
     	}
     	if (str.contains(".")) {
-    		String[] sourceStrArray = str.split(".");
+    		String[] sourceStrArray = str.split("\\.");
     		StringBuilder sBuilder = new StringBuilder(sourceStrArray[0]);
-    		if(sourceStrArray.length>1) sBuilder.append("."+sourceStrArray[1]);
+    		if(sourceStrArray.length>1) {
+    			sBuilder.append("."+sourceStrArray[1]);
+    		}
     		return Double.valueOf(sBuilder.toString()).doubleValue();
     	}
     	return 0;

@@ -52,7 +52,7 @@ public class ZoneColorInfoService {
 		}
 	}
 	
-	public void updateZoneColorByTimer(AutoTradeCallBackInterface obj) {
+	public void updateZoneColorByTimer() {
 
 		if (getZoneColors().isEmpty()) {
 			return;

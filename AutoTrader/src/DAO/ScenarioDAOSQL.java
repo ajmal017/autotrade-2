@@ -9,6 +9,7 @@ import java.util.Date;
 
 import entity.Area;
 import entity.Scenario;
+import systemenum.SystemEnum;
 
 public class ScenarioDAOSQL implements ScenarioDAO {
 	
@@ -90,6 +91,7 @@ public class ScenarioDAOSQL implements ScenarioDAO {
 	        	scenario.setScenario(rs.getString(1));
 	        	scenario.setStartTime(rs.getString(2));
 	        	scenario.setEndTime(rs.getString(3));
+	        	scenario.setTrend(SystemEnum.Trend.Default);
 	        	list.add(scenario);
 	        }
 			return list;
