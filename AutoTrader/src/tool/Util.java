@@ -230,7 +230,8 @@ public class Util {
 	}
 	
     public static String getStringByScreenShotPng(String docpath, String filename) {
-    	
+    	/*
+    	 //zoom on
         try {
         	BufferedImage src = ImageIO.read(new File(docpath+"//"+filename)); // 读入文件
             int width = src.getWidth(); // 得到源图宽
@@ -249,7 +250,7 @@ public class Util {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
+        */
         ITesseract instance = new Tesseract();
         File directory = new File(docpath);
         String courseFile = null;
