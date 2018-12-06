@@ -95,7 +95,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
     	*/
 		
 		
- //   	/*
+//    	/*
 		//init data from CSV file
 		MainService mainService = MainService.getInstance();
 		mainService.refreshDBdataFromCSV();
