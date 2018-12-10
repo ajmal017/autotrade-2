@@ -55,6 +55,7 @@ import service.ScenarioService;
 import service.TrendSignService;
 import service.ZoneColorInfoService;
 import systemenum.SystemEnum;
+import systemenum.SystemEnum.Trend;
 import tool.Util;
 import tool.MP3Player;
 
@@ -236,6 +237,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		for (String s : activeScenariolist) {
 			ScenarioTrend trend  =  new ScenarioTrend();
 			trend.setScenario(s);
+			trend.setTrend(SystemEnum.Trend.Default);
 			getSceTrendList().add(trend);
 		};
 		

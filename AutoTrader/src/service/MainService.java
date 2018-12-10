@@ -47,7 +47,8 @@ public class MainService {
     private void insertScenario() {
     	
     	ScenarioDAO scenarioDao = ScenarioDAOFactory.getScenarioDAO();
-    	for (String as : scenarioDao.getAllActiveScenarioName()) {
+    	ArrayList<String> scenarioList = scenarioDao.getAllActiveScenarioName();
+    	for (String as : scenarioList) {
     		
     		ArrayList<String[]> resultList = Util.readCSVFile(as + "_scenario");
         	if(resultList.size() == 0) return;
@@ -66,7 +67,8 @@ public class MainService {
     private void insertAreaZone() {
 
     	ScenarioDAO scenarioDao = ScenarioDAOFactory.getScenarioDAO();
-    	for (String as : scenarioDao.getAllActiveScenarioName()) {
+    	ArrayList<String> scenarioList = scenarioDao.getAllActiveScenarioName();
+    	for (String as : scenarioList) {
     		
     		ArrayList<String[]> resultList = Util.readCSVFile(as + "_area_zone");
         	if(resultList.size() == 0) return;

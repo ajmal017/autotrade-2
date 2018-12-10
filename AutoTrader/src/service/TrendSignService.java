@@ -9,6 +9,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import DAO.TrendSignDAO;
 import DAO.TrendSignDAOFactory;
@@ -23,8 +25,8 @@ public class TrendSignService {
 
 	private volatile static TrendSignService instance;
 	private ArrayList<TrendSign> dailySignList;
-	private double closePriceSwim;
-	private double closePriceIB;
+	private double closePriceSwim = 0;
+	private double closePriceIB = 0;
 	
 	//初始化函数
     private TrendSignService ()  {
@@ -177,34 +179,40 @@ public class TrendSignService {
     
     public void pushNewTrendSign (String scenario, Enum<SystemEnum.Trend> trend, int green, int red) {
     	
-    	//screen shot
-    	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    	Rectangle screenRectangle = new Rectangle(screenSize);
-    	String shotPath = SystemConfig.DOC_PATH + "//screenshot//" + 
-    					  Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") + "//"+ 
-    					  scenario + "//" + 
-    					  scenario + "_" + Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + ".png";
-    	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
-    	
     	//swim price
     	Rectangle rect = ZoneDAOFactory.getZoneDAO().getRectByName("swim_price");
     	Util.createScreenShotByRect(rect,
     			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
     			"png");
     	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
-    	
+    	System.out.println("swimPriceStr:"+swimPriceStr);
     	double priceSwim = 0.0;
-    	
     	if(swimPriceStr != null && swimPriceStr.length() > 0) {
     		priceSwim = Util.getPriceByString(swimPriceStr);
+    		System.out.println("priceSwim:"+priceSwim);
     	}
     	
     	double priceIB = 110.11; //todo
     	
     	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, priceIB, "", 0, 0);
-
     	getDailySignList().add(newSign);
     	TrendSignDAOFactory.getTrendSignDAO().insertNewTrendSign(newSign);
+    	
+    	ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
+	    cachedThreadPool.execute(new Runnable() {
+	  
+	        @Override
+	        public void run() {
+	        	//screen shot
+            	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            	Rectangle screenRectangle = new Rectangle(screenSize);
+            	String shotPath = SystemConfig.DOC_PATH + "//screenshot//" + 
+            					  Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") + "//"+ 
+            					  scenario + "//" + 
+            					  scenario + "_" + Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + ".png";
+            	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
+	        }
+	    });
     }
     
     public void todayScenarioIsFinished () {

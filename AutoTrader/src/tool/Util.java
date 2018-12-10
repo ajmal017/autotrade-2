@@ -230,7 +230,7 @@ public class Util {
 	}
 	
     public static String getStringByScreenShotPng(String docpath, String filename) {
-    	/*
+    	
     	 //zoom on
         try {
         	BufferedImage src = ImageIO.read(new File(docpath+"//"+filename)); // 读入文件
@@ -250,7 +250,7 @@ public class Util {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        */
+        
         ITesseract instance = new Tesseract();
         File directory = new File(docpath);
         String courseFile = null;
@@ -277,19 +277,32 @@ public class Util {
     }
     
     public static double getPriceByString(String str) {
-    	str = str.replace("\n","");
-    	if (str == null || str.length() == 0) return 0;
-    	if (str.contains(",")) { 
-    		str = str.replace(",", ".");
+    	
+    	if(str == null || str.length() == 0) return 0;
+    	
+    	try {
+
+        	str = str.replace("\n","");
+        	str = str.replace(" ","");
+        	if (str == null || str.length() == 0) return 0;
+        	if (str.contains(",")) { 
+        		str = str.replace(",", ".");
+        	}
+        	if (str.contains(".")) {
+        		String[] sourceStrArray = str.split("\\.");
+        		StringBuilder sBuilder = new StringBuilder(sourceStrArray[0]);
+        		if(sourceStrArray.length>1) {
+        			sBuilder.append("."+sourceStrArray[1]);
+        		}
+        		return Double.valueOf(sBuilder.toString()).doubleValue();
+        	}
+        	
+        	return 0;
+        	
+    	} catch (Exception e) {
+    		e.printStackTrace();
     	}
-    	if (str.contains(".")) {
-    		String[] sourceStrArray = str.split("\\.");
-    		StringBuilder sBuilder = new StringBuilder(sourceStrArray[0]);
-    		if(sourceStrArray.length>1) {
-    			sBuilder.append("."+sourceStrArray[1]);
-    		}
-    		return Double.valueOf(sBuilder.toString()).doubleValue();
-    	}
+    	
     	return 0;
     }
     
