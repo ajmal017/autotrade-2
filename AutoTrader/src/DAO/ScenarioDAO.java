@@ -11,8 +11,7 @@ public interface ScenarioDAO {
 	ArrayList<String> getAllActiveScenarioName();
 	ArrayList<String> getAllDistinctScenarioStartTimeAndEndTime();
 	ArrayList<Scenario> getAllWorkingScenarioAtTime(Date time);
-	ArrayList<Area> getAreaListWithoutZoneByScenario(String scenario, 
-													 String startTime);
+	ArrayList<Area> getAreaListWithoutZoneByScenario(String scenario, Date time);
 	
 	void cleanScenarioActiveData();
 	void cleanScenarioData();

@@ -70,7 +70,7 @@ public class ScenarioDAOSQL implements ScenarioDAO {
 	@Override
 	public ArrayList<Scenario> getAllWorkingScenarioAtTime(Date time) {
 		
-		final String sqlString = "select * from scenario where start_time <= ? and end_time > ?";
+		final String sqlString = "select distinct(scenario) from scenario where start_time <= ? and end_time > ?";
 		ArrayList<Scenario> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -89,8 +89,6 @@ public class ScenarioDAOSQL implements ScenarioDAO {
 	        	
 	        	Scenario scenario = new Scenario();
 	        	scenario.setScenario(rs.getString(1));
-	        	scenario.setStartTime(rs.getString(2));
-	        	scenario.setEndTime(rs.getString(3));
 	        	scenario.setTrend(SystemEnum.Trend.Default);
 	        	list.add(scenario);
 	        }
@@ -104,8 +102,8 @@ public class ScenarioDAOSQL implements ScenarioDAO {
 		return list;
 	}
 	
-	public ArrayList<Area> getAreaListWithoutZoneByScenario(String scenario, String startTime) {
-		final String sqlString = "select area,percent from scenario where scenario = ? and start_time = ?";
+	public ArrayList<Area> getAreaListWithoutZoneByScenario(String scenario,Date time) {
+		final String sqlString = "select start_time,end_time,area,percent from scenario where scenario = ? and start_time <= ? and end_time > ?";
 		ArrayList<Area> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -115,14 +113,19 @@ public class ScenarioDAOSQL implements ScenarioDAO {
 			
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
+			String timeStr = tool.Util.getDateStringByDateAndFormatter(time, "HH:mm");
 			stmt.setString(1, scenario);
-			stmt.setString(2, startTime);
+			stmt.setString(2, timeStr);
+			stmt.setString(3, timeStr);
 			rs = stmt.executeQuery();
 	        while(rs.next()){
 	        	
 	        	Area area = new Area();
-	        	area.setArea(rs.getString(1));
-	        	area.setPercent(rs.getInt(2));
+	        	area.setStartTime(rs.getString(1));
+	        	area.setEndTime(rs.getString(2));
+	        	area.setArea(rs.getString(3));
+	        	area.setPercent(rs.getInt(4));
+	        	area.setScenario(scenario);
 	        	list.add(area);
 	        }
 			return list;

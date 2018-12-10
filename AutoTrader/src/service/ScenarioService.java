@@ -138,22 +138,22 @@ public class ScenarioService {
 			}
 		}
     	
-    	//get new related zone by new scenario
-    	ArrayList<Zone> relatedZones = zoneDAO.getRelatedZoneListByScenarioList(tempScenarioList);
-    	
     	//add area to new scenario
     	for (Scenario s : tempScenarioList) {
     		
     		ArrayList<Area> areaList  = 
-    				scenarioDao.getAreaListWithoutZoneByScenario(s.getScenario(),s.getStartTime());
+    				scenarioDao.getAreaListWithoutZoneByScenario(s.getScenario(),new Date());
     		for (Area area : areaList) {
-    			ArrayList<String> zones = zoneDAO.getOnlyActiveZoneListByScenarioArea(s.getScenario(),s.getStartTime(), area.getArea());
+    			ArrayList<String> zones = zoneDAO.getOnlyActiveZoneListByScenarioArea(area.getScenario(),area.getStartTime(), area.getArea());
     			for (String z : zones) {
     				area.getZoneList().add(z);
     			}
 			}
     		s.setAreaList(areaList);
 		}
+    	
+    	//get new related zone by new scenario
+    	ArrayList<Zone> relatedZones = zoneDAO.getRelatedZoneListByScenarioList(tempScenarioList);
     	
     	//update working scenario memory
     	workingScenarioList.clear();

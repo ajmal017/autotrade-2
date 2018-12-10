@@ -3,6 +3,7 @@ package DAO;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 
+import entity.Area;
 import entity.Scenario;
 import entity.Zone;
 

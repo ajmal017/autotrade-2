@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import entity.Area;
 import entity.Scenario;
 import entity.Zone;
 
@@ -19,8 +20,18 @@ public class ZoneDAOSQL implements ZoneDAO {
 		StringBuilder sBuilder = new StringBuilder();
 		sBuilder.append("select * from xy_coords where zone in (SELECT distinct(zone) FROM area_zone where ");
 		for (int i = 0; i < scenarioList.size(); i++) {
+			
 			Scenario s = scenarioList.get(i);
-			sBuilder.append("(scenario = '" + s.getScenario() +  "' and start_time = '" + s.getStartTime() + "' and active = 1)");
+			
+			for (int j = 0; j < s.getAreaList().size(); j++) {
+				
+				Area a = s.getAreaList().get(j);
+				
+				sBuilder.append("(scenario = '" + a.getScenario() + "' and start_time = '" + a.getStartTime() + "' and area = '" + a.getArea() + "' and active = 1)");
+				if(j + 1 < s.getAreaList().size()) {
+					sBuilder.append(" or ");
+				}
+			}
 			if(i + 1 < scenarioList.size()) {
 				sBuilder.append(" or ");
 			}

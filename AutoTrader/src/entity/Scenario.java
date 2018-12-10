@@ -8,8 +8,8 @@ public class Scenario {
 	
 	//base info
 	private String scenario;
-	private String startTime;
-	private String endTime;
+//	private String startTime;
+//	private String endTime;
 	
 	//sign and matrix
 	private Enum<SystemEnum.Trend> trend;
@@ -27,8 +27,8 @@ public class Scenario {
 		this.setAreaList(new ArrayList<Area>());
 		
 		this.scenario = scenario;
-		this.startTime = starTime;
-		this.setEndTime(endTime);
+//		this.startTime = starTime;
+//		this.endTime = endTime;
 	}
 	
 	public String getScenario() {
@@ -37,21 +37,6 @@ public class Scenario {
 	
 	public void setScenario(String scenario) {
 		this.scenario = scenario;
-	}
-	
-	public String getStartTime() {
-		return startTime;
-	}
-	public void setStartTime(String startTime) {
-		this.startTime = startTime;
-	}
-
-	public String getEndTime() {
-		return endTime;
-	}
-
-	public void setEndTime(String endTime) {
-		this.endTime = endTime;
 	}	
 
 	public ArrayList<Area> getAreaList() {
