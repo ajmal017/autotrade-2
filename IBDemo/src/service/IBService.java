@@ -3,8 +3,6 @@ package service;
 
 
 import java.io.File;
-import java.util.Iterator;
-import java.util.List;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -15,13 +13,10 @@ import com.ib.client.EClientSocket;
 import com.ib.client.EReader;
 import com.ib.client.EReaderSignal;
 import com.ib.client.Order;
-import com.ib.client.OrderType;
 
 import IB.MyEWrapperImpl;
 import entity.IBServerConfig;
 import entity.StockConfig;
-import samples.testbed.contracts.ContractSamples;
-import samples.testbed.orders.OrderSamples;
 
 enum OrderAction {
 	
@@ -38,13 +33,15 @@ public class IBService {
 	private EReaderSignal m_signal;
 	private EReader reader;
 	
-	private static final IBServerConfig ibConfig = new IBServerConfig();
-	private static final StockConfig stockConfig = new StockConfig();
+	private IBServerConfig ibConfig;
+	private StockConfig stockConfig;
 	
-	private int nextOrderId;
+	private OrderAction preOrderAction;
 	
 	private IBService ()  {
-    	
+		ibConfig = new IBServerConfig();
+		stockConfig = new StockConfig();
+		preOrderAction = OrderAction.Default;
 		initConfigs();
     }
 
@@ -78,6 +75,25 @@ public class IBService {
         }
 	}
 	
+	private void sendOrderToIB(String action, int quantity) {
+		
+		Contract stock = new Contract();
+		stock.symbol(stockConfig.getStockSymbol());
+		stock.secType(stockConfig.getSecurityType());
+		stock.currency(stockConfig.getStockCurrency());
+		stock.exchange(stockConfig.getStockExchange());
+//		stock.primaryExch(stockConfig.getPrimaryExchange());		
+		
+		Order order = new Order();
+		order.action(action);
+		order.orderType(stockConfig.getOrderType());
+		order.totalQuantity(quantity);
+		order.account(ibConfig.getAccount());
+		
+		System.out.println("wrapper.getCurrentOrderId()+1 = " + (wrapper.getCurrentOrderId()+1));
+		m_client.placeOrder(wrapper.getCurrentOrderId()+1, stock, order);
+	}
+	
 	public void ibConnect() {
 		
 		if (ibConfig.getLocalHost().length() == 0) return;
@@ -98,9 +114,7 @@ public class IBService {
                     m_signal.waitForSignal();
                     try {
                         reader.processMsgs();
-                        //get all order
-                        //todo
-                        nextOrderId = 0;
+                        
                     } catch (Exception e) {
                     	e.printStackTrace();
                     }
@@ -120,7 +134,7 @@ public class IBService {
 		reader = null;
 		wrapper = null;
 	}
-	
+	/*
 	public void searchContractByDetail() {
 		
 		Contract contract = new Contract();
@@ -137,54 +151,37 @@ public class IBService {
 		
 		m_client.reqMatchingSymbols(211, stockConfig.getStockSymbol());
 	}
-	
-	
-	public void placeOrder(OrderAction action) {
+	*/
+	public void placeOrder(OrderAction newAction) {
 		
-		if(action == OrderAction.Default) return;
+		if(newAction == OrderAction.Default) return;
 		
 		String actionStr = null;
-		if(action == OrderAction.Buy) {
+		int quantity = stockConfig.getOrderQuantity();
+		if(newAction == OrderAction.Buy) {
 			actionStr = "BUY";
 		} else {
 			actionStr = "SELL";
 		}
+		if(preOrderAction != OrderAction.Default) quantity = quantity*2;
 		
-		Contract stock = new Contract();
-		stock.symbol(stockConfig.getStockSymbol());
-		stock.secType(stockConfig.getSecurityType());
-		stock.currency(stockConfig.getStockCurrency());
-		stock.exchange(stockConfig.getStockExchange());
-		stock.primaryExch(stockConfig.getPrimaryExchange());		
-		
-		Order order = new Order();
-		order.action(actionStr);
-		order.orderType(stockConfig.getOrderType());
-		order.totalQuantity(stockConfig.getOrderQuantity());
-		order.account(ibConfig.getAccount());
-		
-		m_client.placeOrder(nextOrderId++, stock, order);
-		/*
-		Contract stock = new Contract();
-		stock.symbol("AAPL");
-		stock.secType("STK");
-		stock.currency("USD");
-		stock.exchange("SMART");
-		stock.primaryExch("ISLAND");		
-		
-		Order order = new Order();
-		order.action("BUY");
-		order.orderType("MKT");
-		order.totalQuantity(100);
-		order.account("");
-		
-		m_client.placeOrder(nextOrderId++, stock, order);
-		*/
+		sendOrderToIB(actionStr, quantity);
+		preOrderAction = newAction;
 	}
 	
-	public void closeLastOrder() {
+	public void closeTodayTrade() {
 		
+		if(preOrderAction == OrderAction.Default) return;
 		
+		String actionStr = null;
+		if(preOrderAction == OrderAction.Buy) {
+			actionStr = "SELL";
+		} else {
+			actionStr = "BUY";
+		}
+		
+		sendOrderToIB(actionStr, stockConfig.getOrderQuantity());
+		preOrderAction = OrderAction.Default;
 	}
 	
 	public static IBService getInstance() {  
