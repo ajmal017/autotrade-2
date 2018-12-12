@@ -23,7 +23,7 @@ public class Main extends Application {
 			Thread.sleep(2000);
 			
 			
-			
+			ibService.searchContractByDetail();
 			
 			Thread.sleep(10000);
 			ibService.ibDisConnect();

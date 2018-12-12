@@ -230,7 +230,7 @@ public class Util {
 	}
 	
     public static String getStringByScreenShotPng(String docpath, String filename) {
-    	
+    	/*
     	 //zoom on
         try {
         	BufferedImage src = ImageIO.read(new File(docpath+"//"+filename)); // 读入文件
@@ -238,8 +238,8 @@ public class Util {
             int height = src.getHeight(); // 得到源图长
             // 放大
             
-            width = width * 2;
-            height = height * 2;
+            width = width / 2;
+            height = height / 2;
             Image image = src.getScaledInstance(width, height, Image.SCALE_DEFAULT);
             BufferedImage tag = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
             Graphics g = tag.getGraphics();
@@ -250,7 +250,7 @@ public class Util {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
+        */
         ITesseract instance = new Tesseract();
         File directory = new File(docpath);
         String courseFile = null;
@@ -295,6 +295,10 @@ public class Util {
         			sBuilder.append("."+sourceStrArray[1]);
         		}
         		return Double.valueOf(sBuilder.toString()).doubleValue();
+        	} else {
+        		StringBuilder sb = new StringBuilder(str);
+        		sb.insert(str.length()-2,".");
+        		str = sb.toString();
         	}
         	
         	return 0;

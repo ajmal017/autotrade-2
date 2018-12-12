@@ -144,6 +144,8 @@ public class TrendSignService {
     		
     		boolean trendAppear = true;
     		
+    		Enum<SystemEnum.Color> preColor = SystemEnum.Color.Default;
+    		Enum<SystemEnum.Color> thisColor = SystemEnum.Color.Default;
 			for (Area area : scenario.getAreaList()) {
 				int areaGreen = 0;
 				int areaRed = 0;
@@ -154,10 +156,33 @@ public class TrendSignService {
 				}
 				if ((areaGreen + areaRed == area.getZoneList().size() && areaGreen > areaRed && areaRed <= area.getPercent()) ||
 				    (areaGreen + areaRed == area.getZoneList().size() && areaRed > areaGreen && areaGreen <= area.getPercent())) {
-					trendAppear = trendAppear & true; 
+					
+					if(preColor != SystemEnum.Color.Default) {
+						
+						if(areaGreen > areaRed) {
+							thisColor = SystemEnum.Color.Green;
+						} else {
+							thisColor = SystemEnum.Color.Red;
+						}
+						if(thisColor != preColor) {
+							trendAppear = trendAppear & false;
+						} else {
+							trendAppear = trendAppear & true; 
+						}
+					} else {
+						trendAppear = trendAppear & true; 
+					}
+					
 				} else {
 					trendAppear = trendAppear & false;
 				}
+				
+				if(areaGreen > areaRed) {
+					preColor = SystemEnum.Color.Green;
+				} else {
+					preColor = SystemEnum.Color.Red;
+				}
+				
 			}
 			if (trendAppear) {
 				ArrayList<Scenario> ss = new ArrayList<Scenario>();

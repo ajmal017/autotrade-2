@@ -1,0 +1,29 @@
+﻿[NativeJ Project Definition]
+ApplicationType=0
+AllowAsService=0
+TargetExe64=autotrade.exe
+RedirectStdOutType=1
+RedirectStdErrType=1
+RedirectStdOut=stdout.log
+RedirectStdErr=stderr.log
+StdOutAppend=0
+StdErrAppend=0
+ProcessPriority=3
+JvmMinVer=1.7
+JvmSearchOrder=012345
+JvmErrMsgOpt=1
+Classpath=autotrade.jar;|.
+DeleteJars=0
+ExtractJarsLocal=2
+AppClass=org.eclipse.jdt.internal.jarinjarloader.JarRsrcLoader
+AllPathsRelative=0
+StayInCurrentDir=0
+AllowMultipleInstance=0
+MultiInstanceInvoke=0
+SplashScreenTitle=Loading application...
+SplashScreenWatch=1
+SplashScreenTimeout=5
+IncludeVersion=0
+ManifestFileType=0
+[MSGS1033]
+SetLang=1033

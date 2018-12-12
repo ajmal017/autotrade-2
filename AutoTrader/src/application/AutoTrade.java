@@ -85,7 +85,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 
 		//test
 		//code here for test
-		/*
+		
 		String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
 		System.out.println("swimPriceStr:"+swimPriceStr);
 		double priceSwim = 0.0;
@@ -93,7 +93,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
     		priceSwim = Util.getPriceByString(swimPriceStr);
     		System.out.println("priceSwim:"+priceSwim);
     	}
-    	*/
+    	
 		
 		
 //    	/*

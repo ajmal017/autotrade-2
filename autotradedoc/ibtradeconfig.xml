@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<IBTradeConfig>
+<IBServerConfig>
+<localhost>127.0.0.1</localhost>
+<port>4002</port>
+<clientid>0</clientid>
+<account>U9969195</account>
+<maxtrytimes>2</maxtrytimes>
+</IBServerConfig>
+<StockConfig>
+<stocksymbol>AAPL</stocksymbol>
+<ordertype>MKT</ordertype>
+<securitytype>STK</securitytype>
+<stockexchange>SMART</stockexchange>
+<primaryexchange>ISLAND</primaryexchange>
+<stockcurrency>USD</stockcurrency>
+<stockexpiry>0.0</stockexpiry>
+<orderquantity>100</orderquantity>
+</StockConfig>
+</IBTradeConfig>

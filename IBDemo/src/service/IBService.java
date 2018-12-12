@@ -14,11 +14,21 @@ import com.ib.client.Contract;
 import com.ib.client.EClientSocket;
 import com.ib.client.EReader;
 import com.ib.client.EReaderSignal;
+import com.ib.client.Order;
+import com.ib.client.OrderType;
 
 import IB.MyEWrapperImpl;
 import entity.IBServerConfig;
 import entity.StockConfig;
+import samples.testbed.contracts.ContractSamples;
+import samples.testbed.orders.OrderSamples;
 
+enum OrderAction {
+	
+	Default,
+	Buy,
+	Sell
+}
 
 public class IBService {
 	private volatile static IBService instance; 
@@ -30,6 +40,8 @@ public class IBService {
 	
 	private static final IBServerConfig ibConfig = new IBServerConfig();
 	private static final StockConfig stockConfig = new StockConfig();
+	
+	private int nextOrderId;
 	
 	private IBService ()  {
     	
@@ -86,6 +98,9 @@ public class IBService {
                     m_signal.waitForSignal();
                     try {
                         reader.processMsgs();
+                        //get all order
+                        //todo
+                        nextOrderId = 0;
                     } catch (Exception e) {
                     	e.printStackTrace();
                     }
@@ -115,12 +130,61 @@ public class IBService {
 		contract.exchange(stockConfig.getStockExchange());
 		contract.primaryExch(stockConfig.getPrimaryExchange());
 
-		m_client.reqContractDetails(17001,contract);
+		m_client.reqContractDetails(222,contract);
 	}
 	
 	public void searchAllContractBySymbol() {
 		
 		m_client.reqMatchingSymbols(211, stockConfig.getStockSymbol());
+	}
+	
+	
+	public void placeOrder(OrderAction action) {
+		
+		if(action == OrderAction.Default) return;
+		
+		String actionStr = null;
+		if(action == OrderAction.Buy) {
+			actionStr = "BUY";
+		} else {
+			actionStr = "SELL";
+		}
+		
+		Contract stock = new Contract();
+		stock.symbol(stockConfig.getStockSymbol());
+		stock.secType(stockConfig.getSecurityType());
+		stock.currency(stockConfig.getStockCurrency());
+		stock.exchange(stockConfig.getStockExchange());
+		stock.primaryExch(stockConfig.getPrimaryExchange());		
+		
+		Order order = new Order();
+		order.action(actionStr);
+		order.orderType(stockConfig.getOrderType());
+		order.totalQuantity(stockConfig.getOrderQuantity());
+		order.account(ibConfig.getAccount());
+		
+		m_client.placeOrder(nextOrderId++, stock, order);
+		/*
+		Contract stock = new Contract();
+		stock.symbol("AAPL");
+		stock.secType("STK");
+		stock.currency("USD");
+		stock.exchange("SMART");
+		stock.primaryExch("ISLAND");		
+		
+		Order order = new Order();
+		order.action("BUY");
+		order.orderType("MKT");
+		order.totalQuantity(100);
+		order.account("");
+		
+		m_client.placeOrder(nextOrderId++, stock, order);
+		*/
+	}
+	
+	public void closeLastOrder() {
+		
+		
 	}
 	
 	public static IBService getInstance() {  

@@ -30,4 +30,11 @@ public interface SystemEnum {
 		String,
 		Date
 	}
+	
+	enum OrderAction implements SystemEnum {
+		
+		Default,
+		Buy,
+		Sell
+	}
 }

@@ -98,7 +98,7 @@ public class ScenarioService {
     	ScenarioDAO scenarioDao = ScenarioDAOFactory.getScenarioDAO();
     	ZoneDAO zoneDAO = ZoneDAOFactory.getZoneDAO();
     	
-    	//get new scenarios
+    	//get new working scenarios
     	ArrayList<Scenario> newScenarioList = scenarioDao.getAllWorkingScenarioAtTime(new Date());
     	if (newScenarioList.size() == 0) {
     		for (Scenario scenario : workingScenarioList) {
@@ -108,6 +108,8 @@ public class ScenarioService {
     		newPlanRefreshed();
     		return;
 		}
+    	
+    	//get active working scenarios
     	ArrayList<Scenario> tempScenarioList = new ArrayList<>();
     	for (Scenario newS : newScenarioList) {
     		for (String workingS : getActiveScenarioList()) {
@@ -117,7 +119,7 @@ public class ScenarioService {
     		}
 		}
     	if (tempScenarioList.size() == 0) {
-    		//无可运作scenario 关闭所有相应订单
+    		//none new scenario 关闭所有相应订单
     		for (Scenario scenario : workingScenarioList) {
 				closeOrderByScenario(scenario.getScenario());
 			}
@@ -125,11 +127,12 @@ public class ScenarioService {
     		newPlanRefreshed();
     		return;
 		} else {
-			//关闭不再working的scenario的订单
+			//close old working的scenario的订单
 			for (Scenario oldS : workingScenarioList) {
 				boolean needClose = true;
 				for (Scenario newS : tempScenarioList) {
 					if (oldS.getScenario().equals(newS.getScenario())) {
+						newS.setTrend(oldS.getTrend()); //save trend
 						needClose = false;
 						break;
 					}
