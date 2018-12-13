@@ -89,7 +89,6 @@ public class ScenarioDAOSQL implements ScenarioDAO {
 	        	
 	        	Scenario scenario = new Scenario();
 	        	scenario.setScenario(rs.getString(1));
-	        	scenario.setTrend(SystemEnum.Trend.Default);
 	        	list.add(scenario);
 	        }
 			return list;

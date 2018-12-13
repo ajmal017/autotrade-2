@@ -33,6 +33,7 @@ import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
 import config.SystemConfig;
+import entity.Zone;
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
@@ -193,7 +194,7 @@ public class Util {
 		case Down:
 			return "down";
 		default:
-			return "wobble";
+			return "close";
 		}
 	}
 	
@@ -391,4 +392,42 @@ public class Util {
         }
     }
     
+    public static Zone getZoneByZoneName(String name) {
+    	
+    	if(name == null || name.length() < 3) return null;
+
+    	Zone z = new Zone();
+    	z.setZone(name);
+    	
+    	String zArea = Character.toString(name.charAt(0));
+    	int zXIndex = Integer.valueOf(Character.toString(name.charAt(2)))-1;
+    	int zYIndex = Integer.valueOf(Character.toString(name.charAt(1)))-1;
+    	
+    	switch(zArea) {
+    		case "A" :
+    			z.setxCoord(SystemConfig.A_X[zXIndex]);
+    			break;
+    		case "B" :
+    			z.setxCoord(SystemConfig.B_X[zXIndex]);
+    			break;
+    		case "C" :
+    			z.setxCoord(SystemConfig.C_X[zXIndex]);
+    			break;
+    		case "D" :
+    			z.setxCoord(SystemConfig.D_X[zXIndex]);
+    			break;
+    		case "E" :
+    			z.setxCoord(SystemConfig.E_X[zXIndex]);
+    			break;
+    		case "F" :
+    			z.setxCoord(SystemConfig.F_X[zXIndex]);
+    			break;
+    		default:
+    			z.setxCoord(SystemConfig.G_X[zXIndex]);
+    			break;
+    	}
+    	z.setyCoord(SystemConfig.ZONE_Y[zYIndex]);
+    	
+    	return z;
+    }
 }

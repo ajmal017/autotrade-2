@@ -18,6 +18,7 @@ public class Scenario {
 	public Scenario () {
 		
 //		super();
+		trend = SystemEnum.Trend.Default;
 		this.setAreaList(new ArrayList<Area>());
 	}
 	

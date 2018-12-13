@@ -10,7 +10,7 @@ public class TrendSign {
 
 	private Date time;
 	private String scenario;
-	private Enum<SystemEnum.Trend> trend; 
+	private Enum<SystemEnum.Trend> trend;
 	private String trendText; //只用于 dao存储 和 xls导出 用
 	private int greenCount;
 	private int redCount;
@@ -49,7 +49,7 @@ public class TrendSign {
 	public TrendSign() {
 		
 //		super();
-		
+		trend = SystemEnum.Trend.Default;
 	}
 	
 	public Date getTime() {

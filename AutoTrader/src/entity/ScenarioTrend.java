@@ -10,7 +10,7 @@ public class ScenarioTrend {
 	public ScenarioTrend() {
 		
 //		super();
-		
+		trend = SystemEnum.Trend.Default;
 	}
 
 	public String getScenario() {

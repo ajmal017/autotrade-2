@@ -8,6 +8,7 @@ import DAO.ScenarioDAOFactory;
 import DAO.ZoneDAO;
 import DAO.ZoneDAOFactory;
 import entity.DailyScenarioRefresh;
+import systemenum.SystemEnum;
 import tool.Util;
 import entity.*;
 
@@ -210,6 +211,8 @@ public class ScenarioService {
     }
     
     private void closeOrderByScenario(String scenario) {
+    	
+    	TrendSignService.getInstance().pushNewTrendSign(scenario, SystemEnum.Trend.Default, 0, 0);
     	
     	//todo
     }

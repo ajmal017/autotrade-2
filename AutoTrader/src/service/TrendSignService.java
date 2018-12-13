@@ -57,23 +57,25 @@ public class TrendSignService {
 				scenarioProfitSwim += newProfitSwim;
 				scenarioProfitIB += newProfitIB;
 				tSign.setProfitSwim(newProfitSwim);
-				tSign.setProfitIB(newProfitSwim);
+				tSign.setProfitIB(newProfitIB);
     			outputList.add(tSign);
 			}
     		//计算休市价和最后一个信号间的收益。
-    		scenarioProfitSwim += Util.getProfit(tsList.get(tsList.size()-1).getPriceSwim(), closePriceSwim, tsList.get(tsList.size()-1).getTrend());
-    		scenarioProfitIB+= Util.getProfit(tsList.get(tsList.size()-1).getPriceIB(), closePriceIB, tsList.get(tsList.size()-1).getTrend());
+    		if(tsList.size() > 0) {
+    			scenarioProfitSwim += Util.getProfit(tsList.get(tsList.size()-1).getPriceSwim(), closePriceSwim, tsList.get(tsList.size()-1).getTrend());
+    			scenarioProfitIB+= Util.getProfit(tsList.get(tsList.size()-1).getPriceIB(), closePriceIB, tsList.get(tsList.size()-1).getTrend());
+    		}
     		//添加收益汇总行
     		TrendSign profitLine = new TrendSign();
     		profitLine.setTime(new Date());
     		profitLine.setScenario(s);
     		profitLine.setTrend(SystemEnum.Trend.Default);
-    		profitLine.setTrendText("close"); //休市
+    		profitLine.setTrendText(Util.getTrendTextByEnum(SystemEnum.Trend.Default)); //休市
     		profitLine.setPriceSwim(closePriceSwim); //休市价
     		profitLine.setPriceIB(closePriceIB); //休市价
     		profitLine.setProfitSwim(scenarioProfitSwim); //总收益
     		profitLine.setProfitIB(scenarioProfitIB); //总收益
-    		profitLine.setDesc("Daily Total Profit");
+    		profitLine.setDesc(s + " Daily Total Profit");
     		outputList.add(profitLine);
     	}
 

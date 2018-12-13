@@ -34,8 +34,11 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -44,6 +47,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -85,7 +89,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 
 		//test
 		//code here for test
-		
+		/*
 		String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
 		System.out.println("swimPriceStr:"+swimPriceStr);
 		double priceSwim = 0.0;
@@ -93,7 +97,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
     		priceSwim = Util.getPriceByString(swimPriceStr);
     		System.out.println("priceSwim:"+priceSwim);
     	}
-    	
+    	*/
 		
 		
 //    	/*
@@ -122,7 +126,18 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	        final Label eTitle = new Label("EndTime:");
 	        startTimeLbl.setPrefWidth(60);
 	        endTimeLbl.setPrefWidth(60);
-	        hb1.getChildren().addAll(sTitle, startTimeLbl, eTitle, endTimeLbl);
+	        
+	        Button btn = new Button();
+	        btn.setText("Close");
+	        btn.setPrefSize(50, 15);
+	        btn.setOnAction(new EventHandler<ActionEvent>() {
+	            @Override
+	            public void handle(ActionEvent event) {
+	                closeApplication();
+	            }
+	        });
+	        
+	        hb1.getChildren().addAll(sTitle, startTimeLbl, eTitle, endTimeLbl,btn);
 	        hb1.setSpacing(3);
 	        
 	        final HBox hb2 = new HBox();
@@ -213,6 +228,13 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			Scene scene = new Scene(root);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
+			primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+			    @Override
+			    public void handle(WindowEvent t) {
+			        Platform.exit();
+			        System.exit(0);
+			    }
+			});
 			primaryStage.show();
 			
 			
@@ -237,9 +259,12 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		for (String s : activeScenariolist) {
 			ScenarioTrend trend  =  new ScenarioTrend();
 			trend.setScenario(s);
-			trend.setTrend(SystemEnum.Trend.Default);
 			getSceTrendList().add(trend);
 		};
+		
+		//test
+//		TrendSignService tss = TrendSignService.getInstance();
+//		tss.todayScenarioIsFinished();
 		
 		if(scenarioService.getSceRefreshPlan().size() == 0) {
 			//none scenario plan
@@ -382,6 +407,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(scenarioService.getSceRefreshPlan().get(0).getRefreshTime());
     		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
+    		secTimer.cancel();
 			secTimer = new Timer();
 			Calendar c = Calendar.getInstance();
 			c.setTime(startTime);
@@ -393,6 +419,13 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		        	calledBySecondTimer();
 		        }
 			}, startTime, timerRefreshMSec);
+			
+			playSignAlertMusic();
+			Alert alert = new Alert(AlertType.INFORMATION);
+			alert.setTitle("Warning");
+			alert.setHeaderText(null);
+			alert.setContentText("every scenario is end");
+			alert.showAndWait();
 			
 		} else {
 			//now is a refresh time
@@ -461,13 +494,34 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		}
 	}
 	
-	private void playSignAlertMusic () {
+	private void playSignAlertMusic() {
 		
 		MP3Player mp3 = new MP3Player("c://autotradedoc//sign_bg.mp3");
         mp3.play();
         
 	}
 	
+	private void closeApplication() {
+		
+		secTimer.cancel();
+		
+		//close order
+		for (ScenarioTrend st : sceTrendList) {
+			if(st.getTrend() != SystemEnum.Trend.Default) {
+				TrendSignService.getInstance().pushNewTrendSign(st.getScenario(), SystemEnum.Trend.Default, 0, 0);
+			}
+		}
+		//export xls
+		TrendSignService.getInstance().todayScenarioIsFinished();
+		try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
+		//shutdown
+		Platform.exit();
+        System.exit(0);
+	}
 	
 	public static void main(String[] args) {
 		launch(args);
