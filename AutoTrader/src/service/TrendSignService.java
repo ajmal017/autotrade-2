@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import DAO.ScenarioDAOFactory;
 import DAO.TrendSignDAO;
 import DAO.TrendSignDAOFactory;
 import DAO.ZoneDAO;
@@ -34,52 +35,34 @@ public class TrendSignService {
     	this.dailySignList = new ArrayList<TrendSign>();
     } 
 	
-    private Map<String, List<String>> getTrendRecordWithProfit() {
+    private Map<String, List<String>> getTrendRecordWithProfit(String scenario) {
     	
-    	//根据scenario分组重排
     	ArrayList<TrendSign> outputList = new ArrayList<TrendSign>();
-    	ArrayList<String> scenarios = ScenarioService.getInstance().getActiveScenarioList();
+    	
     	TrendSignDAO tsDao = TrendSignDAOFactory.getTrendSignDAO();
-    	for (String s : scenarios) {
-    		double scenarioProfitSwim = 0;
-    		double scenarioProfitIB = 0;
-    		//计算每个信号的收益
-    		ArrayList<TrendSign> tsList = tsDao.getTrendSignListByDate(new Date(), s);
-    		for (int i = 0; i < tsList.size(); i ++) {
-    			TrendSign tSign = tsList.get(i);
-    			double newProfitSwim = 0;
-    			double newProfitIB = 0;
-    			//只有第2个信号出现，才算有第1比收益。
-    			if (i > 0) { 
-    				newProfitSwim = Util.getProfit(tsList.get(i-1).getPriceSwim(), tSign.getPriceSwim(), tsList.get(i-1).getTrend());
-    				newProfitIB = Util.getProfit(tsList.get(i-1).getPriceIB(), tSign.getPriceIB(), tsList.get(i-1).getTrend());
-				}
-				scenarioProfitSwim += newProfitSwim;
-				scenarioProfitIB += newProfitIB;
-				tSign.setProfitSwim(newProfitSwim);
-				tSign.setProfitIB(newProfitIB);
-    			outputList.add(tSign);
+    	double scenarioProfitIB = 0;
+    		
+    	ArrayList<TrendSign> tsList = tsDao.getTrendSignListByDate(new Date(), scenario);
+    	for (int i = 0; i < tsList.size(); i ++) {
+    		TrendSign tSign = tsList.get(i);
+    		double newProfitIB = 0;
+    		if (i > 0) { 
+    			newProfitIB = Util.getProfit(tsList.get(i-1).getPriceIB(), tSign.getPriceIB(), tsList.get(i-1).getTrend());
 			}
-    		//计算休市价和最后一个信号间的收益。
-    		if(tsList.size() > 0) {
-    			scenarioProfitSwim += Util.getProfit(tsList.get(tsList.size()-1).getPriceSwim(), closePriceSwim, tsList.get(tsList.size()-1).getTrend());
-    			scenarioProfitIB+= Util.getProfit(tsList.get(tsList.size()-1).getPriceIB(), closePriceIB, tsList.get(tsList.size()-1).getTrend());
-    		}
-    		//添加收益汇总行
-    		TrendSign profitLine = new TrendSign();
-    		profitLine.setTime(new Date());
-    		profitLine.setScenario(s);
-    		profitLine.setTrend(SystemEnum.Trend.Default);
-    		profitLine.setTrendText(Util.getTrendTextByEnum(SystemEnum.Trend.Default)); //休市
-    		profitLine.setPriceSwim(closePriceSwim); //休市价
-    		profitLine.setPriceIB(closePriceIB); //休市价
-    		profitLine.setProfitSwim(scenarioProfitSwim); //总收益
-    		profitLine.setProfitIB(scenarioProfitIB); //总收益
-    		profitLine.setDesc(s + " Daily Total Profit");
-    		outputList.add(profitLine);
-    	}
+			scenarioProfitIB += newProfitIB;
+			tSign.setProfitIB(newProfitIB);
+    		outputList.add(tSign);
+		}
+    	
+    	//add total profit line
+    	TrendSign profitLine = new TrendSign();
+    	profitLine.setTime(new Date());
+    	profitLine.setTrend(SystemEnum.Trend.Default);
+    	profitLine.setTrendText(Util.getTrendTextByEnum(SystemEnum.Trend.Default)); //休市
+    	profitLine.setProfitIB(scenarioProfitIB); //总收益
+    	outputList.add(profitLine);
 
-        SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
         Map<String, List<String>> map = new HashMap<String, List<String>>();
         for (int i = 0; i < outputList.size(); i++) {
         	TrendSign sign = outputList.get(i);
@@ -255,14 +238,25 @@ public class TrendSignService {
     	//TODO
     	closePriceIB = 111.01;
     	
+    	
     	//checkout sign records
-    	Map<String, List<String>> recordMap = getTrendRecordWithProfit();
-        String[] strArray = excelTitle();
-        String path = SystemConfig.DOC_PATH + 
+    	ArrayList<String> sheetList = ScenarioDAOFactory.getScenarioDAO().getAllActiveScenarioName();
+    	ArrayList<Map<String, List<String>>> mapList = new ArrayList<Map<String, List<String>>>();
+    	int trendCount = 0;
+    	for (String s : sheetList) {
+    		Map<String, List<String>> recordMap = getTrendRecordWithProfit(s);
+    		mapList.add(recordMap);
+    		trendCount += recordMap.size();
+    	}
+    	
+    	if(trendCount > 0) {
+    	
+    		String path = SystemConfig.DOC_PATH + 
         		"//trendprofit//" +
         		Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") +  
         		".xls";
-        Util.createExcel(recordMap, strArray, path);
+    		Util.createExcel(sheetList, mapList, excelTitle(), path);
+    	}
         
     	getDailySignList().clear(); //清空当日记录
     	closePriceSwim = 0;
