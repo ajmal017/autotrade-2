@@ -83,16 +83,16 @@ public class ComputeProfit {
 					ts.setTrend(Util.getTrendEnumByText(ts.getTrendText()));
 					
 					cell = row.getCell(4);
-					ts.setGreenCount(Integer.valueOf(cell.getStringCellValue()));
+					ts.setGreenCount(Integer.valueOf(Util.getStrValueByCell(cell)));
 					
 					cell = row.getCell(5);
-					ts.setRedCount(Integer.valueOf(cell.getStringCellValue()));
+					ts.setRedCount(Integer.valueOf(Util.getStrValueByCell(cell)));
 					
 					cell = row.getCell(6);
-					ts.setPriceSwim(Double.valueOf(cell.getStringCellValue()));
+					ts.setPriceSwim(Double.valueOf(Util.getStrValueByCell(cell)));
 					
 					cell = row.getCell(7);
-					ts.setPriceIB(Double.valueOf(cell.getStringCellValue()));
+					ts.setPriceIB(Double.valueOf(Util.getStrValueByCell(cell)));
 					
 					if(i > 1) {
 						
@@ -101,7 +101,7 @@ public class ComputeProfit {
 					}
 					
 					cell = row.getCell(9);
-					ts.setProfitIB(Double.valueOf(cell.getStringCellValue()));
+					ts.setProfitIB(Double.valueOf(Util.getStrValueByCell(cell)));
 					
 					cell = row.getCell(10);
 					ts.setDesc(cell == null?"":cell.getStringCellValue());

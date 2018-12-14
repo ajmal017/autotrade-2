@@ -13,6 +13,7 @@ import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.CellType;
 
 import systemenum.SystemEnum;
 import systemenum.SystemEnum.Trend;
@@ -76,6 +77,18 @@ public class Util {
         return str;
 	}
 	
+	public static String getStrValueByCell(HSSFCell cell) {
+		
+		CellType tCellType = cell.getCellType();
+		String msg="";
+		if(tCellType == CellType.NUMERIC){
+		     msg =String.valueOf(cell.getNumericCellValue());
+		}else{
+		     msg = cell.getStringCellValue(); 
+		}
+		return msg;
+	}
+	
 	public static void createExcel(ArrayList<String> sheetList, ArrayList<Map<String, List<String>>> mapList, String[] strArray, String path) {
         
         HSSFWorkbook wb = new HSSFWorkbook();
@@ -108,6 +121,7 @@ public class Util {
         		
         		for (int j = 0; j < strArray.length; j++) {
         			row.createCell((short) j).setCellValue(list.get(j));
+        			row.setRowStyle(style);
         		}
 
         		i++;
