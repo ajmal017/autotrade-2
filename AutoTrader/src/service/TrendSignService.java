@@ -26,8 +26,6 @@ public class TrendSignService {
 
 	private volatile static TrendSignService instance;
 	private ArrayList<TrendSign> dailySignList;
-	private double closePriceSwim = 0;
-	private double closePriceIB = 0;
 	
 	//初始化函数
     private TrendSignService ()  {
@@ -37,35 +35,32 @@ public class TrendSignService {
 	
     private Map<String, List<String>> getTrendRecordWithProfit(String scenario) {
     	
-    	ArrayList<TrendSign> outputList = new ArrayList<TrendSign>();
-    	
-    	TrendSignDAO tsDao = TrendSignDAOFactory.getTrendSignDAO();
+        Map<String, List<String>> map = new HashMap<String, List<String>>();
+    	ArrayList<TrendSign> tsList = TrendSignDAOFactory.getTrendSignDAO().getTrendSignListByDate(new Date(), scenario);
+        if(tsList.size() == 0) return map;
+        
+//    	ArrayList<TrendSign> outputList = new ArrayList<TrendSign>();
     	double scenarioProfitIB = 0;
-    		
-    	ArrayList<TrendSign> tsList = tsDao.getTrendSignListByDate(new Date(), scenario);
-    	for (int i = 0; i < tsList.size(); i ++) {
-    		TrendSign tSign = tsList.get(i);
-    		double newProfitIB = 0;
-    		if (i > 0) { 
-    			newProfitIB = Util.getProfit(tsList.get(i-1).getPriceIB(), tSign.getPriceIB(), tsList.get(i-1).getTrend());
-			}
+    	for (int i = 1; i < tsList.size(); i ++) {
+    		TrendSign tSign = tsList.get(i); //second trend
+    		double newProfitIB = Util.getProfit(tsList.get(i-1).getPriceIB(), tSign.getPriceIB(), tsList.get(i-1).getTrend());
 			scenarioProfitIB += newProfitIB;
 			tSign.setProfitIB(newProfitIB);
-    		outputList.add(tSign);
 		}
-    	
-    	//add total profit line
+    	/*
+    	//add total line
     	TrendSign profitLine = new TrendSign();
     	profitLine.setTime(new Date());
     	profitLine.setTrend(SystemEnum.Trend.Default);
     	profitLine.setTrendText(Util.getTrendTextByEnum(SystemEnum.Trend.Default)); //休市
     	profitLine.setProfitIB(scenarioProfitIB); //总收益
     	outputList.add(profitLine);
-
+    	*/
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
-        Map<String, List<String>> map = new HashMap<String, List<String>>();
-        for (int i = 0; i < outputList.size(); i++) {
-        	TrendSign sign = outputList.get(i);
+    	
+
+        for (int i = 0; i < tsList.size(); i++) {
+        	TrendSign sign = tsList.get(i);
 		    ArrayList<String> params = new ArrayList<String>();
 		    //no
 		    params.add((i+1) + "");
@@ -76,14 +71,39 @@ public class TrendSignService {
 		    //trend
 		    params.add(sign.getTrendText());
 		    //count
-		    params.add(sign.getGreenCount()+"");
-		    params.add(sign.getRedCount()+"");
-		    //price 
-		    params.add(sign.getPriceSwim()+"");
-		    params.add(sign.getPriceIB()+"");
+		    if(sign.getGreenCount()>0) {
+		    	params.add(sign.getGreenCount()+"");
+		    } else {
+		    	params.add("0");
+		    }
+		    if(sign.getRedCount()>0) {
+		    	params.add(sign.getRedCount()+"");
+		    } else {
+		    	params.add("0");
+		    }
+		    //price
+		    if(sign.getPriceSwim()!=0) {
+		    	params.add(sign.getPriceSwim()+"");
+		    } else {
+		    	params.add("0");
+		    }
+		    if(sign.getPriceIB()!=0) {
+		    	params.add(sign.getPriceIB()+"");
+		    } else {
+		    	params.add("0");
+		    }
+		    
 		    //profit
-		    params.add(sign.getProfitSwim()+"");
-		    params.add(sign.getProfitIB()+"");
+		    if(sign.getProfitSwim()!=0) {
+		    	params.add(sign.getProfitSwim()+"");
+		    } else {
+		    	params.add("0");
+		    }
+		    if(sign.getProfitIB()!=0) {
+		    	params.add(sign.getProfitIB()+"");
+		    } else {
+		    	params.add("0");
+		    }
 		    //desc
 		    params.add(sign.getDesc());
 		    //map key
@@ -202,6 +222,10 @@ public class TrendSignService {
     		System.out.println("priceSwim:"+priceSwim);
     	}
     	
+    	//ib trade
+    	//todo
+    	
+    	//ib price
     	double priceIB = 110.11; //todo
     	
     	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, priceIB, "", 0, 0);
@@ -225,19 +249,7 @@ public class TrendSignService {
 	    });
     }
     
-    public void todayScenarioIsFinished () {
-    	
-    	Rectangle rect = ZoneDAOFactory.getZoneDAO().getRectByName("swim_price");
-    	Util.createScreenShotByRect(rect,
-    			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
-    			"png");
-    	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
-    	if(swimPriceStr != null && swimPriceStr.length() > 0) {
-    		closePriceSwim = Util.getPriceByString(swimPriceStr);
-    	}
-    	//TODO
-    	closePriceIB = 111.01;
-    	
+    public void exportTodayTrendProfit() {
     	
     	//checkout sign records
     	ArrayList<String> sheetList = ScenarioDAOFactory.getScenarioDAO().getAllActiveScenarioName();
@@ -258,14 +270,11 @@ public class TrendSignService {
     		Util.createExcel(sheetList, mapList, excelTitle(), path);
     	}
         
-    	getDailySignList().clear(); //清空当日记录
-    	closePriceSwim = 0;
-    	closePriceIB = 0;
+    	getDailySignList().clear();
     }
     
     public Enum<SystemEnum.Trend> getTodayLastTrendByScenario(String scenario) {
-    	TrendSignDAO tsDao = TrendSignDAOFactory.getTrendSignDAO();
-    	return tsDao.getLastTrendByScenario(new Date(), scenario);
+    	return TrendSignDAOFactory.getTrendSignDAO().getLastTrendByScenario(new Date(), scenario);
     }
     
 	//单例函数 //IMPORT can not init before ScenarioService
@@ -287,21 +296,5 @@ public class TrendSignService {
 	public void setDailySignList(ArrayList<TrendSign> dailySignList) {
 		this.dailySignList = dailySignList;
 	}
-
-	public double getClosePriceSwim() {
-		return closePriceSwim;
-	}
-
-	public void setClosePriceSwim(double closePriceSwim) {
-		this.closePriceSwim = closePriceSwim;
-	}
-
-	public double getClosePriceIB() {
-		return closePriceIB;
-	}
-
-	public void setClosePriceIB(double closePriceIB) {
-		this.closePriceIB = closePriceIB;
-	} 
 	
 }

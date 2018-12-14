@@ -1,6 +1,8 @@
 package application;
 
+import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.io.File;
 import java.io.FileInputStream;
 import java.net.MalformedURLException;
@@ -16,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.JApplet;
 
@@ -262,10 +266,6 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			getSceTrendList().add(trend);
 		};
 		
-		//test
-//		TrendSignService tss = TrendSignService.getInstance();
-//		tss.todayScenarioIsFinished();
-		
 		if(scenarioService.getSceRefreshPlan().size() == 0) {
 			//none scenario plan
 			Alert alert = new Alert(AlertType.INFORMATION);
@@ -377,21 +377,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		
 		ScenarioService scenarioService = ScenarioService.getInstance();
 		ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-		TrendSignService trendService = TrendSignService.getInstance(); 
-
-		/* now update the CSV files and must restart the app again.
-		 * 
-		//check active scenario update(24h working, update scenario active in night)
-		if(scenarioService.activeScenarioDidChanged()) {
-			scenarioService.reloadAllScenarioIfNeeded();
-			getSceTrendList().clear();
-			for (String s : scenarioService.getActiveScenarioList()) {
-				ScenarioTrend trend  =  new ScenarioTrend();
-				trend.setScenario(s);
-				getSceTrendList().add(trend);
-			}
-		}
-		*/
+		TrendSignService trendService = TrendSignService.getInstance();
 		
 		if (scenarioService.getActiveScenarioList().size() == 0 ||
 				scenarioService.getSceRefreshPlan().size() == 0) {
@@ -402,7 +388,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		//every plan passed
 		if (scenarioService.getPassedRefreshPlanCount()  == scenarioService.getSceRefreshPlan().size()) {
 			
-			trendService.todayScenarioIsFinished(); //export ºexcel
+			trendService.exportTodayTrendProfit(); //export ºexcel
 			
 			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(scenarioService.getSceRefreshPlan().get(0).getRefreshTime());
@@ -420,12 +406,13 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		        }
 			}, startTime, timerRefreshMSec);
 			
-			playSignAlertMusic();
 			Alert alert = new Alert(AlertType.INFORMATION);
 			alert.setTitle("Warning");
 			alert.setHeaderText(null);
 			alert.setContentText("every scenario is end");
 			alert.showAndWait();
+			
+			playSignAlertMusic();
 			
 		} else {
 			//now is a refresh time
@@ -441,40 +428,34 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 			Platform.runLater(()->greenCountLbl.setText(""+getGreen()));
 			Platform.runLater(()->redCountLbl.setText(""+getRed()));
 			
-			//table
 			//check and update trend
 			for (ScenarioTrend oldTrend : sceTrendList) {
+				
+				boolean sceWorking = false;
 				for (Scenario scenario : scenarioService.getWorkingScenarioList()) {
 					
+					if(oldTrend.getScenario().equals(scenario.getScenario())) {sceWorking = true;}
 					if(oldTrend.getScenario().equals(scenario.getScenario()) && 
 							oldTrend.getTrend() != scenario.getTrend()) {
-						
 						//update trend
 						oldTrend.setTrend(scenario.getTrend());
-						 //music alert
-						playSignAlertMusic();
 						//get last sign
 						for (int i = trendService.getDailySignList().size()-1; i > -1; i--) {
 							TrendSign lastSign = trendService.getDailySignList().get(i); 
 							if (lastSign.getScenario().equals(oldTrend.getScenario())) {
 								//insert into table
 								TrendTableItem trendItem = new TrendTableItem(
-										Util.getDateStringByDateAndFormatter(lastSign.getTime(), "HH:mm:ss"), 
-										lastSign.getScenario(),
-										Util.getTrendTextByEnum(lastSign.getTrend()),
-										""+lastSign.getGreenCount(), 
-										""+lastSign.getRedCount(), 
-										""+lastSign.getPriceSwim(), 
-										""+lastSign.getPriceIB());
+										Util.getDateStringByDateAndFormatter(lastSign.getTime(), "HH:mm:ss"), lastSign.getScenario(),
+										Util.getTrendTextByEnum(lastSign.getTrend()),""+lastSign.getGreenCount(), ""+lastSign.getRedCount(), ""+lastSign.getPriceSwim(), ""+lastSign.getPriceIB());
 								ObservableList<TrendTableItem> trendData = (ObservableList<TrendTableItem>) tbDataHash.get(lastSign.getScenario());
 								trendData.add(trendItem);
 								break;
 							}
 						}
-						
-						
+						playSignAlertMusic();
 					}
 				}
+				if(!sceWorking) oldTrend.setTrend(SystemEnum.Trend.Default);
 			}
 		}
 	}
@@ -496,9 +477,18 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	
 	private void playSignAlertMusic() {
 		
-		MP3Player mp3 = new MP3Player("c://autotradedoc//sign_bg.mp3");
-        mp3.play();
-        
+		ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
+	    cachedThreadPool.execute(new Runnable() {
+	  
+	        @Override
+	        public void run() {
+				 //music alert
+
+	    		MP3Player mp3 = new MP3Player("c://autotradedoc//sign_bg.mp3");
+	            mp3.play();
+	        }
+	    });
+	    
 	}
 	
 	private void closeApplication() {
@@ -508,11 +498,12 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		//close order
 		for (ScenarioTrend st : sceTrendList) {
 			if(st.getTrend() != SystemEnum.Trend.Default) {
+				
 				TrendSignService.getInstance().pushNewTrendSign(st.getScenario(), SystemEnum.Trend.Default, 0, 0);
 			}
 		}
 		//export xls
-		TrendSignService.getInstance().todayScenarioIsFinished();
+		TrendSignService.getInstance().exportTodayTrendProfit();
 		try {
             Thread.sleep(1000);
         } catch (Exception e) {
