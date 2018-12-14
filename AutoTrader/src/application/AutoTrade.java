@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +53,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -137,7 +139,12 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 	        btn.setOnAction(new EventHandler<ActionEvent>() {
 	            @Override
 	            public void handle(ActionEvent event) {
-	                closeApplication();
+	                
+	                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Close?");
+	                Optional<ButtonType> result = confirmation.showAndWait();
+	                if (result.isPresent() && result.get() == ButtonType.OK) {
+	                	closeApplication(); 
+	                }
 	            }
 	        });
 	        
