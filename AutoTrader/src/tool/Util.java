@@ -151,7 +151,7 @@ public class Util {
 
         	String sheetName = sheetList.get(sheetIndex);
         	HSSFSheet sheet = wb.createSheet(sheetName);
-        	sheet.setDefaultColumnWidth(15);// 默认列宽
+        	sheet.setDefaultColumnWidth(10);// 默认列宽
         	// 第三步，在sheet中添加表头第0行,注意老版本poi对Excel的行数列数有限制short
         	HSSFRow row = sheet.createRow((int) 0);
         	// 第四步，创建单元格，并设置值表头 设置表头居中
@@ -168,10 +168,9 @@ public class Util {
         	}
 
         	// 第五步，写入实体数据 实际应用中这些数据从数据库得到,list中字符串的顺序必须和数组strArray中的顺序一致
-        	int i = 0;
-        	for (String str : map.keySet()) {
+        	for (int i = 0; i < map.size(); i++) {
         		row = sheet.createRow((int) i + 1);
-        		List<String> list = map.get(str);
+        		List<String> list = map.get(String.valueOf(i+1));
 
         		// 第四步，创建单元格，并设置值
         		for (int j = 0; j < strArray.length; j++) {

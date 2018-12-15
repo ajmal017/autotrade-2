@@ -50,7 +50,7 @@ public class TrendSignDAOSQL implements TrendSignDAO {
 
 	@Override
 	public ArrayList<TrendSign> getTrendSignListByDate(Date date, String scenario) {
-		final String sqlString = " select * from trend_sign where date = ? and scenario = ?";
+		final String sqlString = "select * from trend_sign where date = ? and scenario = ?";
 		ArrayList<TrendSign> list = new ArrayList<>();
 
 		Connection conn = null;

@@ -333,7 +333,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		        	calledBySecondTimer();
 		        	
 		        }
-			}, 5, timerRefreshMSec);
+			}, 1, timerRefreshMSec);
 			
 		}  else {
 			//scenario did not start

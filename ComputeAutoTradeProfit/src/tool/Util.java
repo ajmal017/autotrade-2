@@ -86,6 +86,7 @@ public class Util {
 		}else{
 		     msg = cell.getStringCellValue(); 
 		}
+		if(msg.equals("0.0")) msg = "0";
 		return msg;
 	}
 	
@@ -100,7 +101,7 @@ public class Util {
 
         	String sheetName = sheetList.get(sheetIndex);
         	HSSFSheet sheet = wb.createSheet(sheetName);
-        	sheet.setDefaultColumnWidth(15);
+        	sheet.setDefaultColumnWidth(10);
         	
         	HSSFRow row = sheet.createRow((int) 0);
         	
@@ -113,18 +114,15 @@ public class Util {
         		cell.setCellStyle(style);
         	}
 
-        	int i = 0;
-        	for (String str : map.keySet()) {
+        	
+        	for (int i = 0; i < map.size(); i++) {
         		row = sheet.createRow((int) i + 1);
-        		List<String> list = map.get(str);
-
+        		List<String> list = map.get(String.valueOf(i+1));
         		
         		for (int j = 0; j < strArray.length; j++) {
         			row.createCell((short) j).setCellValue(list.get(j));
         			row.setRowStyle(style);
         		}
-
-        		i++;
         	}
         }
         

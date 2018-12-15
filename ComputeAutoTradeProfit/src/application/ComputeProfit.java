@@ -12,10 +12,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.CellType;
 
 import entity.TrendSign;
 import tool.Util;
@@ -26,7 +28,7 @@ public class ComputeProfit {
 	private static HSSFWorkbook work;
 	
 	private static String[] excelTitle() {
-        String[] strArray = { "no", 
+        String[] strArray = { 
         		"time", 
         		"scenario", 
         		"trend", 
@@ -65,33 +67,42 @@ public class ComputeProfit {
 				double totalProfitIB = 0;
 				ArrayList<TrendSign> newTrendList = new ArrayList<TrendSign>();
 				int rowNo = sheet.getLastRowNum()+1;
+				TrendSign ts = new TrendSign();
 				for (int i = 1; i < rowNo; i++) {
-
-					TrendSign ts = new TrendSign();
+					ts = null;
+					ts = new TrendSign();
 					HSSFRow row = sheet.getRow(i);
 					HSSFCell cell;
-					cell = row.getCell(1);
-					String time = cell.getStringCellValue();
-					String date = Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd");
-					ts.setTime(Util.getDateByStringAndFormatter(date+time, "yyyyMMddHH:mm:ss"));
+					cell = row.getCell((short)0);
+					String timevalue;
+					if(cell.getCellType() == CellType.STRING) {
+						timevalue = cell.getStringCellValue();
+					} else {
+						SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+		                Date time = HSSFDateUtil.getJavaDate(cell.getNumericCellValue());
+		                timevalue = sdf.format(time);
+					}
 					
-					cell = row.getCell(2);
+					String date = Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd");
+					ts.setTime(Util.getDateByStringAndFormatter(date+timevalue, "yyyyMMddHH:mm:ss"));
+					
+					cell = row.getCell((short)1);
 					ts.setScenario(cell.getStringCellValue());
 					
-					cell = row.getCell(3);
+					cell = row.getCell((short)2);
 					ts.setTrendText(cell.getStringCellValue());
 					ts.setTrend(Util.getTrendEnumByText(ts.getTrendText()));
 					
-					cell = row.getCell(4);
+					cell = row.getCell((short)3);
 					ts.setGreenCount(Integer.valueOf(Util.getStrValueByCell(cell)));
 					
-					cell = row.getCell(5);
+					cell = row.getCell((short)4);
 					ts.setRedCount(Integer.valueOf(Util.getStrValueByCell(cell)));
 					
-					cell = row.getCell(6);
+					cell = row.getCell((short)5);
 					ts.setPriceSwim(Double.valueOf(Util.getStrValueByCell(cell)));
 					
-					cell = row.getCell(7);
+					cell = row.getCell((short)6);
 					ts.setPriceIB(Double.valueOf(Util.getStrValueByCell(cell)));
 					
 					if(i > 1) {
@@ -100,10 +111,10 @@ public class ComputeProfit {
 						ts.setProfitSwim(Util.getProfit(preSign.getPriceSwim(), ts.getPriceSwim(), preSign.getTrend()));
 					}
 					
-					cell = row.getCell(9);
+					cell = row.getCell((short)8);
 					ts.setProfitIB(Double.valueOf(Util.getStrValueByCell(cell)));
 					
-					cell = row.getCell(10);
+					cell = row.getCell((short)9);
 					ts.setDesc(cell == null?"":cell.getStringCellValue());
 					
 					totalProfitSwim += ts.getProfitSwim();
@@ -113,11 +124,12 @@ public class ComputeProfit {
 				}
 				
 				//add total line
-				TrendSign ts = new TrendSign();
-				ts.setProfitSwim(totalProfitSwim);
-				ts.setProfitIB(totalProfitIB);
-				ts.setDesc("Total");
-				newTrendList.add(ts);
+				TrendSign lastts = new TrendSign();
+				lastts.setTime(ts.getTime());
+				lastts.setProfitSwim(totalProfitSwim);
+				lastts.setProfitIB(totalProfitIB);
+				lastts.setDesc("Total");
+				newTrendList.add(lastts);
 				
 				//create map
 				Map<String, List<String>> map = new HashMap<String, List<String>>();
@@ -125,8 +137,7 @@ public class ComputeProfit {
 		        for (int i = 0; i < newTrendList.size(); i++) {
 		        	TrendSign sign = newTrendList.get(i);
 				    ArrayList<String> params = new ArrayList<String>();
-				  //no
-				    params.add((i+1) + "");
+				    
 				    //time
 				    if(sign.getTime() != null) {
 				    	params.add(df.format(sign.getTime()));

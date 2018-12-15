@@ -62,8 +62,7 @@ public class TrendSignService {
         for (int i = 0; i < tsList.size(); i++) {
         	TrendSign sign = tsList.get(i);
 		    ArrayList<String> params = new ArrayList<String>();
-		    //no
-		    params.add((i+1) + "");
+		    
 		    //time
 		    params.add(df.format(sign.getTime()));
 		    //scenario
@@ -113,7 +112,7 @@ public class TrendSignService {
     }
     
     private String[] excelTitle() {
-        String[] strArray = { "no", "time", "scenario", "trend", "green", "red", "price_swim", "price_ib", "profit_swim", "profit_ib", "desc"};
+        String[] strArray = { "time", "scenario", "trend", "green", "red", "price_swim", "price_ib", "profit_swim", "profit_ib", "desc"};
         return strArray;
     }
     
