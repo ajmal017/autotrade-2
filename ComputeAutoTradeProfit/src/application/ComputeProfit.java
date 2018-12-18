@@ -75,6 +75,7 @@ public class ComputeProfit {
 					HSSFCell cell;
 					cell = row.getCell((short)0);
 					String timevalue;
+//					System.out.println("sheetIndex: " + sheetIndex + " i: "+i);
 					if(cell.getCellType() == CellType.STRING) {
 						timevalue = cell.getStringCellValue();
 					} else {

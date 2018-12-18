@@ -15,17 +15,15 @@ import com.ib.client.EReaderSignal;
 import com.ib.client.Order;
 
 import IB.MyEWrapperImpl;
+import IB.MyEWrapperImplCallbackInterface;
+import application.Main;
+import entity.IBApiConfig;
 import entity.IBServerConfig;
 import entity.StockConfig;
+import systemenum.SystemEnum;
 
-enum OrderAction {
-	
-	Default,
-	Buy,
-	Sell
-}
 
-public class IBService {
+public class IBService implements MyEWrapperImplCallbackInterface {
 	private volatile static IBService instance; 
 	
 	private MyEWrapperImpl wrapper;
@@ -33,15 +31,21 @@ public class IBService {
 	private EReaderSignal m_signal;
 	private EReader reader;
 	
-	private IBServerConfig ibConfig;
+	private IBApiConfig ibApiConfig;
+	private IBServerConfig ibServerConfig;
 	private StockConfig stockConfig;
 	
-	private OrderAction preOrderAction;
+	private Enum<SystemEnum.OrderAction> preOrderAction;
+	private String preOrderScenario;
+	private String preOrderTime;
+	private Main mainObj;
 	
 	private IBService ()  {
-		ibConfig = new IBServerConfig();
+		
+		ibApiConfig = new IBApiConfig();
+		ibServerConfig = new IBServerConfig();
 		stockConfig = new StockConfig();
-		preOrderAction = OrderAction.Default;
+		preOrderAction = SystemEnum.OrderAction.Default;
 		initConfigs();
     }
 
@@ -52,14 +56,25 @@ public class IBService {
 			SAXBuilder builder = new SAXBuilder(); 
 			Document doc = (Document) builder.build(new File("c://autotradedoc//ibtradeconfig.xml"));
 			Element foo = doc.getRootElement(); //get <IBTradeConfig>
-			Element ibConf = foo.getChild("IBServerConfig");  //get <IBServerConfig>
+			Element ibApiConf = foo.getChild("IBApiConfig");  //get <IBApiConfig>
+			Element ibServerConf = foo.getChild("IBServerConfig");  //get <IBServerConfig>
 			Element stockConf = foo.getChild("StockConfig");  //get <StockConfig>
 			
-			ibConfig.setLocalHost(ibConf.getChild("localhost").getText());
-			ibConfig.setPort(Integer.valueOf(ibConf.getChild("port").getText()));
-			ibConfig.setClientId(Integer.valueOf(ibConf.getChild("clientid").getText()));
-			ibConfig.setAccount(ibConf.getChild("account").getText());
-			ibConfig.setMaxTryTimes(Integer.valueOf(ibConf.getChild("maxtrytimes").getText()));
+			String actStr = ibApiConf.getChild("active").getText();
+			ibApiConfig.setActive(Boolean.valueOf(actStr));
+			String accTypeStr = ibApiConf.getChild("accounttype").getText();
+			ibApiConfig.setAccType(accTypeStr.equalsIgnoreCase("paper")?SystemEnum.IbAccountType.Paper:SystemEnum.IbAccountType.Live);
+			
+			ibServerConfig.setLocalHost(ibServerConf.getChild("localhost").getText());
+			ibServerConfig.setClientId(Integer.valueOf(ibServerConf.getChild("clientid").getText()));
+			ibServerConfig.setMaxTryTimes(Integer.valueOf(ibServerConf.getChild("maxtrytimes").getText()));
+			if(ibApiConfig.getAccType() == SystemEnum.IbAccountType.Paper) {
+				ibServerConfig.setAccount(ibServerConf.getChild("paperaccount").getText());
+				ibServerConfig.setPort(Integer.valueOf(ibServerConf.getChild("paperport").getText()));
+			} else {
+				ibServerConfig.setAccount(ibServerConf.getChild("liveaccount").getText());
+				ibServerConfig.setPort(Integer.valueOf(ibServerConf.getChild("liveport").getText()));
+			}
 			
 			stockConfig.setStockSymbol(stockConf.getChild("stocksymbol").getText());
 			stockConfig.setOrderType(stockConf.getChild("ordertype").getText());
@@ -88,7 +103,7 @@ public class IBService {
 		order.action(action);
 		order.orderType(stockConfig.getOrderType());
 		order.totalQuantity(quantity);
-		order.account(ibConfig.getAccount());
+		order.account(ibServerConfig.getAccount());
 		
 		System.out.println("wrapper.getCurrentOrderId()+1 = " + (wrapper.getCurrentOrderId()+1));
 		m_client.placeOrder(wrapper.getCurrentOrderId()+1, stock, order);
@@ -96,14 +111,15 @@ public class IBService {
 	
 	public void ibConnect() {
 		
-		if (ibConfig.getLocalHost().length() == 0) return;
+		if (ibServerConfig.getLocalHost().length() == 0 || ibServerConfig.getPort() == 0) return;
 		
 		wrapper = new MyEWrapperImpl();
+		wrapper.setIbServiceInstance(instance);
 		
         m_client = wrapper.getClient();
         m_signal = wrapper.getSignal();
         
-        m_client.eConnect(ibConfig.getLocalHost(), ibConfig.getPort(), ibConfig.getClientId());
+        m_client.eConnect(ibServerConfig.getLocalHost(), ibServerConfig.getPort(), ibServerConfig.getClientId());
         
         reader = new EReader(m_client, m_signal);
         reader.start();
@@ -152,36 +168,38 @@ public class IBService {
 		m_client.reqMatchingSymbols(211, stockConfig.getStockSymbol());
 	}
 	*/
-	public void placeOrder(OrderAction newAction) {
+	public void placeOrder(Enum<SystemEnum.OrderAction> newAction, String scenario, String time) {
 		
-		if(newAction == OrderAction.Default) return;
+		if(newAction == SystemEnum.OrderAction.Default) return;
 		
 		String actionStr = null;
 		int quantity = stockConfig.getOrderQuantity();
-		if(newAction == OrderAction.Buy) {
+		if(newAction == SystemEnum.OrderAction.Buy) {
 			actionStr = "BUY";
 		} else {
 			actionStr = "SELL";
 		}
-		if(preOrderAction != OrderAction.Default) quantity = quantity*2;
-		
-		sendOrderToIB(actionStr, quantity);
+		if(preOrderAction != SystemEnum.OrderAction.Default) quantity = quantity*2;
+
 		preOrderAction = newAction;
+		setPreOrderScenario(scenario);
+		setPreOrderTime(time);
+		sendOrderToIB(actionStr, quantity);
 	}
 	
 	public void closeTodayTrade() {
 		
-		if(preOrderAction == OrderAction.Default) return;
+		if(preOrderAction == SystemEnum.OrderAction.Default) return;
 		
 		String actionStr = null;
-		if(preOrderAction == OrderAction.Buy) {
+		if(preOrderAction == SystemEnum.OrderAction.Buy) {
 			actionStr = "SELL";
 		} else {
 			actionStr = "BUY";
 		}
 		
 		sendOrderToIB(actionStr, stockConfig.getOrderQuantity());
-		preOrderAction = OrderAction.Default;
+		preOrderAction = SystemEnum.OrderAction.Default;
 	}
 	
 	public static IBService getInstance() {  
@@ -193,6 +211,36 @@ public class IBService {
 			}  
 		}  
 		return instance;  
+	}
+
+	@Override
+	public void updateTradePrice(double price) {
+		
+		getMainObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime());
+	}
+
+	public String getPreOrderScenario() {
+		return preOrderScenario;
+	}
+
+	public void setPreOrderScenario(String preOrderScenario) {
+		this.preOrderScenario = preOrderScenario;
+	}
+
+	public String getPreOrderTime() {
+		return preOrderTime;
+	}
+
+	public void setPreOrderTime(String preOrderTime) {
+		this.preOrderTime = preOrderTime;
+	}
+
+	public Main getMainObj() {
+		return mainObj;
+	}
+
+	public void setMainObj(Main mainObj) {
+		this.mainObj = mainObj;
 	}
 	
 }

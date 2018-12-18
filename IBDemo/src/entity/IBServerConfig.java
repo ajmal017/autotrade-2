@@ -6,7 +6,7 @@ public class IBServerConfig {
 	private String localHost; //127.0.0.1
 	private int port; //4002
 	private int clientId; //0
-	private String account; //U9969195 U1784153
+	private String account; //U9969195
 	private int maxTryTimes; //2
 	
 	public IBServerConfig () {

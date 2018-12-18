@@ -221,15 +221,13 @@ public class TrendSignService {
     		System.out.println("priceSwim:"+priceSwim);
     	}
     	
+    	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, 0, "", 0, 0);
+    	getDailySignList().add(newSign);
+    	TrendSignDAOFactory.getTrendSignDAO().insertNewTrendSign(newSign);
+    	
     	//ib trade
     	//todo
     	
-    	//ib price
-    	double priceIB = 110.11; //todo
-    	
-    	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, priceIB, "", 0, 0);
-    	getDailySignList().add(newSign);
-    	TrendSignDAOFactory.getTrendSignDAO().insertNewTrendSign(newSign);
     	
     	ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
 	    cachedThreadPool.execute(new Runnable() {

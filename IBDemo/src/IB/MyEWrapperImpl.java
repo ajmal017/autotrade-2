@@ -34,8 +34,11 @@ import com.ib.client.TickAttribBidAsk;
 import com.ib.client.TickAttribLast;
 import com.ib.client.TickType;
 
+import service.IBService;
+
 public class MyEWrapperImpl implements EWrapper {
 
+		private IBService ibServiceInstance;
 	//! [socket_declare]
 		private EReaderSignal readerSignal;
 		private EClientSocket clientSocket;
@@ -695,6 +698,13 @@ public class MyEWrapperImpl implements EWrapper {
 	    @Override
 	    public void orderBound(long orderId, int apiClientId, int apiOrderId) {
 	        System.out.println(EWrapperMsgGenerator.orderBound(orderId, apiClientId, apiOrderId));
+	        
 	    }
 	    //! [orderbound]
+		public IBService getIbServiceInstance() {
+			return ibServiceInstance;
+		}
+		public void setIbServiceInstance(IBService ibServiceInstance) {
+			this.ibServiceInstance = ibServiceInstance;
+		}
 }

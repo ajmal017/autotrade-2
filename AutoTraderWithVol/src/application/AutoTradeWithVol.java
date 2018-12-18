@@ -2,14 +2,11 @@ package application;
 	
 import javafx.application.Application;
 import javafx.stage.Stage;
-import service.IBService;
-import service.IBServiceCallbackInterface;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 
 
-
-public class Main extends Application implements IBServiceCallbackInterface {
+public class AutoTradeWithVol extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		try {
@@ -18,18 +15,6 @@ public class Main extends Application implements IBServiceCallbackInterface {
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
-			
-			IBService ibService = IBService.getInstance();
-			ibService.setMainObj(this);
-			ibService.ibConnect();
-			Thread.sleep(2000);
-			
-			
-//			ibService.searchContractByDetail();
-			
-			Thread.sleep(10000);
-			ibService.ibDisConnect();
-			
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -37,12 +22,5 @@ public class Main extends Application implements IBServiceCallbackInterface {
 	
 	public static void main(String[] args) {
 		launch(args);
-	}
-
-	@Override
-	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime) {
-		
-		//todo
-		
 	}
 }

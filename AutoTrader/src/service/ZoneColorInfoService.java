@@ -11,7 +11,6 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import application.AutoTradeCallBackInterface;
 import entity.DailyScenarioRefresh;
 import entity.Scenario;
 import entity.Zone;
@@ -57,9 +56,7 @@ public class ZoneColorInfoService {
 		if (getZoneColors().isEmpty()) {
 			return;
 		}
-
-    	int green = 0;
-    	int red = 0;
+		
         try {
         	
 			Robot rb = null; // java.awt.image包中的类，可以用来抓取屏幕，即截屏。
@@ -82,12 +79,6 @@ public class ZoneColorInfoService {
 				rgb[2] = (pixel & 0xff);
 				
 				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
-				if (zone.getColor() == SystemEnum.Color.Green) {
-					green ++;
-				}
-				if (zone.getColor() == SystemEnum.Color.Red) {
-					red ++;
-				}
 			}
 			
 			return;

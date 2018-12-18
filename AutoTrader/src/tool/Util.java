@@ -171,13 +171,10 @@ public class Util {
         	for (int i = 0; i < map.size(); i++) {
         		row = sheet.createRow((int) i + 1);
         		List<String> list = map.get(String.valueOf(i+1));
-
         		// 第四步，创建单元格，并设置值
         		for (int j = 0; j < strArray.length; j++) {
         			row.createCell((short) j).setCellValue(list.get(j));
         		}
-
-        		i++;
         	}
         }
 

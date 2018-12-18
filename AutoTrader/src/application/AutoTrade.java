@@ -1,32 +1,16 @@
 package application;
 
-import java.awt.Dimension;
-import java.awt.Rectangle;
-import java.awt.Toolkit;
-import java.io.File;
-import java.io.FileInputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.swing.JApplet;
-
-import com.sun.media.jfxmedia.AudioClip;
-
-import DAO.ZoneDAOFactory;
 import config.SystemConfig;
 import entity.DailyScenarioRefresh;
 import entity.Scenario;
@@ -38,14 +22,11 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
@@ -59,18 +40,16 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
-import service.IBService;
 import service.MainService;
 import service.ScenarioService;
 import service.TrendSignService;
 import service.ZoneColorInfoService;
 import systemenum.SystemEnum;
-import systemenum.SystemEnum.Trend;
 import tool.Util;
 import tool.MP3Player;
 
 
-public class AutoTrade extends Application implements AutoTradeCallBackInterface  {
+public class AutoTrade extends Application {
 	
 	public static int timerRefreshMSec = 1000; //ms
 	
@@ -506,7 +485,7 @@ public class AutoTrade extends Application implements AutoTradeCallBackInterface
 		for (ScenarioTrend st : sceTrendList) {
 			if(st.getTrend() != SystemEnum.Trend.Default) {
 				
-				TrendSignService.getInstance().pushNewTrendSign(st.getScenario(), SystemEnum.Trend.Default, 0, 0);
+				ScenarioService.getInstance().closeOrderByScenario(st.getScenario());
 			}
 		}
 		//export xls

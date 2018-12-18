@@ -210,7 +210,7 @@ public class ScenarioService {
 		}
     }
     
-    private void closeOrderByScenario(String scenario) {
+    public void closeOrderByScenario(String scenario) {
     	
     	TrendSignService.getInstance().pushNewTrendSign(scenario, SystemEnum.Trend.Default, 0, 0);
     }
