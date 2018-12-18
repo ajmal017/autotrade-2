@@ -488,6 +488,11 @@ public class AutoTrade extends Application {
 				ScenarioService.getInstance().closeOrderByScenario(st.getScenario());
 			}
 		}
+		try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
 		//export xls
 		TrendSignService.getInstance().exportTodayTrendProfit();
 		try {
