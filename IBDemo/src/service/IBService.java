@@ -39,6 +39,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private String preOrderScenario;
 	private String preOrderTime;
 	private Main mainObj;
+	private int currentOrderId;
 	
 	private IBService ()  {
 		
@@ -103,10 +104,9 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		order.action(action);
 		order.orderType(stockConfig.getOrderType());
 		order.totalQuantity(quantity);
-		order.account(ibServerConfig.getAccount());
-		
-		System.out.println("wrapper.getCurrentOrderId()+1 = " + (wrapper.getCurrentOrderId()+1));
-		m_client.placeOrder(wrapper.getCurrentOrderId()+1, stock, order);
+//		order.account(ibServerConfig.getAccount());
+		setCurrentOrderId(getCurrentOrderId()+1);
+		m_client.placeOrder(getCurrentOrderId(), stock, order);
 	}
 	
 	public void ibConnect() {
@@ -139,6 +139,9 @@ public class IBService implements MyEWrapperImplCallbackInterface {
         }.start();
         try {
             Thread.sleep(1000);
+            setCurrentOrderId(wrapper.getCurrentOrderId());
+
+    		System.out.println("setCurrentOrderId = " + getCurrentOrderId());
         } catch (Exception e) {
         	e.printStackTrace();
         }
@@ -241,6 +244,14 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 
 	public void setMainObj(Main mainObj) {
 		this.mainObj = mainObj;
+	}
+
+	public int getCurrentOrderId() {
+		return currentOrderId;
+	}
+
+	public void setCurrentOrderId(int currentOrderId) {
+		this.currentOrderId = currentOrderId;
 	}
 	
 }

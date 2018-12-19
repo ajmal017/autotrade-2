@@ -65,7 +65,7 @@ public class ScenarioService {
     	//create scenario  refresh plan
     	ArrayList<String> times = scenarioDao.getAllDistinctScenarioStartTimeAndEndTime();
     	if (times.size() == 0) {
-			//当日没有任务。
+			
     		return;
 		}
     	
@@ -77,7 +77,7 @@ public class ScenarioService {
     		str.append(d);
     		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
     		if (dDate.before(new Date())) {
-    			refresh.setPassed(true); //需要把已经过去的时间节点打上标记（如果在开盘后启动)
+    			refresh.setPassed(true); 
     			int passed = getPassedRefreshPlanCount() + 1;
     			setPassedRefreshPlanCount(passed);
 			} else {
@@ -92,7 +92,7 @@ public class ScenarioService {
     	
     	if (getActiveScenarioList().size() == 0) {
     		workingScenarioList.clear();
-    		newPlanRefreshed();
+    		
     		return;
     	}
     	
@@ -185,29 +185,6 @@ public class ScenarioService {
     	setPassedRefreshPlanCount(0);
     	getWorkingScenarioList().clear();
     	initAllScenarioData();
-    }
-    
-    public boolean activeScenarioDidChanged() {
-    	
-    	ArrayList<String> oldS = getActiveScenarioList();
-
-    	ScenarioDAO scenarioDao = ScenarioDAOFactory.getScenarioDAO();
-    	ArrayList<String> newS = scenarioDao.getAllActiveScenarioName();
-    	
-    	if (oldS.size() != newS.size()) {
-			return true;
-		} else {
-			if (oldS.size() == 0) {
-				return false;
-			} else {
-				for (int i = 0; i < oldS.size(); i++) {
-					if (!oldS.get(i).equals(newS.get(i))) {
-						return true;
-					}
-				}
-				return false;
-			}
-		}
     }
     
     public void closeOrderByScenario(String scenario) {
