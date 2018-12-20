@@ -20,6 +20,10 @@ public class AutoTradeWithVol extends Application {
 		}
 	}
 	
+	public void stop() {
+		
+	}
+	
 	public static void main(String[] args) {
 		launch(args);
 	}

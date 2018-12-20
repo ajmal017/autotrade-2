@@ -470,7 +470,7 @@ public class AutoTrade extends Application {
 	        public void run() {
 				 //music alert
 
-	    		MP3Player mp3 = new MP3Player("c://autotradedoc//sign_bg.mp3");
+	    		MP3Player mp3 = new MP3Player(SystemConfig.DOC_PATH+"//sign_bg.mp3");
 	            mp3.play();
 	        }
 	    });

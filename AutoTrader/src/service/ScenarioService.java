@@ -103,7 +103,7 @@ public class ScenarioService {
     	ArrayList<Scenario> newScenarioList = scenarioDao.getAllWorkingScenarioAtTime(new Date());
     	if (newScenarioList.size() == 0) {
     		for (Scenario scenario : workingScenarioList) {
-				closeOrderByScenario(scenario.getScenario());
+				if(scenario.getTrend() != SystemEnum.Trend.Default) closeOrderByScenario(scenario.getScenario());
 			}
     		workingScenarioList.clear();
     		newPlanRefreshed();
@@ -122,7 +122,7 @@ public class ScenarioService {
     	if (tempScenarioList.size() == 0) {
     		//none new scenario 关闭所有相应订单
     		for (Scenario scenario : workingScenarioList) {
-				closeOrderByScenario(scenario.getScenario());
+    			if(scenario.getTrend() != SystemEnum.Trend.Default) closeOrderByScenario(scenario.getScenario());
 			}
     		workingScenarioList.clear();
     		newPlanRefreshed();
@@ -138,7 +138,7 @@ public class ScenarioService {
 						break;
 					}
 				}
-				if(needClose) closeOrderByScenario(oldS.getScenario());
+				if(needClose && oldS.getTrend() != SystemEnum.Trend.Default) closeOrderByScenario(oldS.getScenario());
 			}
 		}
     	
