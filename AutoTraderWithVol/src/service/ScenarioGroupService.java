@@ -1,14 +1,17 @@
 package service;
 
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import DAO.ZoneDAO;
-import DAO.ZoneDAOFactory;
 import config.SystemConfig;
 import dao.CommonDAO;
 import dao.CommonDAOFactory;
@@ -432,9 +435,9 @@ public class ScenarioGroupService {
     private void checkScenarioTrend() {
     	
     	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-    	ZoneDAO zoneDao = ZoneDAOFactory.getZoneDAO();
+    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	
-    	for (Scenario scenario : scenarioService.getWorkingScenarioList()) {
+    	for (Scenario scenario : getWorkingScenarioList()) {
     		
     		boolean trendAppear = true;
     		
@@ -444,7 +447,7 @@ public class ScenarioGroupService {
 				int areaGreen = 0;
 				int areaRed = 0;
 				for (String zone : area.getZoneList()) {
-					Enum<SystemEnum.Color> c = colorService.getColorByZone(zone);
+					Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone);
 					if (c == SystemEnum.Color.Green) {areaGreen++;}			
 					if (c == SystemEnum.Color.Red) {areaRed++;}
 				}
@@ -479,24 +482,67 @@ public class ScenarioGroupService {
 				
 			}
 			if (trendAppear) {
-				ArrayList<Scenario> ss = new ArrayList<Scenario>();
-				ss.add(scenario);
-				ArrayList<Zone> zones = zoneDao.getRelatedZoneListByScenarioList(ss);
-				int scenarioGreen = getGreenCountByZoneList(zones);
-				int scenarioRed = getRedCountByZoneList(zones);
-				if(scenarioGreen > scenarioRed && scenario.getTrend() != SystemEnum.Trend.Up) {
+//				ArrayList<Scenario> ss = new ArrayList<Scenario>();
+//				ss.add(scenario);
+//				ArrayList<Zone> zones = zoneDao.getRelatedZoneListByScenarioList(ss);
+//				int scenarioGreen = getGreenCountByZoneList(zones);
+//				int scenarioRed = getRedCountByZoneList(zones);
+				if(preColor == SystemEnum.Color.Green && scenario.getTrend() != SystemEnum.Trend.Up) {
 					scenario.setTrend(SystemEnum.Trend.Up);
-					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
+//					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
 				}
-				if(scenarioGreen < scenarioRed && scenario.getTrend() != SystemEnum.Trend.Down) {
+				if(preColor == SystemEnum.Color.Red && scenario.getTrend() != SystemEnum.Trend.Down) {
 					scenario.setTrend(SystemEnum.Trend.Down);
-					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
+//					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
 				}
 			}
 		}
 	}
     
-    
+    public void pushNewTrendSign (String scenario, Enum<SystemEnum.Trend> trend, int green, int red) {
+    	
+    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
+    	
+    	//swim price
+    	Rectangle rect = commonDao.getRectByName("swim_price");
+    	Util.createScreenShotByRect(rect,
+    			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
+    			"png");
+    	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
+    	System.out.println("swimPriceStr:"+swimPriceStr);
+    	double priceSwim = 0.0;
+    	if(swimPriceStr != null && swimPriceStr.length() > 0) {
+    		priceSwim = Util.getPriceByString(swimPriceStr);
+    		System.out.println("priceSwim:"+priceSwim);
+    	}
+    	
+    	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, 0, "", 0, 0);
+    	
+    	ArrayList<TrendSign> dailySignList = getDailySignMap().get(scenario);
+    	dailySignList.add(newSign);
+    	
+    	commonDao.insertNewTrendSign(newSign);
+    	
+    	//ib trade
+    	//todo
+    	
+    	
+    	ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
+	    cachedThreadPool.execute(new Runnable() {
+	  
+	        @Override
+	        public void run() {
+	        	//screen shot
+            	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            	Rectangle screenRectangle = new Rectangle(screenSize);
+            	String shotPath = SystemConfig.DOC_PATH + "//screenshot//" + 
+            					  Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") + "//"+ 
+            					  scenario + "//" + 
+            					  scenario + "_" + Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + ".png";
+            	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
+	        }
+	    });
+    }
     
     
     
