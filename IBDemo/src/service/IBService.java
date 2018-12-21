@@ -26,10 +26,10 @@ import systemenum.SystemEnum;
 public class IBService implements MyEWrapperImplCallbackInterface {
 	private volatile static IBService instance; 
 	
-	private MyEWrapperImpl wrapper;
+	private volatile static MyEWrapperImpl wrapper;
 	private EClientSocket m_client;
 	private EReaderSignal m_signal;
-	private EReader reader;
+	private volatile static EReader reader;
 	
 	private IBApiConfig ibApiConfig;
 	private IBServerConfig ibServerConfig;
@@ -105,8 +105,8 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		order.orderType(stockConfig.getOrderType());
 		order.totalQuantity(quantity);
 //		order.account(ibServerConfig.getAccount());
-		setCurrentOrderId(getCurrentOrderId()+1);
 		m_client.placeOrder(getCurrentOrderId(), stock, order);
+		setCurrentOrderId(getCurrentOrderId()+1);
 	}
 	
 	public void ibConnect() {
@@ -140,8 +140,6 @@ public class IBService implements MyEWrapperImplCallbackInterface {
         try {
             Thread.sleep(1000);
             setCurrentOrderId(wrapper.getCurrentOrderId());
-
-    		System.out.println("setCurrentOrderId = " + getCurrentOrderId());
         } catch (Exception e) {
         	e.printStackTrace();
         }

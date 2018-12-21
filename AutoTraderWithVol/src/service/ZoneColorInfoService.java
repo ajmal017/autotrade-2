@@ -19,8 +19,13 @@ private volatile static ZoneColorInfoService instance;
 	
 	private Hashtable<String,Zone> sceZoneColors; //only working zone 
 	private Hashtable<String,Zone> volZoneColors; //only working zone 
+	private BufferedImage bi;
 	
-    private ZoneColorInfoService ()  {
+	private ArrayList<Zone> volumeZoneList; // B71 B72 ....G77 G78
+	
+	private ZoneColorInfoService ()  {
+
+    	this.volumeZoneList = new ArrayList<Zone>();
     	
     	this.sceZoneColors = new Hashtable<String,Zone>();
     	this.volZoneColors = new Hashtable<String,Zone>();
@@ -37,6 +42,17 @@ private volatile static ZoneColorInfoService instance;
     	return instance;  
     }
 
+	public void loadVolumeBarZoneListWithDefaultColor(ArrayList<Zone> zoneList) {
+		
+		if (getVolumeZoneList().size() > 0) {
+			getVolumeZoneList().clear();
+		}
+		
+		for(Zone zone : zoneList) {
+			getVolumeZoneList().add(zone);
+		}
+	}
+	
 	public void reloadSceZoneColorsByNewZoneListWithDefaultColor(ArrayList<Zone> zoneList) {
 		
 		if (!getSceZoneColors().isEmpty()) {
@@ -47,7 +63,7 @@ private volatile static ZoneColorInfoService instance;
 			getSceZoneColors().put(zone.getZone(),zone);
 		}
 	}
-	
+	/*
 	public void reloadVolZoneColorsByNewZoneListWithDefaultColor(ArrayList<Zone> zoneList) {
 		
 		if (!getVolZoneColors().isEmpty()) {
@@ -58,8 +74,8 @@ private volatile static ZoneColorInfoService instance;
 			getVolZoneColors().put(zone.getZone(),zone);
 		}
 	}
-	
-	public void updateZoneColorByTimer() {
+	*/
+	public void updateSceZoneAndVolumeBarZoneColorByTimer() {
 
 		if (getSceZoneColors().isEmpty() && getVolZoneColors().isEmpty()) {
 			return;
@@ -72,7 +88,7 @@ private volatile static ZoneColorInfoService instance;
 			Toolkit tk = Toolkit.getDefaultToolkit();
 			Dimension di = tk.getScreenSize();
 			Rectangle rec = new Rectangle(0, 0, di.width, di.height);
-			BufferedImage bi = rb.createScreenCapture(rec);
+			setBi(rb.createScreenCapture(rec));
 
 			int[] rgb = new int[3];
 			
@@ -81,7 +97,7 @@ private volatile static ZoneColorInfoService instance;
 				
 				Zone zone = e.nextElement();
 				
-				int pixel = bi.getRGB(zone.getxCoord(), zone.getyCoord());
+				int pixel = getBi().getRGB(zone.getxCoord(), zone.getyCoord());
 				rgb[0] = (pixel & 0xff0000) >> 16;
 				rgb[1] = (pixel & 0xff00) >> 8;
 				rgb[2] = (pixel & 0xff);
@@ -89,12 +105,9 @@ private volatile static ZoneColorInfoService instance;
 				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
 			}
 			
-			e = getVolZoneColors().elements();
-			while( e. hasMoreElements() ){
+			for(Zone zone: getVolumeZoneList()){
 				
-				Zone zone = e.nextElement();
-				
-				int pixel = bi.getRGB(zone.getxCoord(), zone.getyCoord());
+				int pixel = getBi().getRGB(zone.getxCoord(), zone.getyCoord());
 				rgb[0] = (pixel & 0xff0000) >> 16;
 				rgb[1] = (pixel & 0xff00) >> 8;
 				rgb[2] = (pixel & 0xff);
@@ -108,6 +121,35 @@ private volatile static ZoneColorInfoService instance;
 			e.printStackTrace();
 		}
         
+	}
+	
+	public void updateVolumeZoneColorAfterReloadVolBarByTimer() {
+
+		if (getVolZoneColors().isEmpty()) {
+			return;
+		}
+		
+        try {
+        	
+			int[] rgb = new int[3];
+			
+			Enumeration<Zone> e = getVolZoneColors().elements();
+			while( e. hasMoreElements() ){
+				
+				Zone zone = e.nextElement();
+				
+				int pixel = getBi().getRGB(zone.getxCoord(), zone.getyCoord());
+				rgb[0] = (pixel & 0xff0000) >> 16;
+				rgb[1] = (pixel & 0xff00) >> 8;
+				rgb[2] = (pixel & 0xff);
+				
+				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
+			}
+			return;
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public Enum<SystemEnum.Color> getColorBySceZone(String zone) {
@@ -139,6 +181,21 @@ private volatile static ZoneColorInfoService instance;
 	public void setVolZoneColors(Hashtable<String,Zone> volZoneColors) {
 		this.volZoneColors = volZoneColors;
 	}
-
 	
+    public BufferedImage getBi() {
+		return bi;
+	}
+
+	public void setBi(BufferedImage bi) {
+		this.bi = bi;
+	}
+
+	public ArrayList<Zone> getVolumeZoneList() {
+		return volumeZoneList;
+	}
+
+	public void setVolumeZoneList(ArrayList<Zone> volumeZoneList) {
+		this.volumeZoneList = volumeZoneList;
+	}
+
 }

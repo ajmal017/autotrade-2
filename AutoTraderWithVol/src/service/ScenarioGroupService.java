@@ -33,8 +33,6 @@ public class ScenarioGroupService {
 
 	private ArrayList<Volume> workingVolumeList; //T10
 	private ArrayList<Scenario> workingScenarioList; //T10
-	
-	private ArrayList<Zone> volumeZoneList; // B71 B72 ....G77 G78
 	 
 	private ArrayList<DailyScenarioRefresh> volRefreshPlan;
 	private int passedVolRefreshPlanCount = 0;
@@ -49,8 +47,6 @@ public class ScenarioGroupService {
 		
     	this.workingScenarioList = new ArrayList<Scenario>();
     	this.workingVolumeList = new ArrayList<Volume>();
-    	
-    	this.volumeZoneList = new ArrayList<Zone>();
     	
     	this.sceRefreshPlan = new ArrayList<DailyScenarioRefresh>();
     	this.volRefreshPlan = new ArrayList<DailyScenarioRefresh>();
@@ -140,9 +136,7 @@ public class ScenarioGroupService {
 			//none volume zone
     		return;
 		}
-    	for(Zone z : volumeZoneList) {
-    		getVolumeZoneList().add(z);
-    	}
+    	ZoneColorInfoService.getInstance().loadVolumeBarZoneListWithDefaultColor(volumeZoneList);
     	
 		initAllVolumeData();
 		initAllScenarioData();
@@ -234,19 +228,31 @@ public class ScenarioGroupService {
         return strArray;
     }
 	
-	
-	
-	
-	
-	
-	
-	
-	
+	private int getGreenCountBySceZoneList(ArrayList<Zone> zoneList) {
+
+    	int g = 0;
+    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
+    	for(Zone zone : zoneList) {
+    		Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone.getZone());
+    		if (c == SystemEnum.Color.Green) {g++;}
+    	}
+    	return g;
+    }
+    
+    private int getRedCountBySceZoneList(ArrayList<Zone> zoneList) {
+
+    	int r = 0;
+    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
+    	for(Zone zone : zoneList) {
+    		Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone.getZone());
+    		if (c == SystemEnum.Color.Red) {r++;}
+    	}
+    	return r;
+    }
 	
 	public void closeOrderByScenario(String scenario) {
     	
-		//todo
-//    	TrendSignService.getInstance().pushNewTrendSign(scenario, SystemEnum.Trend.Default, 0, 0);
+    	pushNewTrendSign(scenario, SystemEnum.Trend.Default, 0, 0);
     }
 	
 	public void updateWorkingVolumeListByRefreshPlan() {
@@ -360,7 +366,6 @@ public class ScenarioGroupService {
 				for (Scenario newS : tempScenarioList) {
 					if (oldS.getScenario().equals(newS.getScenario())) {
 						newS.setTrend(oldS.getTrend()); //save trend
-						
 						break;
 					}
 				}
@@ -394,6 +399,39 @@ public class ScenarioGroupService {
 		newScePlanRefreshed();
     }
 	
+    public void updateRelatedVolZone() {
+    	
+    	ZoneColorInfoService zService = ZoneColorInfoService.getInstance();
+    	if (!zService.getVolZoneColors().isEmpty()) {
+    		zService.getVolZoneColors().clear();
+		}
+    	
+    	ArrayList<Zone> yellowZone = new ArrayList<Zone>();
+    	for(Zone vBar : zService.getVolumeZoneList()) {
+    		if(vBar.getColor() == SystemEnum.Color.Yellow) {
+    			yellowZone.add(vBar);
+    		}
+    	}
+    	if(yellowZone.size() == 0) return;
+    	
+    	for(Volume vol : getWorkingVolumeList()) {
+    		
+    		int activeColume = (vol.getColumn() == 0 ? yellowZone.size():vol.getColumn());
+    		for(int i = 0; i < activeColume; i ++) {
+    			
+    			Zone yz = yellowZone.get(yellowZone.size()-1-i);
+    			for(String row : vol.getRows()) {
+    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz.getZone(),row,true);
+
+    		    	if(!zService.getVolZoneColors().containsKey(relatedZone.getZone())) {
+    		    		zService.getVolZoneColors().put(relatedZone.getZone(), relatedZone);
+    		    	}
+    			}
+    		}
+    	}
+    	
+    }
+    
     public void exportTodayTrendProfit() {
     	
     	//checkout sign records
@@ -423,19 +461,136 @@ public class ScenarioGroupService {
     	checkVolumeTrend();
     	checkScenarioTrend();
     	
-    	//todo
+    	for(ScenarioTrend groupTrend : getActiveScenarioGroupList()) {
+    		
+    		Enum<SystemEnum.Trend> volTrend = SystemEnum.Trend.Default;
+    		boolean volWorking = false;
+    		Volume matchVol = null;
+    		for(Volume vol : getWorkingVolumeList()) {
+    			
+    			if(vol.getScenario().equals(groupTrend.getScenario())) {
+    				matchVol = vol;
+    				volWorking = true;
+    				volTrend = vol.getTrend();
+    			}
+    		}
+    		
+    		if(!volWorking) {
+    			groupTrend.setTrend(SystemEnum.Trend.Default);
+    			continue;
+    		}
+    		
+    		Enum<SystemEnum.Trend> sceTrend = SystemEnum.Trend.Default;
+    		boolean sceWorking = false;
+    		Scenario matchSce = null;
+    		for(Scenario sce : getWorkingScenarioList()) {
+    			
+    			if(sce.getScenario().equals(groupTrend.getScenario())) {
+    				matchSce = sce;
+    				sceWorking = true;
+    				sceTrend = sce.getTrend();
+    			}
+    		}
+    		
+    		if(sceWorking) {
+    			
+    			if(volTrend == sceTrend && volTrend != groupTrend.getTrend()) {
+    				//trend change
+    				groupTrend.setTrend(volTrend);
+    				ArrayList<Scenario> ss = new ArrayList<Scenario>();
+    				ss.add(matchSce);
+    				ArrayList<Zone> zones = CommonDAOFactory.getCommonDAO().getRelatedZoneListByScenarioList(ss);
+    				int scenarioGreen = getGreenCountBySceZoneList(zones);
+    				int scenarioRed = getRedCountBySceZoneList(zones);
+    				
+    				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),scenarioGreen+matchVol.getGreen(),scenarioRed+matchVol.getRed());
+    			}
+    			
+    		} else {
+    			
+    			if(volTrend != groupTrend.getTrend()) {
+    				//trend change
+    				groupTrend.setTrend(volTrend);
+    				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),matchVol.getGreen(),matchVol.getRed());
+    			}
+    		}
+    	} 
     }
     
     
     private void checkVolumeTrend() {
     	
-    	//todo
+    	ZoneColorInfoService zService = ZoneColorInfoService.getInstance();
+    	
+    	ArrayList<Zone> yellowZone = new ArrayList<Zone>();
+    	for(Zone vBar : zService.getVolumeZoneList()) {
+    		if(vBar.getColor() == SystemEnum.Color.Yellow) {
+    			yellowZone.add(vBar);
+    		}
+    	}
+    	if(yellowZone.size() == 0) return;
+    	
+    	for(Volume vol : getWorkingVolumeList()) {
+    		
+    		if(vol.getColumn() > yellowZone.size()) continue;
+    		
+    		boolean trendAppear = false;
+    		int volGreen = 0;
+			int volRed = 0;
+			
+			int activeColume = (vol.getColumn() == 0 ? yellowZone.size():vol.getColumn());
+    		
+			for(int i = 0; i < activeColume; i ++) {
+    			
+    			Zone yz = yellowZone.get(yellowZone.size()-1-i);
+    			for(String row : vol.getRows()) {
+    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz.getZone(),row,false);
+    				Enum<SystemEnum.Color> c = zService.getColorBySceZone(relatedZone.getZone());
+					if (c == SystemEnum.Color.Green) {volGreen++;}			
+					if (c == SystemEnum.Color.Red) {volRed++;}
+    			}
+    		}
+    		
+			vol.setGreen(volGreen);
+			vol.setRed(volRed);
+			
+			Enum<SystemEnum.Color> newColor = SystemEnum.Color.Default;
+			
+    		if ((volGreen + volRed == activeColume*vol.getRows().size() && volGreen > volRed && volRed <= vol.getPercent()) ||
+				    (volGreen + volRed == activeColume*vol.getRows().size() && volRed > volGreen && volGreen <= vol.getPercent())) {
+					
+    			trendAppear = true;
+			}
+				
+			if(volGreen > volRed) {
+				newColor = SystemEnum.Color.Green;
+			} else {
+				newColor = SystemEnum.Color.Red;
+			}
+    		
+			if (trendAppear) {
+//				ArrayList<Scenario> ss = new ArrayList<Scenario>();
+//				ss.add(scenario);
+//				ArrayList<Zone> zones = zoneDao.getRelatedZoneListByScenarioList(ss);
+//				int scenarioGreen = getGreenCountByZoneList(zones);
+//				int scenarioRed = getRedCountByZoneList(zones);
+				if(newColor == SystemEnum.Color.Green && vol.getTrend() != SystemEnum.Trend.Up) {
+					vol.setTrend(SystemEnum.Trend.Up);
+//					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
+				}
+				if(newColor == SystemEnum.Color.Red && vol.getTrend() != SystemEnum.Trend.Down) {
+					vol.setTrend(SystemEnum.Trend.Down);
+//					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
+				}
+			}
+			
+			
+    	}
     }
     
     private void checkScenarioTrend() {
     	
     	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	
     	for (Scenario scenario : getWorkingScenarioList()) {
     		
@@ -482,18 +637,12 @@ public class ScenarioGroupService {
 				
 			}
 			if (trendAppear) {
-//				ArrayList<Scenario> ss = new ArrayList<Scenario>();
-//				ss.add(scenario);
-//				ArrayList<Zone> zones = zoneDao.getRelatedZoneListByScenarioList(ss);
-//				int scenarioGreen = getGreenCountByZoneList(zones);
-//				int scenarioRed = getRedCountByZoneList(zones);
+				
 				if(preColor == SystemEnum.Color.Green && scenario.getTrend() != SystemEnum.Trend.Up) {
 					scenario.setTrend(SystemEnum.Trend.Up);
-//					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
 				}
 				if(preColor == SystemEnum.Color.Red && scenario.getTrend() != SystemEnum.Trend.Down) {
 					scenario.setTrend(SystemEnum.Trend.Down);
-//					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
 				}
 			}
 		}
@@ -601,14 +750,6 @@ public class ScenarioGroupService {
 
 	public void setWorkingScenarioList(ArrayList<Scenario> workingScenarioList) {
 		this.workingScenarioList = workingScenarioList;
-	}
-
-	public ArrayList<Zone> getVolumeZoneList() {
-		return volumeZoneList;
-	}
-
-	public void setVolumeZoneList(ArrayList<Zone> volumeZoneList) {
-		this.volumeZoneList = volumeZoneList;
 	}
 
 	public ArrayList<DailyScenarioRefresh> getSceRefreshPlan() {

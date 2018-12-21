@@ -36,7 +36,7 @@ public class CommonDAOSQL implements CommonDAO {
 			return list;
 			
 		} catch (SQLException e) {
-			e.printStackTrace(); 
+			e.printStackTrace();
 		} finally {
 	        ConnectionUtils.closeAll(stmt, rs);
 		}
@@ -200,7 +200,7 @@ public class CommonDAOSQL implements CommonDAO {
 	public ArrayList<Zone> getRelatedZoneListByScenarioList(ArrayList<Scenario> scenarioList) {
 		
 		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append("select * from xy_coords where zone in (SELECT distinct(zone) FROM area_zone where ");
+		sBuilder.append("SELECT distinct(zone) FROM area_zone where ");
 		for (int i = 0; i < scenarioList.size(); i++) {
 			
 			Scenario s = scenarioList.get(i);
@@ -218,7 +218,6 @@ public class CommonDAOSQL implements CommonDAO {
 				sBuilder.append(" or ");
 			}
 		}
-		sBuilder.append(")");
 		
 		ArrayList<Zone> list = new ArrayList<>();
 		Connection conn = null;
@@ -233,8 +232,7 @@ public class CommonDAOSQL implements CommonDAO {
 	        	
 	        	Zone zone =  new Zone();
 	        	zone.setZone(rs.getString(1));
-	        	zone.setxCoord(rs.getInt(2));
-	        	zone.setyCoord(rs.getInt(3));
+	        	Util.setZoneXYByZone(zone);
 	        	list.add(zone);
 	        }
 			return list;

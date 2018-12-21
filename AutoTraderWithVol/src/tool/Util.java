@@ -434,4 +434,14 @@ public class Util {
     	return zone;
     }
     
+    public static Zone getRelatedZoneWithVolBarAndRow(String volBar, String row, boolean withXY) {
+    	
+    	String area = Character.toString(volBar.charAt(0));
+    	String columnNum = Character.toString(volBar.charAt(2));
+    	String newName = area + row + columnNum;
+    	Zone newZone = new Zone();
+    	newZone.setZone(newName);
+    	if(withXY) setZoneXYByZone(newZone);
+    	return newZone;
+    }
 }

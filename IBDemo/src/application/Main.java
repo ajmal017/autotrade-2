@@ -108,8 +108,7 @@ public class Main extends Application implements IBServiceCallbackInterface {
         	e.printStackTrace();
         }
 		
-		IBService ibService = IBService.getInstance();
-		ibService.ibDisConnect();
+		IBService.getInstance().ibDisConnect();
 		
 		//shutdown
 		Platform.exit();
@@ -120,6 +119,6 @@ public class Main extends Application implements IBServiceCallbackInterface {
 	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime) {
 		
 		//todo
-		
+		System.out.println("updateTradePrice = " + price);
 	}
 }

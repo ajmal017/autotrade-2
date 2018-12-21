@@ -12,6 +12,7 @@ public class Zone {
 	
 	public Zone() {
 //		super();
+		color = SystemEnum.Color.Default;
 	}
 
 	public String getZone() {
