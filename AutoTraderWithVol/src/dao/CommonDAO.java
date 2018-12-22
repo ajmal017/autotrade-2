@@ -32,4 +32,33 @@ public interface CommonDAO {
 	Enum<SystemEnum.Trend> getLastTrendByScenario(Date date, String scenario);
 	
 	void insertNewTrendSign(TrendSign sign);
+	
+	
+	void cleanScenarioActiveData();
+	void cleanScenarioData();
+	void cleanAreaZone();
+	void cleanMyFrame();
+	void cleanVolumeZone();
+	void cleanVolume();
+	
+	void insertScenarioActive(String scenario, 
+			  int active);
+	void insertScenario(String scenario, 
+		String starttime, 
+		String endtime, 
+		String area, 
+		int percent);
+	void insertAreaZone(String scenario, 
+			String starttime, 
+			String area,
+			String zone,
+			int active);
+	void insertMyFrame(String name, int x, int y, int width, int height);
+	void insertVolumeZone(String zone);
+	void insertVolume(String scenario, 
+			String starttime, 
+			String endtime, 
+			int column, 
+			int percent, 
+			String rows);
 }

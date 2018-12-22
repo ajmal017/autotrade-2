@@ -250,7 +250,7 @@ public class AutoTrade extends Application {
 			ScenarioTrend trend  =  new ScenarioTrend();
 			trend.setScenario(s);
 			getSceTrendList().add(trend);
-		};
+		}
 		
 		if(scenarioService.getSceRefreshPlan().size() == 0) {
 			//none scenario plan

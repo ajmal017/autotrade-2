@@ -693,7 +693,9 @@ public class ScenarioGroupService {
 	    });
     }
     
-    
+    public Enum<SystemEnum.Trend> getTodayLastTrendByScenario(String scenario) {
+    	return CommonDAOFactory.getCommonDAO().getLastTrendByScenario(new Date(), scenario);
+    }
     
     
     
