@@ -545,7 +545,7 @@ public class ScenarioGroupService {
     			Zone yz = yellowZone.get(yellowZone.size()-1-i);
     			for(String row : vol.getRows()) {
     				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz.getZone(),row,false);
-    				Enum<SystemEnum.Color> c = zService.getColorBySceZone(relatedZone.getZone());
+    				Enum<SystemEnum.Color> c = zService.getColorByVolZone(relatedZone.getZone());
 					if (c == SystemEnum.Color.Green) {volGreen++;}			
 					if (c == SystemEnum.Color.Red) {volRed++;}
     			}
