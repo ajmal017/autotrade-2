@@ -127,6 +127,8 @@ public class ScenarioGroupService {
 		}
     	
     	for (String nameString : sceNames) {
+    		ScenarioTrend st = new ScenarioTrend(nameString);
+        	st.setTrend(ScenarioGroupService.getInstance().getTodayLastTrendByScenario(st.getScenario()));
         	getActiveScenarioGroupList().add(new ScenarioTrend(nameString));
         	getDailySignMap().put(nameString, new ArrayList<TrendSign>());
 		}
@@ -351,6 +353,7 @@ public class ScenarioGroupService {
     		for (ScenarioTrend activeS : getActiveScenarioGroupList()) {
     			if (newS.getScenario().equals(activeS.getScenario())) {
     				tempScenarioList.add(newS);
+    				break;
 				}
     		}
 		}
@@ -379,9 +382,7 @@ public class ScenarioGroupService {
     				commonDao.getAreaListWithoutZoneByScenario(s.getScenario(),new Date());
     		for (Area area : areaList) {
     			ArrayList<String> zones = commonDao.getOnlyActiveZoneListByScenarioArea(area.getScenario(),area.getStartTime(), area.getArea());
-    			for (String z : zones) {
-    				area.getZoneList().add(z);
-    			}
+    			area.setZoneList(zones);
 			}
     		s.setAreaList(areaList);
 		}

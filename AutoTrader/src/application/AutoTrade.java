@@ -439,6 +439,7 @@ public class AutoTrade extends Application {
 							}
 						}
 						playSignAlertMusic();
+						break;
 					}
 				}
 				if(!sceWorking) oldTrend.setTrend(SystemEnum.Trend.Default);

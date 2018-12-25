@@ -103,6 +103,8 @@ private volatile static ZoneColorInfoService instance;
 				rgb[2] = (pixel & 0xff);
 				
 				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
+				//test
+				zone.setColor(SystemEnum.Color.Green);
 			}
 			
 			for(Zone zone: getVolumeZoneList()){
@@ -113,6 +115,8 @@ private volatile static ZoneColorInfoService instance;
 				rgb[2] = (pixel & 0xff);
 				
 				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
+				//test
+				zone.setColor(SystemEnum.Color.Yellow);
 			}
 			
 			return;
@@ -144,6 +148,8 @@ private volatile static ZoneColorInfoService instance;
 				rgb[2] = (pixel & 0xff);
 				
 				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
+				//test
+				zone.setColor(SystemEnum.Color.Green);
 			}
 			return;
 			

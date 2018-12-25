@@ -496,6 +496,7 @@ public class AutoTradeWithVol extends Application {
 							
 						}
 						playSignAlertMusic();
+						break;
 					}
 				}
 				if(!sceWorking) oldTrend.setTrend(SystemEnum.Trend.Default);

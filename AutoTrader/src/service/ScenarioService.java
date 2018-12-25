@@ -7,7 +7,6 @@ import DAO.ScenarioDAO;
 import DAO.ScenarioDAOFactory;
 import DAO.ZoneDAO;
 import DAO.ZoneDAOFactory;
-import entity.DailyScenarioRefresh;
 import systemenum.SystemEnum;
 import tool.Util;
 import entity.*;
@@ -116,6 +115,7 @@ public class ScenarioService {
     		for (String workingS : getActiveScenarioList()) {
     			if (newS.getScenario().equals(workingS)) {
     				tempScenarioList.add(newS);
+    				break;
 				}
     		}
 		}
@@ -140,6 +140,11 @@ public class ScenarioService {
 				}
 				if(needClose && oldS.getTrend() != SystemEnum.Trend.Default) closeOrderByScenario(oldS.getScenario());
 			}
+			if(workingScenarioList.size() == 0) {
+				for(Scenario newS : tempScenarioList) {
+					newS.setTrend(TrendSignService.getInstance().getTodayLastTrendByScenario(newS.getScenario()));
+				}
+			}
 		}
     	
     	//add area to new scenario
@@ -149,9 +154,7 @@ public class ScenarioService {
     				scenarioDao.getAreaListWithoutZoneByScenario(s.getScenario(),new Date());
     		for (Area area : areaList) {
     			ArrayList<String> zones = zoneDAO.getOnlyActiveZoneListByScenarioArea(area.getScenario(),area.getStartTime(), area.getArea());
-    			for (String z : zones) {
-    				area.getZoneList().add(z);
-    			}
+    			area.setZoneList(zones);
 			}
     		s.setAreaList(areaList);
 		}

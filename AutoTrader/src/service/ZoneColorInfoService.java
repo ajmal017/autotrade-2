@@ -79,6 +79,8 @@ public class ZoneColorInfoService {
 				rgb[2] = (pixel & 0xff);
 				
 				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
+				//test
+				zone.setColor(SystemEnum.Color.Green);
 			}
 			
 			return;
