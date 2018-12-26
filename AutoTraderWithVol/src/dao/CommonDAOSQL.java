@@ -23,7 +23,7 @@ public class CommonDAOSQL implements CommonDAO {
 	@Override
 	public ArrayList<String>getAllActiveScenarioName()  {
 		
-		final String sqlString = " select scenario from scenario_active where active = ?";
+		final String sqlString = "select scenario from scenario_active where active = ?";
 		ArrayList<String> list = new ArrayList<>();
 
 		Connection conn = null;

@@ -3,6 +3,7 @@ package application;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Optional;
 import java.util.Timer;
@@ -16,6 +17,7 @@ import entity.Scenario;
 import entity.ScenarioTrend;
 import entity.TrendSign;
 import entity.TrendTableItem;
+import entity.Zone;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -55,6 +57,7 @@ public class AutoTradeWithVol extends Application {
 	
     private final Label startTimeLbl = new Label();
 	private final Label endTimeLbl = new Label();
+	private final Label yellowCountLbl = new Label();
 	
 	private Hashtable<String,Object> tbDataHash;
 	
@@ -104,9 +107,15 @@ public class AutoTradeWithVol extends Application {
 	    
 	}
 	
-	
-	
-	
+	private int getYellow() {
+		
+		int yellow = 0;
+		for(Zone z : ZoneColorInfoService.getInstance().getVolumeZoneList()){
+			
+			if (z.getColor() == SystemEnum.Color.Yellow) {yellow++;}
+		}
+		return yellow;
+	}
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -157,17 +166,27 @@ public class AutoTradeWithVol extends Application {
 	        hb1.getChildren().addAll(sTitle, startTimeLbl, eTitle, endTimeLbl,btn);
 	        hb1.setSpacing(3);
 	    
+	        final HBox hb2 = new HBox();
+	        hb2.setPrefSize(300, 15);
+	        final Label yTitle = new Label("Yellow:");
+	        yellowCountLbl.setPrefWidth(60);
+	        yellowCountLbl.setText("0");
+	        hb2.getChildren().addAll(yTitle, yellowCountLbl);
+	        hb2.setSpacing(3);
+	        
 
 	        sTitle.setFont(new Font(12));
 	        eTitle.setFont(new Font(12));
 	        startTimeLbl.setFont(new Font(12));
 	        endTimeLbl.setFont(new Font(12));
+	        yTitle.setFont(new Font(12));
+	        yellowCountLbl.setFont(new Font(12));
 	        
 	        final VBox vbox = new VBox();
 	        vbox.setMinSize(400, 400);
 	        vbox.setSpacing(5);
 	        vbox.setPadding(new Insets(10, 0, 0, 10));
-	        vbox.getChildren().addAll(hb1);
+	        vbox.getChildren().addAll(hb1,hb2);
 	        
 	        //table
 
@@ -468,38 +487,25 @@ public class AutoTradeWithVol extends Application {
 			//check trend
 			scenarioService.checkScenarioGroupTrend();
 			
-			//check and update trend
-			for (ScenarioTrend oldTrend : sceTrendList) {
-				
-				boolean sceWorking = false;
-				for (ScenarioTrend scenario : scenarioService.getActiveScenarioGroupList()) {
-					
-					if(oldTrend.getScenario().equals(scenario.getScenario()) &&
-							scenario.getTrend() != SystemEnum.Trend.Default) {
-						sceWorking = true;
-					}
-					if(oldTrend.getScenario().equals(scenario.getScenario()) && 
-							oldTrend.getTrend() != scenario.getTrend()) {
-						//update trend
-						oldTrend.setTrend(scenario.getTrend());
-						//get last sign
-						ArrayList<TrendSign> signList = scenarioService.getDailySignMap().get(scenario.getScenario());
-						for (int i = signList.size()-1; i > -1; i--) {
-							TrendSign lastSign = signList.get(i); 
-								//insert into table
-								TrendTableItem trendItem = new TrendTableItem(
-										Util.getDateStringByDateAndFormatter(lastSign.getTime(), "HH:mm:ss"), lastSign.getScenario(),
-										Util.getTrendTextByEnum(lastSign.getTrend()),""+lastSign.getGreenCount(), ""+lastSign.getRedCount(), ""+lastSign.getPriceSwim(), ""+lastSign.getPriceIB());
-								ObservableList<TrendTableItem> trendData = (ObservableList<TrendTableItem>) tbDataHash.get(lastSign.getScenario());
-								trendData.add(trendItem);
-								break;
-							
-						}
-						playSignAlertMusic();
-						break;
-					}
+			Platform.runLater(()->yellowCountLbl.setText(""+getYellow()));
+			
+			for(int i = 0; i < sceTrendList.size(); i++) {
+				ScenarioTrend oldTrend = sceTrendList.get(i);
+				ScenarioTrend scenario = scenarioService.getActiveScenarioGroupList().get(i);
+				if(oldTrend.getTrend() != scenario.getTrend()) {
+					//update trend
+					oldTrend.setTrend(scenario.getTrend());
+					//get last sign
+					ArrayList<TrendSign> signList = scenarioService.getDailySignMap().get(scenario.getScenario());
+					TrendSign lastSign = signList.get(signList.size()-1); 
+					//insert into table
+					TrendTableItem trendItem = new TrendTableItem(
+							Util.getDateStringByDateAndFormatter(lastSign.getTime(), "HH:mm:ss"), lastSign.getScenario(),
+							Util.getTrendTextByEnum(lastSign.getTrend()),""+lastSign.getGreenCount(), ""+lastSign.getRedCount(), ""+lastSign.getPriceSwim(), ""+lastSign.getPriceIB());
+					ObservableList<TrendTableItem> trendData = (ObservableList<TrendTableItem>) tbDataHash.get(lastSign.getScenario());
+					trendData.add(trendItem);
+					playSignAlertMusic();
 				}
-				if(!sceWorking) oldTrend.setTrend(SystemEnum.Trend.Default);
 			}
 		}
 	}

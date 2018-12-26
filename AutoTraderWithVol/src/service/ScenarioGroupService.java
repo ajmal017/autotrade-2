@@ -126,18 +126,19 @@ public class ScenarioGroupService {
     		return;
 		}
     	
-    	for (String nameString : sceNames) {
-    		ScenarioTrend st = new ScenarioTrend(nameString);
-        	st.setTrend(ScenarioGroupService.getInstance().getTodayLastTrendByScenario(st.getScenario()));
-        	getActiveScenarioGroupList().add(new ScenarioTrend(nameString));
-        	getDailySignMap().put(nameString, new ArrayList<TrendSign>());
-		}
-		
     	ArrayList<Zone> volumeZoneList = commonDao.getVolumeZoneList();
     	if (volumeZoneList.size() == 0) {
 			//none volume zone
     		return;
 		}
+    	
+    	for (String nameString : sceNames) {
+    		ScenarioTrend st = new ScenarioTrend(nameString);
+        	st.setTrend(getTodayLastTrendByScenario(st.getScenario()));
+        	getActiveScenarioGroupList().add(new ScenarioTrend(nameString));
+        	getDailySignMap().put(nameString, new ArrayList<TrendSign>());
+		}
+		
     	ZoneColorInfoService.getInstance().loadVolumeBarZoneListWithDefaultColor(volumeZoneList);
     	
 		initAllVolumeData();
@@ -407,10 +408,10 @@ public class ScenarioGroupService {
     		zService.getVolZoneColors().clear();
 		}
     	
-    	ArrayList<Zone> yellowZone = new ArrayList<Zone>();
+    	ArrayList<String> yellowZone = new ArrayList<String>();
     	for(Zone vBar : zService.getVolumeZoneList()) {
     		if(vBar.getColor() == SystemEnum.Color.Yellow) {
-    			yellowZone.add(vBar);
+    			yellowZone.add(vBar.getZone());
     		}
     	}
     	if(yellowZone.size() == 0) return;
@@ -420,9 +421,9 @@ public class ScenarioGroupService {
     		int activeColume = (vol.getColumn() == 0 ? yellowZone.size():vol.getColumn());
     		for(int i = 0; i < activeColume; i ++) {
     			
-    			Zone yz = yellowZone.get(yellowZone.size()-1-i);
+    			String yz = yellowZone.get(yellowZone.size()-1-i);
     			for(String row : vol.getRows()) {
-    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz.getZone(),row,true);
+    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,true);
 
     		    	if(!zService.getVolZoneColors().containsKey(relatedZone.getZone())) {
     		    		zService.getVolZoneColors().put(relatedZone.getZone(), relatedZone);
@@ -473,6 +474,7 @@ public class ScenarioGroupService {
     				matchVol = vol;
     				volWorking = true;
     				volTrend = vol.getTrend();
+    				break;
     			}
     		}
     		
@@ -490,6 +492,7 @@ public class ScenarioGroupService {
     				matchSce = sce;
     				sceWorking = true;
     				sceTrend = sce.getTrend();
+    				break;
     			}
     		}
     		
@@ -504,6 +507,8 @@ public class ScenarioGroupService {
     				int scenarioGreen = getGreenCountBySceZoneList(zones);
     				int scenarioRed = getRedCountBySceZoneList(zones);
     				
+    				System.out.println("volTrend:" + Util.getTrendTextByEnum(volTrend) +" sceTrend"+Util.getTrendTextByEnum(sceTrend) +" groupTrend:"+Util.getTrendTextByEnum(groupTrend.getTrend()));
+    				
     				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),scenarioGreen+matchVol.getGreen(),scenarioRed+matchVol.getRed());
     			}
     			
@@ -512,6 +517,8 @@ public class ScenarioGroupService {
     			if(volTrend != groupTrend.getTrend()) {
     				//trend change
     				groupTrend.setTrend(volTrend);
+    				System.out.println("volTrend:" + Util.getTrendTextByEnum(volTrend) +" sceTrend"+Util.getTrendTextByEnum(sceTrend) +" groupTrend:"+Util.getTrendTextByEnum(groupTrend.getTrend()));
+    				
     				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),matchVol.getGreen(),matchVol.getRed());
     			}
     		}
@@ -523,10 +530,10 @@ public class ScenarioGroupService {
     	
     	ZoneColorInfoService zService = ZoneColorInfoService.getInstance();
     	
-    	ArrayList<Zone> yellowZone = new ArrayList<Zone>();
+    	ArrayList<String> yellowZone = new ArrayList<String>();
     	for(Zone vBar : zService.getVolumeZoneList()) {
     		if(vBar.getColor() == SystemEnum.Color.Yellow) {
-    			yellowZone.add(vBar);
+    			yellowZone.add(vBar.getZone());
     		}
     	}
     	if(yellowZone.size() == 0) return;
@@ -543,9 +550,9 @@ public class ScenarioGroupService {
     		
 			for(int i = 0; i < activeColume; i ++) {
     			
-    			Zone yz = yellowZone.get(yellowZone.size()-1-i);
+    			String yz = yellowZone.get(yellowZone.size()-1-i);
     			for(String row : vol.getRows()) {
-    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz.getZone(),row,false);
+    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,false);
     				Enum<SystemEnum.Color> c = zService.getColorByVolZone(relatedZone.getZone());
 					if (c == SystemEnum.Color.Green) {volGreen++;}			
 					if (c == SystemEnum.Color.Red) {volRed++;}
@@ -570,18 +577,14 @@ public class ScenarioGroupService {
 			}
     		
 			if (trendAppear) {
-//				ArrayList<Scenario> ss = new ArrayList<Scenario>();
-//				ss.add(scenario);
-//				ArrayList<Zone> zones = zoneDao.getRelatedZoneListByScenarioList(ss);
-//				int scenarioGreen = getGreenCountByZoneList(zones);
-//				int scenarioRed = getRedCountByZoneList(zones);
+
 				if(newColor == SystemEnum.Color.Green && vol.getTrend() != SystemEnum.Trend.Up) {
 					vol.setTrend(SystemEnum.Trend.Up);
-//					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
+					System.out.println(vol.getScenario()+" vol trendAppear:"+Util.getTrendTextByEnum(vol.getTrend()) + " green:" + volGreen + " red:" + volRed);
 				}
 				if(newColor == SystemEnum.Color.Red && vol.getTrend() != SystemEnum.Trend.Down) {
 					vol.setTrend(SystemEnum.Trend.Down);
-//					pushNewTrendSign(scenario.getScenario(),scenario.getTrend(),scenarioGreen,scenarioRed);
+					System.out.println(vol.getScenario()+" vol trendAppear:"+Util.getTrendTextByEnum(vol.getTrend()) + " green:" + volGreen + " red:" + volRed);
 				}
 			}
 			
@@ -697,28 +700,6 @@ public class ScenarioGroupService {
     public Enum<SystemEnum.Trend> getTodayLastTrendByScenario(String scenario) {
     	return CommonDAOFactory.getCommonDAO().getLastTrendByScenario(new Date(), scenario);
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
 	public static ScenarioGroupService getInstance() {  
 		if (instance == null) {  

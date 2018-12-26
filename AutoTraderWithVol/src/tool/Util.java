@@ -438,9 +438,11 @@ public class Util {
     	
     	String area = Character.toString(volBar.charAt(0));
     	String columnNum = Character.toString(volBar.charAt(2));
-    	String newName = area + row + columnNum;
+    	StringBuilder newName = new StringBuilder(area);
+    	newName.append(row);
+    	newName.append(columnNum);
     	Zone newZone = new Zone();
-    	newZone.setZone(newName);
+    	newZone.setZone(newName.toString());
     	if(withXY) setZoneXYByZone(newZone);
     	return newZone;
     }

@@ -77,7 +77,7 @@ private volatile static ZoneColorInfoService instance;
 	*/
 	public void updateSceZoneAndVolumeBarZoneColorByTimer() {
 
-		if (getSceZoneColors().isEmpty() && getVolZoneColors().isEmpty()) {
+		if (getSceZoneColors().isEmpty() && getVolumeZoneList().size() == 0) {
 			return;
 		}
 		
@@ -95,28 +95,28 @@ private volatile static ZoneColorInfoService instance;
 			Enumeration<Zone> e = getSceZoneColors().elements();
 			while( e. hasMoreElements() ){
 				
-				Zone zone = e.nextElement();
+				Zone z1 = e.nextElement();
 				
-				int pixel = getBi().getRGB(zone.getxCoord(), zone.getyCoord());
+				int pixel = getBi().getRGB(z1.getxCoord(), z1.getyCoord());
 				rgb[0] = (pixel & 0xff0000) >> 16;
 				rgb[1] = (pixel & 0xff00) >> 8;
 				rgb[2] = (pixel & 0xff);
 				
-				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
+				z1.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
 				//test
-				zone.setColor(SystemEnum.Color.Green);
+//				zone.setColor(SystemEnum.Color.Green);
 			}
 			
-			for(Zone zone: getVolumeZoneList()){
+			for(Zone z2: getVolumeZoneList()){
 				
-				int pixel = getBi().getRGB(zone.getxCoord(), zone.getyCoord());
+				int pixel = getBi().getRGB(z2.getxCoord(), z2.getyCoord());
 				rgb[0] = (pixel & 0xff0000) >> 16;
 				rgb[1] = (pixel & 0xff00) >> 8;
 				rgb[2] = (pixel & 0xff);
 				
-				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
+				z2.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
 				//test
-				zone.setColor(SystemEnum.Color.Yellow);
+//				zone.setColor(SystemEnum.Color.Yellow);
 			}
 			
 			return;
@@ -149,7 +149,7 @@ private volatile static ZoneColorInfoService instance;
 				
 				zone.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
 				//test
-				zone.setColor(SystemEnum.Color.Green);
+//				zone.setColor(SystemEnum.Color.Green);
 			}
 			return;
 			
