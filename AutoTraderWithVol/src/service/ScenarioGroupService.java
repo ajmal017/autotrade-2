@@ -1,5 +1,6 @@
 package service;
 
+import java.awt.AWTException;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
@@ -72,7 +73,7 @@ public class ScenarioGroupService {
     		refresh.setRefreshTime(d);
     		StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(d);
-    		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
+    		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
     		if (dDate.before(new Date())) {
     			refresh.setPassed(true); 
     			int passed = getPassedVolRefreshPlanCount() + 1;
@@ -102,7 +103,7 @@ public class ScenarioGroupService {
     		refresh.setRefreshTime(d);
     		StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(d);
-    		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
+    		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
     		if (dDate.before(new Date())) {
     			refresh.setPassed(true); 
     			int passed = getPassedSceRefreshPlanCount() + 1;
@@ -418,17 +419,32 @@ public class ScenarioGroupService {
     	
     	for(Volume vol : getWorkingVolumeList()) {
     		
-    		int activeColume = (vol.getColumn() == 0 ? yellowZone.size():vol.getColumn());
+    		if(vol.getColumn() > yellowZone.size()) {
+    			System.out.println("updateRelatedVolZone vol.getColumn()" +vol.getColumn()+ " > yellowZone.size()"+yellowZone.size());
+    			continue;
+    		}
+    		
+    		int activeColume;
+    		if (vol.getColumn() == 0) {
+    			activeColume = yellowZone.size();
+    		} else {
+    			activeColume = vol.getColumn();
+    		}
     		for(int i = 0; i < activeColume; i ++) {
     			
-    			String yz = yellowZone.get(yellowZone.size()-1-i);
-    			for(String row : vol.getRows()) {
-    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,true);
+    			try {
+    				String yz = yellowZone.get(yellowZone.size()-1-i);
+    				for(String row : vol.getRows()) {
+    					Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,true);
 
-    		    	if(!zService.getVolZoneColors().containsKey(relatedZone.getZone())) {
-    		    		zService.getVolZoneColors().put(relatedZone.getZone(), relatedZone);
-    		    	}
-    			}
+    					if(!zService.getVolZoneColors().containsKey(relatedZone.getZone())) {
+    						zService.getVolZoneColors().put(relatedZone.getZone(), relatedZone);
+    					}
+    				}
+    			}  catch (Exception e) {
+					System.out.println("Exception vol:"+vol.getScenario()+" activeColume:"+activeColume+" i:"+i);
+					e.printStackTrace();
+				}
     		}
     	}
     	
@@ -498,7 +514,9 @@ public class ScenarioGroupService {
     		
     		if(sceWorking) {
     			
-    			if(volTrend == sceTrend && volTrend != groupTrend.getTrend()) {
+    			if(volTrend == sceTrend && 
+    					volTrend != SystemEnum.Trend.Default &&
+    					volTrend != groupTrend.getTrend()) {
     				//trend change
     				groupTrend.setTrend(volTrend);
     				ArrayList<Scenario> ss = new ArrayList<Scenario>();
@@ -514,7 +532,7 @@ public class ScenarioGroupService {
     			
     		} else {
     			
-    			if(volTrend != groupTrend.getTrend()) {
+    			if(volTrend != SystemEnum.Trend.Default && volTrend != groupTrend.getTrend()) {
     				//trend change
     				groupTrend.setTrend(volTrend);
     				System.out.println("volTrend:" + Util.getTrendTextByEnum(volTrend) +" sceTrend"+Util.getTrendTextByEnum(sceTrend) +" groupTrend:"+Util.getTrendTextByEnum(groupTrend.getTrend()));
@@ -540,23 +558,37 @@ public class ScenarioGroupService {
     	
     	for(Volume vol : getWorkingVolumeList()) {
     		
-    		if(vol.getColumn() > yellowZone.size()) continue;
+    		if(vol.getColumn() > yellowZone.size()) {
+    			System.out.println("checkVolumeTrend vol.getColumn()" +vol.getColumn()+ " > yellowZone.size()"+yellowZone.size());
+    			continue;
+    		}
     		
     		boolean trendAppear = false;
     		int volGreen = 0;
 			int volRed = 0;
-			
-			int activeColume = (vol.getColumn() == 0 ? yellowZone.size():vol.getColumn());
+			  
+			int activeColume;
+    		if (vol.getColumn() == 0) {
+    			activeColume = yellowZone.size();
+    		} else {
+    			activeColume = vol.getColumn();
+    		}
     		
 			for(int i = 0; i < activeColume; i ++) {
     			
-    			String yz = yellowZone.get(yellowZone.size()-1-i);
-    			for(String row : vol.getRows()) {
-    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,false);
-    				Enum<SystemEnum.Color> c = zService.getColorByVolZone(relatedZone.getZone());
-					if (c == SystemEnum.Color.Green) {volGreen++;}			
-					if (c == SystemEnum.Color.Red) {volRed++;}
-    			}
+				try {
+					String yz = yellowZone.get(yellowZone.size()-1-i);
+	    			for(String row : vol.getRows()) {
+	    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,false);
+	    				Enum<SystemEnum.Color> c = zService.getColorByVolZone(relatedZone.getZone());
+						if (c == SystemEnum.Color.Green) {volGreen++;}			
+						if (c == SystemEnum.Color.Red) {volRed++;}
+	    			}
+				} catch (Exception e) {
+					System.out.println("Exception vol:"+vol.getScenario()+" activeColume:"+activeColume+" i:"+i);
+					e.printStackTrace();
+				}
+				
     		}
     		
 			vol.setGreen(volGreen);
@@ -568,12 +600,11 @@ public class ScenarioGroupService {
 				    (volGreen + volRed == activeColume*vol.getRows().size() && volRed > volGreen && volGreen <= vol.getPercent())) {
 					
     			trendAppear = true;
-			}
-				
-			if(volGreen > volRed) {
-				newColor = SystemEnum.Color.Green;
-			} else {
-				newColor = SystemEnum.Color.Red;
+    			if(volGreen > volRed) {
+    				newColor = SystemEnum.Color.Green;
+    			} else {
+    				newColor = SystemEnum.Color.Red;
+    			}
 			}
     		
 			if (trendAppear) {
@@ -586,6 +617,8 @@ public class ScenarioGroupService {
 					vol.setTrend(SystemEnum.Trend.Down);
 					System.out.println(vol.getScenario()+" vol trendAppear:"+Util.getTrendTextByEnum(vol.getTrend()) + " green:" + volGreen + " red:" + volRed);
 				}
+			} else {
+				vol.setTrend(SystemEnum.Trend.Default);
 			}
 			
 			
@@ -648,6 +681,8 @@ public class ScenarioGroupService {
 				if(preColor == SystemEnum.Color.Red && scenario.getTrend() != SystemEnum.Trend.Down) {
 					scenario.setTrend(SystemEnum.Trend.Down);
 				}
+			} else {
+				scenario.setTrend(SystemEnum.Trend.Default);
 			}
 		}
 	}

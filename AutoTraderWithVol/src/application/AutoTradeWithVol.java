@@ -63,7 +63,7 @@ public class AutoTradeWithVol extends Application {
 	
 	private boolean isSceRefreshTime() {
 		
-		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm");
+		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
 		ScenarioGroupService sService = ScenarioGroupService.getInstance();
 		if (sService.getSceRefreshPlan().size() == 0) {
 			return false;
@@ -78,7 +78,7 @@ public class AutoTradeWithVol extends Application {
 	
 	private boolean isVolRefreshTime() {
 		
-		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm");
+		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
 		ScenarioGroupService sService = ScenarioGroupService.getInstance();
 		if (sService.getSceRefreshPlan().size() == 0) {
 			return false;
@@ -308,12 +308,12 @@ public class AutoTradeWithVol extends Application {
 			//set tomorrow timer
 			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(volPlans.get(0).getRefreshTime());
-    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
+    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
 			secTimer = new Timer();
 			Calendar c = Calendar.getInstance();
 			c.setTime(startTime);
 			c.add(Calendar.DATE, +1); //tomorrow
-			c.add(Calendar.SECOND, +1); //delay 1 sec for swim's refresh
+//			c.add(Calendar.SECOND, +1); //delay 1 sec for swim's refresh
 			startTime = c.getTime();
 			secTimer.scheduleAtFixedRate(new TimerTask() {
 		        public void run() {
@@ -380,7 +380,7 @@ public class AutoTradeWithVol extends Application {
 				//scenario did not start
 				StringBuilder str1 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
 	    		str1.append(volPlans.get(0).getRefreshTime());
-	    		Date startTimeVol = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm");
+	    		Date startTimeVol = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm:ss");
 	    		Date finalStarTime = null;
 	    		if(scenarioService.getSceRefreshPlan().size() == 0) {
 	    			finalStarTime = startTimeVol;
@@ -388,7 +388,7 @@ public class AutoTradeWithVol extends Application {
 	    			
 	    			StringBuilder str2 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
 		    		str2.append(scenarioService.getSceRefreshPlan().get(0).getRefreshTime());
-		    		Date startTimeSce = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm");
+		    		Date startTimeSce = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm:ss");
 	    			if(startTimeSce.before(startTimeVol)) {
 	    				finalStarTime = startTimeSce;
 	    			} else {
@@ -399,7 +399,7 @@ public class AutoTradeWithVol extends Application {
 				secTimer = new Timer ();
 				Calendar c = Calendar.getInstance();
 				c.setTime(finalStarTime);
-				c.add(Calendar.SECOND, +1);
+//				c.add(Calendar.SECOND, +1);
 				finalStarTime = c.getTime();
 				secTimer.scheduleAtFixedRate(new TimerTask() {
 			        public void run() {
@@ -432,7 +432,7 @@ public class AutoTradeWithVol extends Application {
 			//scenario did not start
 			StringBuilder str1 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str1.append(scenarioService.getVolRefreshPlan().get(0).getRefreshTime());
-    		Date startTimeVol = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm");
+    		Date startTimeVol = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm:ss");
     		Date finalStarTime = null;
     		if(scenarioService.getSceRefreshPlan().size() == 0) {
     			finalStarTime = startTimeVol;
@@ -440,7 +440,7 @@ public class AutoTradeWithVol extends Application {
     			
     			StringBuilder str2 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
 	    		str2.append(scenarioService.getSceRefreshPlan().get(0).getRefreshTime());
-	    		Date startTimeSce = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm");
+	    		Date startTimeSce = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm:ss");
     			if(startTimeSce.before(startTimeVol)) {
     				finalStarTime = startTimeSce;
     			} else {
@@ -452,7 +452,7 @@ public class AutoTradeWithVol extends Application {
 			Calendar c = Calendar.getInstance();
 			c.setTime(finalStarTime);
 			c.add(Calendar.DATE, +1);
-			c.add(Calendar.SECOND, +1);
+//			c.add(Calendar.SECOND, +1);
 			finalStarTime = c.getTime();
 			secTimer.scheduleAtFixedRate(new TimerTask() {
 		        public void run() {

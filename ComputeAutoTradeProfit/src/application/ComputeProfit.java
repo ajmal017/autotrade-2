@@ -47,7 +47,7 @@ public class ComputeProfit {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
-		String filePath = "c://autotradedoc//trendprofit//" +
+		String filePath = "c://autotradedoc_vol//trendprofit//" +
     		Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") +  
     		".xls";
 		

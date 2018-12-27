@@ -51,6 +51,4 @@ public class Scenario {
 	public void setTrend(Enum<SystemEnum.Trend> trend) {
 		this.trend = trend;
 	}
-
-
 }

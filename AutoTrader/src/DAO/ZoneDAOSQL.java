@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import entity.Area;
 import entity.Scenario;
 import entity.Zone;
+import tool.Util;
 
 public class ZoneDAOSQL implements ZoneDAO {
 
@@ -18,7 +19,7 @@ public class ZoneDAOSQL implements ZoneDAO {
 	public ArrayList<Zone> getRelatedZoneListByScenarioList(ArrayList<Scenario> scenarioList) {
 		
 		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append("select * from xy_coords where zone in (SELECT distinct(zone) FROM area_zone where ");
+		sBuilder.append("SELECT distinct(zone) FROM area_zone where ");
 		for (int i = 0; i < scenarioList.size(); i++) {
 			
 			Scenario s = scenarioList.get(i);
@@ -36,7 +37,6 @@ public class ZoneDAOSQL implements ZoneDAO {
 				sBuilder.append(" or ");
 			}
 		}
-		sBuilder.append(")");
 		
 		ArrayList<Zone> list = new ArrayList<>();
 		Connection conn = null;
@@ -51,8 +51,7 @@ public class ZoneDAOSQL implements ZoneDAO {
 	        	
 	        	Zone zone =  new Zone();
 	        	zone.setZone(rs.getString(1));
-	        	zone.setxCoord(rs.getInt(2));
-	        	zone.setyCoord(rs.getInt(3));
+	        	Util.setZoneXYByZone(zone);
 	        	list.add(zone);
 	        }
 			return list;
@@ -143,26 +142,6 @@ public class ZoneDAOSQL implements ZoneDAO {
 	}
 
 	@Override
-	public void cleanXYCoords() {
-		final String sqlString = "delete from xy_coords";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-		
-	}
-
-	@Override
 	public void cleanMyFrame() {
 		final String sqlString = "delete from my_frame";
 		
@@ -197,28 +176,6 @@ public class ZoneDAOSQL implements ZoneDAO {
 			stmt.setString(3,area);
 			stmt.setString(4,zone);
 			stmt.setInt(5,active);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-
-	@Override
-	public void insertXYCoords(String zone, int x, int y) {
-		final String sqlString = "insert into xy_coords values (?,?,?)";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,zone);
-			stmt.setInt(2,x);
-			stmt.setInt(3,y);
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {

@@ -80,7 +80,7 @@ public class ScenarioDAOSQL implements ScenarioDAO {
 			
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
-	    	String timeStr = tool.Util.getDateStringByDateAndFormatter(time, "HH:mm");
+	    	String timeStr = tool.Util.getDateStringByDateAndFormatter(time, "HH:mm:ss");
 	    	
 			stmt.setString(1, timeStr);
 			stmt.setString(2, timeStr);
@@ -112,7 +112,7 @@ public class ScenarioDAOSQL implements ScenarioDAO {
 			
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
-			String timeStr = tool.Util.getDateStringByDateAndFormatter(time, "HH:mm");
+			String timeStr = tool.Util.getDateStringByDateAndFormatter(time, "HH:mm:ss");
 			stmt.setString(1, scenario);
 			stmt.setString(2, timeStr);
 			stmt.setString(3, timeStr);

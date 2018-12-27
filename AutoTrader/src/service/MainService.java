@@ -100,20 +100,6 @@ public class MainService {
     		zoneDao.insertMyFrame(name, x, y, width, height);
     	}
     }
-
-    private void insertXYCoords() {
-	
-    	ArrayList<String[]> resultList = Util.readCSVFile("xy_coords");
-    	if(resultList.size() == 0) return;
-    	
-    	ZoneDAO zoneDao = ZoneDAOFactory.getZoneDAO();
-    	for(String[] result : resultList) {
-    		String zone = result[0];
-    		int x = Integer.parseInt(result[1]);
-    		int y = Integer.parseInt(result[2]);
-    		zoneDao.insertXYCoords(zone, x, y);
-    	}
-    }
     
     private void insertNewDataFromCSV() {
     	
@@ -122,7 +108,6 @@ public class MainService {
     	
     	insertAreaZone();
     	insertMyFrame();
-    	insertXYCoords();
     }
     
     private void cleanOldDataInDB() {
@@ -134,7 +119,6 @@ public class MainService {
     	ZoneDAO zoneDao = ZoneDAOFactory.getZoneDAO();
     	zoneDao.cleanAreaZone();
     	zoneDao.cleanMyFrame();
-    	zoneDao.cleanXYCoords();
     }
     
     public void refreshDBdataFromCSV() {

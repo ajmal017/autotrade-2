@@ -14,7 +14,6 @@ public interface ZoneDAO {
 	Rectangle getRectByName(String name);
 	
 	void cleanAreaZone();
-	void cleanXYCoords();
 	void cleanMyFrame();
 	
 	void insertAreaZone(String scenario, 
@@ -22,6 +21,5 @@ public interface ZoneDAO {
 						String area,
 						String zone,
 						int active);
-	void insertXYCoords(String zone, int x, int y);
 	void insertMyFrame(String name, int x, int y, int width, int height);
 }

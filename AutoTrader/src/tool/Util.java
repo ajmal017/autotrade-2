@@ -397,42 +397,41 @@ public class Util {
         }
     }
     
-    public static Zone getZoneByZoneName(String name) {
+    public static Zone setZoneXYByZone(Zone zone) {
     	
-    	if(name == null || name.length() < 3) return null;
+    	if(zone.getZone() == null || zone.getZone().length() < 3) return null;
 
-    	Zone z = new Zone();
-    	z.setZone(name);
     	
-    	String zArea = Character.toString(name.charAt(0));
-    	int zXIndex = Integer.valueOf(Character.toString(name.charAt(2)))-1;
-    	int zYIndex = Integer.valueOf(Character.toString(name.charAt(1)))-1;
+    	String zArea = Character.toString(zone.getZone().charAt(0));
+    	int zXIndex = Integer.valueOf(Character.toString(zone.getZone().charAt(2)))-1;
+    	int zYIndex = Integer.valueOf(Character.toString(zone.getZone().charAt(1)))-1;
     	
     	switch(zArea) {
     		case "A" :
-    			z.setxCoord(SystemConfig.A_X[zXIndex]);
+    			zone.setxCoord(SystemConfig.A_X[zXIndex]);
     			break;
     		case "B" :
-    			z.setxCoord(SystemConfig.B_X[zXIndex]);
+    			zone.setxCoord(SystemConfig.B_X[zXIndex]);
     			break;
     		case "C" :
-    			z.setxCoord(SystemConfig.C_X[zXIndex]);
+    			zone.setxCoord(SystemConfig.C_X[zXIndex]);
     			break;
     		case "D" :
-    			z.setxCoord(SystemConfig.D_X[zXIndex]);
+    			zone.setxCoord(SystemConfig.D_X[zXIndex]);
     			break;
     		case "E" :
-    			z.setxCoord(SystemConfig.E_X[zXIndex]);
+    			zone.setxCoord(SystemConfig.E_X[zXIndex]);
     			break;
     		case "F" :
-    			z.setxCoord(SystemConfig.F_X[zXIndex]);
+    			zone.setxCoord(SystemConfig.F_X[zXIndex]);
     			break;
     		default:
-    			z.setxCoord(SystemConfig.G_X[zXIndex]);
+    			zone.setxCoord(SystemConfig.G_X[zXIndex]);
     			break;
     	}
-    	z.setyCoord(SystemConfig.ZONE_Y[zYIndex]);
+    	zone.setyCoord(SystemConfig.ZONE_Y[zYIndex]);
     	
-    	return z;
+    	return zone;
     }
+    
 }

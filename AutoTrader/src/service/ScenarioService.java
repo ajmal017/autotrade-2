@@ -68,14 +68,15 @@ public class ScenarioService {
     		return;
 		}
     	
+    	Date now = new Date();
     	for (String d : times) {
     		
     		DailyScenarioRefresh refresh = new DailyScenarioRefresh();
     		refresh.setRefreshTime(d);
-    		StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+    		StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(now, "yyyyMMdd"));
     		str.append(d);
-    		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
-    		if (dDate.before(new Date())) {
+    		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
+    		if (dDate.before(now)) {
     			refresh.setPassed(true); 
     			int passed = getPassedRefreshPlanCount() + 1;
     			setPassedRefreshPlanCount(passed);

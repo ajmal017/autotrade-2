@@ -76,10 +76,6 @@ private volatile static ZoneColorInfoService instance;
 	}
 	*/
 	public void updateSceZoneAndVolumeBarZoneColorByTimer() {
-
-		if (getSceZoneColors().isEmpty() && getVolumeZoneList().size() == 0) {
-			return;
-		}
 		
         try {
         	
@@ -128,10 +124,6 @@ private volatile static ZoneColorInfoService instance;
 	}
 	
 	public void updateVolumeZoneColorAfterReloadVolBarByTimer() {
-
-		if (getVolZoneColors().isEmpty()) {
-			return;
-		}
 		
         try {
         	

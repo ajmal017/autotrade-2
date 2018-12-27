@@ -273,12 +273,12 @@ public class AutoTrade extends Application {
 			//set tomorrow timer
 			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(plans.get(0).getRefreshTime());
-    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
+    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
 			secTimer = new Timer();
 			Calendar c = Calendar.getInstance();
 			c.setTime(startTime);
 			c.add(Calendar.DATE, +1); //tomorrow
-			c.add(Calendar.SECOND, +1); //delay 1 sec for swim's refresh
+//			c.add(Calendar.SECOND, +1); //delay 1 sec for swim's refresh
 			startTime = c.getTime();
 			secTimer.scheduleAtFixedRate(new TimerTask() {
 		        public void run() {
@@ -318,11 +318,11 @@ public class AutoTrade extends Application {
 			//scenario did not start
 			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(plans.get(0).getRefreshTime());
-    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
+    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
 			secTimer = new Timer ();
 			Calendar c = Calendar.getInstance();
 			c.setTime(startTime);
-			c.add(Calendar.SECOND, +1);
+//			c.add(Calendar.SECOND, +1);
 			startTime = c.getTime();
 			secTimer.scheduleAtFixedRate(new TimerTask() {
 		        public void run() {
@@ -378,13 +378,13 @@ public class AutoTrade extends Application {
 			
 			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(scenarioService.getSceRefreshPlan().get(0).getRefreshTime());
-    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm");
+    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
     		secTimer.cancel();
 			secTimer = new Timer();
 			Calendar c = Calendar.getInstance();
 			c.setTime(startTime);
 			c.add(Calendar.DATE, +1);
-			c.add(Calendar.SECOND, +1);
+//			c.add(Calendar.SECOND, +1);
 			startTime = c.getTime();
 			secTimer.scheduleAtFixedRate(new TimerTask() {
 		        public void run() {
@@ -449,7 +449,7 @@ public class AutoTrade extends Application {
 	
 	private boolean isRefreshTime() {
 		
-		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm");
+		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
 		ScenarioService sService = ScenarioService.getInstance();
 		if (sService.getSceRefreshPlan().size() == 0) {
 			return false;
