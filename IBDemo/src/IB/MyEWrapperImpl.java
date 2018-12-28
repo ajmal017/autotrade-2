@@ -119,6 +119,13 @@ public class MyEWrapperImpl implements EWrapper {
 			System.out.println("MyEWrapperImpl OrderStatus. Id: "+orderId+", Status: "+status+", Filled"+filled+", Remaining: "+remaining
 	                +", AvgFillPrice: "+avgFillPrice+", PermId: "+permId+", ParentId: "+parentId+", LastFillPrice: "+lastFillPrice+
 	                ", ClientId: "+clientId+", WhyHeld: "+whyHeld+", MktCapPrice: "+mktCapPrice);
+			
+			//self coding
+			if(getIbServiceInstance() != null) {
+				if(status.contains("Filled") && remaining == 0 && avgFillPrice > 0 && orderId == ibServiceInstance.getCurrentOrderId()-1) {
+					getIbServiceInstance().updateTradePrice(avgFillPrice);
+				}
+			}
 		}
 		//! [orderstatus]
 		

@@ -48,6 +48,8 @@ private volatile static ZoneColorInfoService instance;
 			getVolumeZoneList().clear();
 		}
 		
+		if(zoneList == null || zoneList.size() == 0) return;
+		
 		for(Zone zone : zoneList) {
 			getVolumeZoneList().add(zone);
 		}

@@ -22,6 +22,9 @@ import javafx.scene.layout.VBox;
 
 
 public class Main extends Application implements IBServiceCallbackInterface {
+	boolean wantCloseApp;
+	
+	
 	@Override
 	public void start(Stage primaryStage) {
 		try {
@@ -63,8 +66,8 @@ public class Main extends Application implements IBServiceCallbackInterface {
 	            @Override
 	            public void handle(ActionEvent event) {
 	            	IBService ibService = IBService.getInstance();
-	            	ibService.closeTodayTrade();
-	                closeApplication(); 
+	            	ibService.closeTodayTrade("T10", "10:00:00");
+	            	wantCloseApp = true;
 	            }
 	        });
 	        
@@ -120,5 +123,9 @@ public class Main extends Application implements IBServiceCallbackInterface {
 		
 		//todo
 		System.out.println("updateTradePrice = " + price);
+		if(wantCloseApp) {
+			closeApplication();
+			wantCloseApp = false;
+		}
 	}
 }

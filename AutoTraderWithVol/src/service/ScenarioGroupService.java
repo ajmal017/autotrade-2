@@ -126,21 +126,22 @@ public class ScenarioGroupService {
 			//none active scenario
     		return;
 		}
-    	
+    	/*
     	ArrayList<Zone> volumeZoneList = commonDao.getVolumeZoneList();
     	if (volumeZoneList.size() == 0) {
 			//none volume zone
     		return;
 		}
-    	
+    	*/
     	for (String nameString : sceNames) {
     		ScenarioTrend st = new ScenarioTrend(nameString);
-        	st.setTrend(getTodayLastTrendByScenario(st.getScenario()));
-        	getActiveScenarioGroupList().add(new ScenarioTrend(nameString));
+    		Enum<SystemEnum.Trend> lastTrend = getTodayLastTrendByScenario(nameString);
+        	st.setTrend(lastTrend);
+        	getActiveScenarioGroupList().add(st);
         	getDailySignMap().put(nameString, new ArrayList<TrendSign>());
 		}
 		
-    	ZoneColorInfoService.getInstance().loadVolumeBarZoneListWithDefaultColor(volumeZoneList);
+    	ZoneColorInfoService.getInstance().loadVolumeBarZoneListWithDefaultColor(commonDao.getVolumeZoneList());
     	
 		initAllVolumeData();
 		initAllScenarioData();
@@ -272,9 +273,7 @@ public class ScenarioGroupService {
     	//get new working volumes
     	ArrayList<Volume> newVolumeList = commonDAO.getAllWorkingVolumeAtTime(new Date());
     	if (newVolumeList.size() == 0) {
-    		for (ScenarioTrend activeS : getActiveScenarioGroupList()) {
-				if(activeS.getTrend() != SystemEnum.Trend.Default) closeOrderByScenario(activeS.getScenario());
-			}
+    		
     		workingVolumeList.clear();
     		newVolPlanRefreshed();
     		return;
@@ -291,38 +290,24 @@ public class ScenarioGroupService {
     		}
 		}
     	if (tempVolumeList.size() == 0) {
-    		//none new scenario
-    		for (ScenarioTrend activeS : getActiveScenarioGroupList()) {
-				if(activeS.getTrend() != SystemEnum.Trend.Default) closeOrderByScenario(activeS.getScenario());
-			}
+    		
     		workingVolumeList.clear();
     		newVolPlanRefreshed();
     		return;
 		} else {
 			//close old working scenario order
 			for (Volume oldV : workingVolumeList) {
-				boolean needClose = true;
 				for (Volume newV : tempVolumeList) {
 					if (oldV.getScenario().equals(newV.getScenario())) {
 						newV.setTrend(oldV.getTrend()); //save trend
-						needClose = false;
 						break;
-					}
-				}
-				if(needClose) {
-					for (ScenarioTrend activeS : getActiveScenarioGroupList()) {
-						if(activeS.getScenario().equals(oldV.getScenario()) && 
-								activeS.getTrend() != SystemEnum.Trend.Default) {
-							closeOrderByScenario(oldV.getScenario());
-							break;
-						}
 					}
 				}
 			}
 		}
     	
     	//update working scenario memory
-    	workingScenarioList.clear();
+    	workingVolumeList.clear();
     	for (Volume workingVolume : tempVolumeList) {
 			workingVolumeList.add(workingVolume);
 		}
@@ -367,7 +352,6 @@ public class ScenarioGroupService {
 		} else {
 			
 			for (Scenario oldS : workingScenarioList) {
-				
 				for (Scenario newS : tempScenarioList) {
 					if (oldS.getScenario().equals(newS.getScenario())) {
 						newS.setTrend(oldS.getTrend()); //save trend
@@ -494,11 +478,6 @@ public class ScenarioGroupService {
     			}
     		}
     		
-    		if(!volWorking) {
-    			groupTrend.setTrend(SystemEnum.Trend.Default);
-    			continue;
-    		}
-    		
     		Enum<SystemEnum.Trend> sceTrend = SystemEnum.Trend.Default;
     		boolean sceWorking = false;
     		Scenario matchSce = null;
@@ -512,22 +491,43 @@ public class ScenarioGroupService {
     			}
     		}
     		
+    		if(!volWorking && !sceWorking && groupTrend.getTrend() != SystemEnum.Trend.Default) {
+    			groupTrend.setTrend(SystemEnum.Trend.Default);
+    			closeOrderByScenario(groupTrend.getScenario());
+    			continue;
+    		}
+    		
     		if(sceWorking) {
     			
-    			if(volTrend == sceTrend && 
-    					volTrend != SystemEnum.Trend.Default &&
-    					volTrend != groupTrend.getTrend()) {
-    				//trend change
-    				groupTrend.setTrend(volTrend);
-    				ArrayList<Scenario> ss = new ArrayList<Scenario>();
-    				ss.add(matchSce);
-    				ArrayList<Zone> zones = CommonDAOFactory.getCommonDAO().getRelatedZoneListByScenarioList(ss);
-    				int scenarioGreen = getGreenCountBySceZoneList(zones);
-    				int scenarioRed = getRedCountBySceZoneList(zones);
+    			if(volWorking) {
+    				if (volTrend == sceTrend && 
+        					volTrend != SystemEnum.Trend.Default &&
+        					volTrend != groupTrend.getTrend()) {
+    					//trend change
+    					groupTrend.setTrend(volTrend);
+    					
+    					ArrayList<Scenario> ss = new ArrayList<Scenario>();
+    					ss.add(matchSce);
+    					ArrayList<Zone> zones = CommonDAOFactory.getCommonDAO().getRelatedZoneListByScenarioList(ss);
+    					int scenarioGreen = getGreenCountBySceZoneList(zones);
+    					int scenarioRed = getRedCountBySceZoneList(zones);
     				
-    				System.out.println("volTrend:" + Util.getTrendTextByEnum(volTrend) +" sceTrend"+Util.getTrendTextByEnum(sceTrend) +" groupTrend:"+Util.getTrendTextByEnum(groupTrend.getTrend()));
+    					pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),scenarioGreen+matchVol.getGreen(),scenarioRed+matchVol.getRed());
+    				}
+    			} else {
     				
-    				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),scenarioGreen+matchVol.getGreen(),scenarioRed+matchVol.getRed());
+    				if(sceTrend != SystemEnum.Trend.Default && sceTrend != groupTrend.getTrend()) {
+        				//trend change
+        				groupTrend.setTrend(sceTrend);
+        				
+        				ArrayList<Scenario> ss = new ArrayList<Scenario>();
+    					ss.add(matchSce);
+    					ArrayList<Zone> zones = CommonDAOFactory.getCommonDAO().getRelatedZoneListByScenarioList(ss);
+    					int scenarioGreen = getGreenCountBySceZoneList(zones);
+    					int scenarioRed = getRedCountBySceZoneList(zones);
+        				
+        				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),scenarioGreen,scenarioRed);
+        			}
     			}
     			
     		} else {
@@ -535,8 +535,6 @@ public class ScenarioGroupService {
     			if(volTrend != SystemEnum.Trend.Default && volTrend != groupTrend.getTrend()) {
     				//trend change
     				groupTrend.setTrend(volTrend);
-    				System.out.println("volTrend:" + Util.getTrendTextByEnum(volTrend) +" sceTrend"+Util.getTrendTextByEnum(sceTrend) +" groupTrend:"+Util.getTrendTextByEnum(groupTrend.getTrend()));
-    				
     				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),matchVol.getGreen(),matchVol.getRed());
     			}
     		}

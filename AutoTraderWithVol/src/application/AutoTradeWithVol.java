@@ -280,74 +280,95 @@ public class AutoTradeWithVol extends Application {
 		for (ScenarioTrend s : activeScenariolist) {
 			ScenarioTrend trend  =  new ScenarioTrend();
 			trend.setScenario(s.getScenario());
+			Enum<SystemEnum.Trend> lastTrend = scenarioService.getTodayLastTrendByScenario(trend.getScenario());
+			trend.setTrend(lastTrend);
 			getSceTrendList().add(trend);
 		}
-		
-		
-		if(scenarioService.getVolRefreshPlan().size() == 0) {
+
+		ArrayList<DailyScenarioRefresh> volPlans = scenarioService.getVolRefreshPlan();
+		ArrayList<DailyScenarioRefresh> scePlans = scenarioService.getSceRefreshPlan();
+		if(volPlans.size() == 0 && scePlans.size() == 0) {
 			//none scenario plan
 			Alert alert = new Alert(AlertType.INFORMATION);
 			alert.setTitle("Warning");
 			alert.setHeaderText(null);
-			alert.setContentText("none volume scenario plan");
+			alert.setContentText("none scenario plan");
 			alert.showAndWait();
 			return;
 		}
 		
-
 		//load start end time label
-		ArrayList<DailyScenarioRefresh> volPlans = scenarioService.getVolRefreshPlan();    	
-		startTimeLbl.setText(volPlans.get(0).getRefreshTime());
-		endTimeLbl.setText(volPlans.get(volPlans.size()-1).getRefreshTime());
+		Date volStartTime = null,volEndTime = null,sceStartTime = null,sceEndTime = null,finalStartTime = null,finalEndTime = null;
+		if(volPlans.size() > 0) {
+			
+			StringBuilder str1 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+			str1.append(volPlans.get(0).getRefreshTime());
+			volStartTime = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm:ss");
+			
+			StringBuilder str2 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+			str2.append(volPlans.get(volPlans.size()-1).getRefreshTime());
+			volEndTime = Util.getDateByStringAndFormatter(str2.toString(),"yyyyMMddHH:mm:ss");
+		}
+		if(scePlans.size() > 0) {
+			
+			StringBuilder str3 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+			str3.append(scePlans.get(0).getRefreshTime());
+			sceStartTime = Util.getDateByStringAndFormatter(str3.toString(),"HH:mm:ss");
+			
+			StringBuilder str4 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+			str4.append(scePlans.get(scePlans.size()-1).getRefreshTime());
+			sceEndTime = Util.getDateByStringAndFormatter(str4.toString(),"HH:mm:ss");
+		}
+		
+		if (volPlans.size() > 0 && scePlans.size() > 0) {
+			
+			if(sceStartTime.before(volStartTime)) {
+				finalStartTime = sceStartTime;
+			} else {
+				finalStartTime = volStartTime;
+			}
+			if(sceEndTime.before(volEndTime)) {
+				finalEndTime = volEndTime;
+			} else {
+				finalEndTime = sceEndTime;
+			}
+		} else if(volPlans.size() > 0) {
+			finalStartTime = volStartTime;
+			finalEndTime = volEndTime;
+		} else {
+			finalStartTime = sceStartTime;
+			finalEndTime = sceEndTime;
+		}
+		
+		startTimeLbl.setText(Util.getDateStringByDateAndFormatter(finalStartTime, "HH:mm:ss"));
+		endTimeLbl.setText(Util.getDateStringByDateAndFormatter(finalEndTime, "HH:mm:ss"));
 		
 		int didPassedCountVol =  scenarioService.getPassedVolRefreshPlanCount();
 		int didPassedCountSce =  scenarioService.getPassedSceRefreshPlanCount();
 		
-		if (didPassedCountVol == scenarioService.getVolRefreshPlan().size()) {
+		if (didPassedCountVol == scenarioService.getVolRefreshPlan().size() && 
+				didPassedCountSce == scenarioService.getSceRefreshPlan().size()) {
 			//every plan passed, including the close time
 			//set tomorrow timer
-			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-    		str.append(volPlans.get(0).getRefreshTime());
-    		Date startTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
 			secTimer = new Timer();
 			Calendar c = Calendar.getInstance();
-			c.setTime(startTime);
+			c.setTime(finalStartTime);
 			c.add(Calendar.DATE, +1); //tomorrow
 //			c.add(Calendar.SECOND, +1); //delay 1 sec for swim's refresh
-			startTime = c.getTime();
+			finalStartTime = c.getTime();
 			secTimer.scheduleAtFixedRate(new TimerTask() {
 		        public void run() {
 		        	calledBySecondTimer();
 		        }
-			}, startTime, timerRefreshMSec);
+			}, finalStartTime, timerRefreshMSec);
 			
 			Alert alert = new Alert(AlertType.INFORMATION);
 			alert.setTitle("Warning");
 			alert.setHeaderText(null);
-			alert.setContentText("every volume scenario is end");
+			alert.setContentText("every scenario is end");
 			alert.showAndWait();
 			return;
-		} else if (didPassedCountVol > 0) { 
-			//scenario started
-			
-			//change last plan's passed state to NO, then run following logic
-			DailyScenarioRefresh volRefresh  =  scenarioService.getVolRefreshPlan().get(didPassedCountVol-1);
-			volRefresh.setPassed(false);
-			scenarioService.setPassedVolRefreshPlanCount(didPassedCountVol-1);
-			scenarioService.updateWorkingVolumeListByRefreshPlan();
-			
-			//load appeared trend (if app reload during market time)
-			for(ScenarioTrend trend : getSceTrendList()) {
-				trend.setTrend(scenarioService.getTodayLastTrendByScenario(trend.getScenario()));
-			}
-			
-			if (didPassedCountSce > 0) {
-				
-				DailyScenarioRefresh sceRefresh  =  scenarioService.getSceRefreshPlan().get(didPassedCountSce-1);
-				sceRefresh.setPassed(false);
-				scenarioService.setPassedSceRefreshPlanCount(didPassedCountSce-1);
-				scenarioService.updateWorkingScenarioListByRefreshPlan();
-			}
+		} else if (didPassedCountVol == 0 && didPassedCountSce == 0) { 
 			
 			secTimer = new Timer ();
 			secTimer.scheduleAtFixedRate(new TimerTask() {
@@ -355,59 +376,32 @@ public class AutoTradeWithVol extends Application {
 		        	calledBySecondTimer();
 		        	
 		        }
-			}, 1, timerRefreshMSec);
+			}, finalStartTime, timerRefreshMSec);
 			
 		}  else {
 			
-			if (didPassedCountSce > 0) {
+			if (didPassedCountSce > 0 && didPassedCountSce != scenarioService.getSceRefreshPlan().size()) {
 				
-				DailyScenarioRefresh refresh  =  scenarioService.getSceRefreshPlan().get(didPassedCountSce-1);
-				refresh.setPassed(false);
+				DailyScenarioRefresh sceRefresh = scenarioService.getSceRefreshPlan().get(didPassedCountSce-1);
+				sceRefresh.setPassed(false);
 				scenarioService.setPassedSceRefreshPlanCount(didPassedCountSce-1);
 				scenarioService.updateWorkingScenarioListByRefreshPlan();
+			}
 			
-				secTimer = new Timer ();
-				secTimer.scheduleAtFixedRate(new TimerTask() {
-			        public void run() {
-			        	calledBySecondTimer();
-			        	
-			        }
-				}, 1, timerRefreshMSec);
+			if (didPassedCountVol > 0 && didPassedCountVol != scenarioService.getVolRefreshPlan().size()) {
 				
-			} else {
-				
-
-				//scenario did not start
-				StringBuilder str1 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-	    		str1.append(volPlans.get(0).getRefreshTime());
-	    		Date startTimeVol = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm:ss");
-	    		Date finalStarTime = null;
-	    		if(scenarioService.getSceRefreshPlan().size() == 0) {
-	    			finalStarTime = startTimeVol;
-	    		} else {
-	    			
-	    			StringBuilder str2 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-		    		str2.append(scenarioService.getSceRefreshPlan().get(0).getRefreshTime());
-		    		Date startTimeSce = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm:ss");
-	    			if(startTimeSce.before(startTimeVol)) {
-	    				finalStarTime = startTimeSce;
-	    			} else {
-	    				finalStarTime = startTimeVol;
-	    			}
-	    		}
-	    		
-				secTimer = new Timer ();
-				Calendar c = Calendar.getInstance();
-				c.setTime(finalStarTime);
-//				c.add(Calendar.SECOND, +1);
-				finalStarTime = c.getTime();
-				secTimer.scheduleAtFixedRate(new TimerTask() {
-			        public void run() {
-			        	calledBySecondTimer();
-			        	
-			        }
-				}, finalStarTime, timerRefreshMSec);
-			}	
+				DailyScenarioRefresh volRefresh = scenarioService.getVolRefreshPlan().get(didPassedCountVol-1);
+				volRefresh.setPassed(false);
+				scenarioService.setPassedVolRefreshPlanCount(didPassedCountVol-1);
+				scenarioService.updateWorkingVolumeListByRefreshPlan();
+			}
+			secTimer = new Timer ();
+			secTimer.scheduleAtFixedRate(new TimerTask() {
+		        public void run() {
+		        	calledBySecondTimer();
+		        	
+		        }
+			}, 1, timerRefreshMSec);
 		}
 	}
 	
@@ -416,38 +410,21 @@ public class AutoTradeWithVol extends Application {
 		
 		ScenarioGroupService scenarioService = ScenarioGroupService.getInstance();
 		
-		if (scenarioService.getActiveScenarioGroupList().size() == 0 ||
-				scenarioService.getVolRefreshPlan().size() == 0) {
+		if (scenarioService.getActiveScenarioGroupList().size() == 0) {
 			
 			return;
 		}
 
 		ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
 		//every plan passed
-		if (scenarioService.getPassedVolRefreshPlanCount()  == scenarioService.getVolRefreshPlan().size()) {
+		if (scenarioService.getPassedVolRefreshPlanCount() == scenarioService.getVolRefreshPlan().size() &&
+				scenarioService.getPassedSceRefreshPlanCount() == scenarioService.getSceRefreshPlan().size()) {
 			
 			scenarioService.exportTodayTrendProfit(); //export ºexcel
 			
-			
-			//scenario did not start
-			StringBuilder str1 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-    		str1.append(scenarioService.getVolRefreshPlan().get(0).getRefreshTime());
-    		Date startTimeVol = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm:ss");
-    		Date finalStarTime = null;
-    		if(scenarioService.getSceRefreshPlan().size() == 0) {
-    			finalStarTime = startTimeVol;
-    		} else {
-    			
-    			StringBuilder str2 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-	    		str2.append(scenarioService.getSceRefreshPlan().get(0).getRefreshTime());
-	    		Date startTimeSce = Util.getDateByStringAndFormatter(str1.toString(), "yyyyMMddHH:mm:ss");
-    			if(startTimeSce.before(startTimeVol)) {
-    				finalStarTime = startTimeSce;
-    			} else {
-    				finalStarTime = startTimeVol;
-    			}
-    		}
-    		
+			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+    		str.append(startTimeLbl.getText());
+    		Date finalStarTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
 			secTimer = new Timer ();
 			Calendar c = Calendar.getInstance();
 			c.setTime(finalStarTime);

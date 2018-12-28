@@ -172,6 +172,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	public void placeOrder(Enum<SystemEnum.OrderAction> newAction, String scenario, String time) {
 		
 		if(newAction == SystemEnum.OrderAction.Default) return;
+		if(preOrderAction == newAction) return;
 		
 		String actionStr = null;
 		int quantity = stockConfig.getOrderQuantity();
@@ -188,7 +189,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		sendOrderToIB(actionStr, quantity);
 	}
 	
-	public void closeTodayTrade() {
+	public void closeTodayTrade(String scenario, String time) {
 		
 		if(preOrderAction == SystemEnum.OrderAction.Default) return;
 		
@@ -198,7 +199,8 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		} else {
 			actionStr = "BUY";
 		}
-		
+		setPreOrderScenario(scenario);
+		setPreOrderTime(time);
 		sendOrderToIB(actionStr, stockConfig.getOrderQuantity());
 		preOrderAction = SystemEnum.OrderAction.Default;
 	}
@@ -217,7 +219,11 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	@Override
 	public void updateTradePrice(double price) {
 		
+		if(getPreOrderScenario() == null) return;
+		
 		getMainObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime());
+		setPreOrderScenario(null);
+		setPreOrderTime(null);
 	}
 
 	public String getPreOrderScenario() {
