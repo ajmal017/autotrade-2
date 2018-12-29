@@ -80,7 +80,7 @@ public class AutoTradeWithVol extends Application {
 		
 		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
 		ScenarioGroupService sService = ScenarioGroupService.getInstance();
-		if (sService.getSceRefreshPlan().size() == 0) {
+		if (sService.getVolRefreshPlan().size() == 0) {
 			return false;
 		}
 		DailyScenarioRefresh nextFresh = sService.getVolRefreshPlan().get(sService.getPassedVolRefreshPlanCount());

@@ -10,6 +10,7 @@ public class StockConfig {
 	private String stockCurrency;//USD
 	private double stockExpiry; //0.0
 	private int orderQuantity; //100
+	private double firstOrderQuantityPercent;
 	
 	public StockConfig () {
 		
@@ -62,5 +63,13 @@ public class StockConfig {
 	}
 	public void setOrderQuantity(int orderQuantity) {
 		this.orderQuantity = orderQuantity;
+	}
+
+	public double getFirstOrderQuantityPercent() {
+		return firstOrderQuantityPercent;
+	}
+
+	public void setFirstOrderQuantityPercent(double firstOrderQuantityPercent) {
+		this.firstOrderQuantityPercent = firstOrderQuantityPercent;
 	}
 }

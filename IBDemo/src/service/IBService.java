@@ -38,6 +38,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private Enum<SystemEnum.OrderAction> preOrderAction;
 	private String preOrderScenario;
 	private String preOrderTime;
+	private int preOrderQuantity;
 	private Main mainObj;
 	private int currentOrderId;
 	
@@ -85,6 +86,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			stockConfig.setStockCurrency(stockConf.getChild("stockcurrency").getText());
 			stockConfig.setStockExpiry(Double.valueOf(stockConf.getChild("stockexpiry").getText()));
 			stockConfig.setOrderQuantity(Integer.valueOf(stockConf.getChild("orderquantity").getText()));
+			stockConfig.setFirstOrderQuantityPercent(Double.valueOf(stockConf.getChild("firstorderquantitypercent").getText())); 
 			
 		} catch (Exception e) {
         	e.printStackTrace();
@@ -175,14 +177,21 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		if(preOrderAction == newAction) return;
 		
 		String actionStr = null;
-		int quantity = stockConfig.getOrderQuantity();
+		int quantity = 0;
 		if(newAction == SystemEnum.OrderAction.Buy) {
 			actionStr = "BUY";
 		} else {
 			actionStr = "SELL";
 		}
-		if(preOrderAction != SystemEnum.OrderAction.Default) quantity = quantity*2;
-
+		if(preOrderAction != SystemEnum.OrderAction.Default) {
+			quantity = preOrderQuantity + stockConfig.getOrderQuantity();
+		} else if (stockConfig.getFirstOrderQuantityPercent() > 0) {
+			quantity = (int)(stockConfig.getFirstOrderQuantityPercent()*stockConfig.getOrderQuantity());
+		} else {
+			quantity = stockConfig.getOrderQuantity();
+		}
+		
+		preOrderQuantity = quantity - preOrderQuantity;
 		preOrderAction = newAction;
 		setPreOrderScenario(scenario);
 		setPreOrderTime(time);
