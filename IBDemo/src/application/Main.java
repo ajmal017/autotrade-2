@@ -1,6 +1,8 @@
 package application;
 	
 import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -22,8 +24,8 @@ import javafx.scene.layout.VBox;
 
 
 public class Main extends Application implements IBServiceCallbackInterface {
-	boolean wantCloseApp;
-	
+	private boolean wantCloseApp;
+	private Timer secTimer;
 	
 	@Override
 	public void start(Stage primaryStage) {
@@ -89,9 +91,13 @@ public class Main extends Application implements IBServiceCallbackInterface {
 			primaryStage.setScene(scene);
 			primaryStage.show();
 			
-			
-			
-			
+			secTimer = new Timer ();
+			secTimer.scheduleAtFixedRate(new TimerTask() {
+		        public void run() {
+		        	startMonitoring();
+		        	
+		        }
+			}, 1, 2000);
 			
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -102,16 +108,27 @@ public class Main extends Application implements IBServiceCallbackInterface {
 		launch(args);
 	}
 
+	private void startMonitoring () {
+		
+		boolean connecting = IBService.getInstance().monitoring();
+		
+		if(connecting) {
+			System.out.println("connected");
+		} else {
+			System.out.println("disconnected");
+		}
+	}
 	
 	private void closeApplication() {
+		
+
+		IBService.getInstance().ibDisConnect();
 		
 		try {
             Thread.sleep(2000);
         } catch (Exception e) {
         	e.printStackTrace();
         }
-		
-		IBService.getInstance().ibDisConnect();
 		
 		//shutdown
 		Platform.exit();
@@ -121,11 +138,17 @@ public class Main extends Application implements IBServiceCallbackInterface {
 	@Override
 	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime) {
 		
-		//todo
 		System.out.println("updateTradePrice = " + price);
 		if(wantCloseApp) {
 			closeApplication();
 			wantCloseApp = false;
 		}
+	}
+	
+	@Override
+	public void ibLogouted() {
+		
+		//todo
+		
 	}
 }

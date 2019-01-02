@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import application.AutoTradeWithVol;
 import config.SystemConfig;
 import dao.CommonDAO;
 import dao.CommonDAOFactory;
@@ -26,7 +27,7 @@ import entity.Zone;
 import systemenum.SystemEnum;
 import tool.Util;
 
-public class ScenarioGroupService {
+public class ScenarioGroupService implements IBServiceCallbackInterface {
 	
 	private volatile static ScenarioGroupService instance;
 	
@@ -41,6 +42,9 @@ public class ScenarioGroupService {
 	private int passedSceRefreshPlanCount = 0; 
 	
 	private Map<String,ArrayList<TrendSign>> dailySignMap; //T10,List
+	
+	private boolean needCloseApp;
+	private AutoTradeWithVol autoTradeObj;
 	
 	private ScenarioGroupService ()  {
     	
@@ -702,16 +706,33 @@ public class ScenarioGroupService {
     		System.out.println("priceSwim:"+priceSwim);
     	}
     	
-    	TrendSign newSign = new TrendSign(new Date(), scenario, trend, green, red, priceSwim, 0, "", 0, 0);
+    	Date now = new Date();
+    	String nowTimeStr = Util.getDateStringByDateAndFormatter(now, "HH:mm:ss");
+    	
+    	TrendSign newSign = new TrendSign(now, scenario, trend, green, red, priceSwim, 0, "", 0, 0);
     	
     	ArrayList<TrendSign> dailySignList = getDailySignMap().get(scenario);
     	dailySignList.add(newSign);
     	
     	commonDao.insertNewTrendSign(newSign);
     	
-    	//ib trade
-    	//todo
-    	
+    	IBService ibService = IBService.getInstance();
+    	if(ibService.getIbApiConfig().isActive() && ibService.isIBConnecting()) {
+    		
+    		if (trend == SystemEnum.Trend.Default) { //close
+    			ibService.closeTodayTrade(scenario, nowTimeStr);
+    		} else {
+    			
+    			Enum<SystemEnum.OrderAction> newAction = SystemEnum.OrderAction.Default;
+    			if (trend == SystemEnum.Trend.Up) {
+    				newAction = SystemEnum.OrderAction.Buy;
+    			} else {
+    				newAction = SystemEnum.OrderAction.Sell;
+    			}
+    			
+    			ibService.placeOrder(newAction, scenario, nowTimeStr);
+    		}
+    	}
     	
     	ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
 	    cachedThreadPool.execute(new Runnable() {
@@ -738,11 +759,22 @@ public class ScenarioGroupService {
 		if (instance == null) {  
 			synchronized (ScenarioGroupService.class) {  
 				if (instance == null) {  
-					instance = new ScenarioGroupService();  
+					instance = new ScenarioGroupService();
+					IBService.getInstance().setGroupServiceObj(instance);
 				}	  
 			}  
 		}  
 		return instance;  
+	}
+	
+
+	@Override
+	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime) {
+		
+		CommonDAOFactory.getCommonDAO().updateLastTrendSignIBPrice(preOrderScenario, preOrderTime, price);
+		if(getAutoTradeObj() != null && isNeedCloseApp()) {
+			getAutoTradeObj().closeAppAfterPriceUpdate();
+		}
 	}
 
 	public ArrayList<ScenarioTrend> getActiveScenarioGroupList() {
@@ -807,6 +839,22 @@ public class ScenarioGroupService {
 
 	public void setDailySignMap(Map<String,ArrayList<TrendSign>> dailySignMap) {
 		this.dailySignMap = dailySignMap;
+	}
+
+	public boolean isNeedCloseApp() {
+		return needCloseApp;
+	}
+
+	public void setNeedCloseApp(boolean needCloseApp) {
+		this.needCloseApp = needCloseApp;
+	}
+
+	public AutoTradeWithVol getAutoTradeObj() {
+		return autoTradeObj;
+	}
+
+	public void setAutoTradeObj(AutoTradeWithVol autoTradeObj) {
+		this.autoTradeObj = autoTradeObj;
 	}
 	
 

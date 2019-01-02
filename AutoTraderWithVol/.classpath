@@ -32,5 +32,9 @@
 	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.23.1.jar"/>
 	<classpathentry kind="lib" path="lib/tess4j-3.4.8.jar"/>
 	<classpathentry kind="lib" path="lib/xmlgraphics-commons-1.5.jar"/>
+	<classpathentry kind="lib" path="lib/ApiDemo.jar"/>
+	<classpathentry kind="lib" path="lib/jdom-2.0.6.jar"/>
+	<classpathentry kind="lib" path="lib/TwsApi_debug.jar"/>
+	<classpathentry kind="lib" path="lib/TwsApi.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

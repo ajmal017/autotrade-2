@@ -709,4 +709,28 @@ public class CommonDAOSQL implements CommonDAO {
 	        ConnectionUtils.closeAll(stmt,null);
 		}
 	}
+
+	@Override
+	public void updateLastTrendSignIBPrice(String scenario, String time, double price) {
+		final String sqlString = "update trend_sign set price_ib = ? where scenario = ? and time = ? and date = ?";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setDouble(1,price);
+			stmt.setString(2, scenario);
+			stmt.setString(3, time);
+			stmt.setString(4,Util.getDateStringByDateAndFormatter(new Date(), "yyyy/MM/dd"));
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+		
+	}
 }

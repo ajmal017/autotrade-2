@@ -27,8 +27,11 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import service.IBService;
+import service.IBServiceCallbackInterface;
 import service.MainService;
 import service.ScenarioGroupService;
+import service.ScenarioGroupServiceCallbackInterface;
 import service.ZoneColorInfoService;
 import systemenum.SystemEnum;
 import tool.MP3Player;
@@ -48,11 +51,12 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 
 
-public class AutoTradeWithVol extends Application {
+public class AutoTradeWithVol extends Application implements ScenarioGroupServiceCallbackInterface {
 	
 	public static int timerRefreshMSec = 1000; //ms
 	
     private Timer secTimer;
+    private int ibTimerCount = 0; //5
     private ArrayList<ScenarioTrend> sceTrendList;
 	
     private final Label startTimeLbl = new Label();
@@ -60,6 +64,8 @@ public class AutoTradeWithVol extends Application {
 	private final Label yellowCountLbl = new Label();
 	
 	private Hashtable<String,Object> tbDataHash;
+	
+	private boolean wantCloseApp;
 	
 	private boolean isSceRefreshTime() {
 		
@@ -123,11 +129,29 @@ public class AutoTradeWithVol extends Application {
 		setSceTrendList(new ArrayList<ScenarioTrend>());
 		tbDataHash = new Hashtable<String,Object>();
 		
+		//connect to ib
+		IBService ibService = IBService.getInstance();
+		if(ibService.getIbApiConfig().isActive()) {
+			ibService.ibConnect();
+			
+			if (!ibService.isIBConnecting()) {
+				//none active scenario
+				Alert alert = new Alert(AlertType.INFORMATION);
+				alert.setTitle("Warning");
+				alert.setHeaderText(null);
+				alert.setContentText("IB connected FAIL!!!");
+				alert.showAndWait();
+				return;
+			} 
+		}
+		
 		//init data from CSV file
 		MainService mainService = MainService.getInstance();
 		mainService.refreshDBdataFromCSV();
 		
 		ScenarioGroupService scenarioService = ScenarioGroupService.getInstance();
+		scenarioService.setAutoTradeObj(this);
+		
 		ArrayList<ScenarioTrend> activeScenariolist = scenarioService.getActiveScenarioGroupList();
 		if(activeScenariolist.size() == 0) {
 			//none active scenario
@@ -174,7 +198,6 @@ public class AutoTradeWithVol extends Application {
 	        hb2.getChildren().addAll(yTitle, yellowCountLbl);
 	        hb2.setSpacing(3);
 	        
-
 	        sTitle.setFont(new Font(12));
 	        eTitle.setFont(new Font(12));
 	        startTimeLbl.setFont(new Font(12));
@@ -414,7 +437,16 @@ public class AutoTradeWithVol extends Application {
 			
 			return;
 		}
-
+		
+		ibTimerCount ++;
+		if(ibTimerCount == 5) {
+			IBService ibService = IBService.getInstance();
+			if(ibService.getIbApiConfig().isActive() && !ibService.isIBConnecting()) {
+				playSignAlertMusic();
+			}
+			ibTimerCount = 0;
+		}
+		
 		ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
 		//every plan passed
 		if (scenarioService.getPassedVolRefreshPlanCount() == scenarioService.getVolRefreshPlan().size() &&
@@ -443,8 +475,6 @@ public class AutoTradeWithVol extends Application {
 			alert.setHeaderText(null);
 			alert.setContentText("every scenario is end");
 			alert.showAndWait();
-			
-			playSignAlertMusic();
 			
 		} else {
 			//now is a refresh time
@@ -491,15 +521,23 @@ public class AutoTradeWithVol extends Application {
 		
 		secTimer.cancel();
 		
+		boolean needCloseOrder = false;
 		//close order
 		for (ScenarioTrend st : sceTrendList) {
 			if(st.getTrend() != SystemEnum.Trend.Default) {
-				
-				ScenarioGroupService.getInstance().closeOrderByScenario(st.getScenario());
+				ScenarioGroupService scenarioService =  ScenarioGroupService.getInstance();
+				scenarioService.closeOrderByScenario(st.getScenario());
+				scenarioService.setNeedCloseApp(true);
+				needCloseOrder = true;
 			}
 		}
+		
+		if(needCloseOrder) return; //close app after price update
+		
+		IBService.getInstance().ibDisConnect();
+		
 		try {
-            Thread.sleep(1000);
+            Thread.sleep(2000);
         } catch (Exception e) {
         	e.printStackTrace();
         }
@@ -531,5 +569,33 @@ public class AutoTradeWithVol extends Application {
 		this.sceTrendList = sceTrendList;
 	}
 
-	
+	public boolean isWantCloseApp() {
+		return wantCloseApp;
+	}
+
+	public void setWantCloseApp(boolean wantCloseApp) {
+		this.wantCloseApp = wantCloseApp;
+	}
+
+	@Override
+	public void closeAppAfterPriceUpdate() {
+		
+		IBService.getInstance().ibDisConnect();
+		
+		try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
+		//export xls
+		ScenarioGroupService.getInstance().exportTodayTrendProfit();
+		try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
+		//shutdown
+		Platform.exit();
+        System.exit(0);
+	}
 }

@@ -5,6 +5,7 @@ public class SystemConfig {
 	
 	public static String PRICE_IMG_NAME = "swim_price.png";
 	public static String DB_NAME = "lttradevol.db";
+	public static String IB_CONFIG_NAME = "ibtradeconfig.xml";
 	
 	public static int[] ZONE_Y = {150,273,393,520,603,725,851,975};
 	public static int[] A_X = {24,57,89,121,153,185,217,250};

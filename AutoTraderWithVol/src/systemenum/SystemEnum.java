@@ -37,4 +37,10 @@ public interface SystemEnum {
 		Buy,
 		Sell
 	}
+	
+	enum IbAccountType implements SystemEnum {
+		
+		Live,
+		Paper
+	}
 }

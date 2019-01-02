@@ -14,9 +14,9 @@ import com.ib.client.EReader;
 import com.ib.client.EReaderSignal;
 import com.ib.client.Order;
 
-import IB.MyEWrapperImpl;
-import IB.MyEWrapperImplCallbackInterface;
-import application.Main;
+import ib.MyEWrapperImpl;
+import ib.MyEWrapperImplCallbackInterface;
+import config.SystemConfig;
 import entity.IBApiConfig;
 import entity.IBServerConfig;
 import entity.StockConfig;
@@ -39,7 +39,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private String preOrderScenario;
 	private String preOrderTime;
 	private int preOrderQuantity;
-	private Main mainObj;
+	private ScenarioGroupService groupServiceObj;
 	private int currentOrderId;
 	
 	private IBService ()  {
@@ -56,7 +56,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		try {
 
 			SAXBuilder builder = new SAXBuilder(); 
-			Document doc = (Document) builder.build(new File("c://autotradedoc_vol//ibtradeconfig.xml"));
+			Document doc = (Document) builder.build(new File(SystemConfig.DOC_PATH + "//" + SystemConfig.IB_CONFIG_NAME));
 			Element foo = doc.getRootElement(); //get <IBTradeConfig>
 			Element ibApiConf = foo.getChild("IBApiConfig");  //get <IBApiConfig>
 			Element ibServerConf = foo.getChild("IBServerConfig");  //get <IBServerConfig>
@@ -140,7 +140,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
             }
         }.start();
         try {
-            Thread.sleep(1000);
+            Thread.sleep(2000);
             setCurrentOrderId(wrapper.getCurrentOrderId());
         } catch (Exception e) {
         	e.printStackTrace();
@@ -171,7 +171,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		m_client.reqMatchingSymbols(211, stockConfig.getStockSymbol());
 	}
 	*/
-	public boolean monitoring() {
+	public boolean isIBConnecting() {
 		
 		return m_client.isConnected();
 	}
@@ -235,7 +235,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		
 		if(getPreOrderScenario() == null) return;
 		
-		if (getMainObj() != null) { getMainObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime());}
+		if (getGroupServiceObj() != null) { getGroupServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime());}
 		setPreOrderScenario(null);
 		setPreOrderTime(null);
 	}
@@ -256,14 +256,6 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		this.preOrderTime = preOrderTime;
 	}
 
-	public Main getMainObj() {
-		return mainObj;
-	}
-
-	public void setMainObj(Main mainObj) {
-		this.mainObj = mainObj;
-	}
-
 	public int getCurrentOrderId() {
 		return currentOrderId;
 	}
@@ -271,11 +263,16 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	public void setCurrentOrderId(int currentOrderId) {
 		this.currentOrderId = currentOrderId;
 	}
-
-	@Override
-	public void ibLogouted() {
-		// TODO Auto-generated method stub
-		if (getMainObj() != null) { getMainObj().ibLogouted();};
-	}
 	
+	public IBApiConfig getIbApiConfig() {
+		return ibApiConfig;
+	}
+
+	public ScenarioGroupService getGroupServiceObj() {
+		return groupServiceObj;
+	}
+
+	public void setGroupServiceObj(ScenarioGroupService groupServiceObj) {
+		this.groupServiceObj = groupServiceObj;
+	}
 }
