@@ -68,12 +68,12 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 	private boolean wantCloseApp;
 	
 	private boolean isSceRefreshTime() {
-		
-		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
+
 		ScenarioGroupService sService = ScenarioGroupService.getInstance();
-		if (sService.getSceRefreshPlan().size() == 0) {
+		if (sService.getSceRefreshPlan().size() == 0 || sService.getSceRefreshPlan().size() == sService.getPassedSceRefreshPlanCount()) {
 			return false;
 		}
+		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
 		DailyScenarioRefresh nextFresh = sService.getSceRefreshPlan().get(sService.getPassedSceRefreshPlanCount());
 		if (nowTimeString.equals(nextFresh.getRefreshTime())) {
 			return true;
@@ -83,12 +83,12 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 	}
 	
 	private boolean isVolRefreshTime() {
-		
-		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
+
 		ScenarioGroupService sService = ScenarioGroupService.getInstance();
-		if (sService.getVolRefreshPlan().size() == 0) {
+		if (sService.getVolRefreshPlan().size() == 0 || sService.getVolRefreshPlan().size() == sService.getPassedVolRefreshPlanCount()) {
 			return false;
 		}
+		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
 		DailyScenarioRefresh nextFresh = sService.getVolRefreshPlan().get(sService.getPassedVolRefreshPlanCount());
 		if (nowTimeString.equals(nextFresh.getRefreshTime())) {
 			return true;
@@ -142,7 +142,9 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 				alert.setContentText("IB connected FAIL!!!");
 				alert.showAndWait();
 				return;
-			} 
+			} else {
+				System.out.println("IB connect started");
+			}
 		}
 		
 		//init data from CSV file
@@ -336,11 +338,11 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 			
 			StringBuilder str3 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
 			str3.append(scePlans.get(0).getRefreshTime());
-			sceStartTime = Util.getDateByStringAndFormatter(str3.toString(),"HH:mm:ss");
+			sceStartTime = Util.getDateByStringAndFormatter(str3.toString(),"yyyyMMddHH:mm:ss");
 			
 			StringBuilder str4 = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
 			str4.append(scePlans.get(scePlans.size()-1).getRefreshTime());
-			sceEndTime = Util.getDateByStringAndFormatter(str4.toString(),"HH:mm:ss");
+			sceEndTime = Util.getDateByStringAndFormatter(str4.toString(),"yyyyMMddHH:mm:ss");
 		}
 		
 		if (volPlans.size() > 0 && scePlans.size() > 0) {
@@ -441,8 +443,12 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 		ibTimerCount ++;
 		if(ibTimerCount == 5) {
 			IBService ibService = IBService.getInstance();
-			if(ibService.getIbApiConfig().isActive() && !ibService.isIBConnecting()) {
-				playSignAlertMusic();
+			if(ibService.getIbApiConfig().isActive()) {
+				if(ibService.isIBConnecting()) {
+					System.out.println("IB connected.");
+				} else {
+					playSignAlertMusic();
+				}
 			}
 			ibTimerCount = 0;
 		}
@@ -534,7 +540,9 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 		
 		if(needCloseOrder) return; //close app after price update
 		
-		IBService.getInstance().ibDisConnect();
+		if(IBService.getInstance().getIbApiConfig().isActive() && IBService.getInstance().isIBConnecting()) {
+			IBService.getInstance().ibDisConnect();
+		}
 		
 		try {
             Thread.sleep(2000);
@@ -580,7 +588,9 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 	@Override
 	public void closeAppAfterPriceUpdate() {
 		
-		IBService.getInstance().ibDisConnect();
+		if(IBService.getInstance().getIbApiConfig().isActive() && IBService.getInstance().isIBConnecting()) {
+			IBService.getInstance().ibDisConnect();
+		}
 		
 		try {
             Thread.sleep(2000);

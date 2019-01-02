@@ -224,6 +224,12 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 		    } else {
 		    	params.add("0");
 		    }
+		    if(sign.getQuantity()!=0) {
+		    	params.add(sign.getQuantity()+"");
+		    } else {
+		    	params.add("0");
+		    }
+		    
 		    //desc
 		    params.add(sign.getDesc());
 		    //map key
@@ -233,7 +239,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     }
 	
 	private String[] excelTitle() {
-        String[] strArray = { "time", "scenario", "trend", "green", "red", "price_swim", "price_ib", "profit_swim", "profit_ib", "desc"};
+        String[] strArray = { "time", "scenario", "trend", "green", "red", "price_swim", "price_ib", "profit_swim", "profit_ib", "quantity", "desc"};
         return strArray;
     }
 	
@@ -709,7 +715,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     	Date now = new Date();
     	String nowTimeStr = Util.getDateStringByDateAndFormatter(now, "HH:mm:ss");
     	
-    	TrendSign newSign = new TrendSign(now, scenario, trend, green, red, priceSwim, 0, "", 0, 0);
+    	TrendSign newSign = new TrendSign(now, scenario, trend, green, red, priceSwim, 0, 0, "", 0, 0);
     	
     	ArrayList<TrendSign> dailySignList = getDailySignMap().get(scenario);
     	dailySignList.add(newSign);
@@ -745,7 +751,9 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
             	String shotPath = SystemConfig.DOC_PATH + "//screenshot//" + 
             					  Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") + "//"+ 
             					  scenario + "//" + 
-            					  scenario + "_" + Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + ".png";
+            					  scenario + "_" + 
+            					  Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + "_" +
+            					  Util.getTrendTextByEnum(trend) +".png";
             	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
 	        }
 	    });
@@ -769,11 +777,12 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	
 
 	@Override
-	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime) {
-		
-		CommonDAOFactory.getCommonDAO().updateLastTrendSignIBPrice(preOrderScenario, preOrderTime, price);
+	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime, int preQuantity) {
+		System.out.println("Scenario group service updateTradePrice:"+price+" preOrderScenario:"+preOrderScenario+" preOrderTime:"+preOrderTime);
+		CommonDAOFactory.getCommonDAO().updateLastTrendSignIBPrice(preOrderScenario, preOrderTime, price, preQuantity);
 		if(getAutoTradeObj() != null && isNeedCloseApp()) {
 			getAutoTradeObj().closeAppAfterPriceUpdate();
+			setNeedCloseApp(false);
 		}
 	}
 

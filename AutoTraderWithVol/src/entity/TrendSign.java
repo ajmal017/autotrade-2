@@ -16,6 +16,7 @@ public class TrendSign {
 	
 	private double priceSwim;
 	private double priceIB;
+	private int quantity;
 	private String desc;
 	
 	//xls
@@ -29,6 +30,7 @@ public class TrendSign {
 			int red, 
 			double priceSwim, 
 			double priceIB,
+			int quantity,
 			String desc,
 			double profitSwim,
 			double profitIB) {
@@ -40,6 +42,7 @@ public class TrendSign {
         setRedCount(red);
         setPriceSwim(priceSwim);
         setPriceIB(priceIB);
+        setQuantity(quantity);
         setDesc(desc);
         setProfitSwim(priceSwim);
         setProfitIB(priceIB);
@@ -131,6 +134,14 @@ public class TrendSign {
 
 	public void setRedCount(int redCount) {
 		this.redCount = redCount;
+	}
+
+	public int getQuantity() {
+		return quantity;
+	}
+
+	public void setQuantity(int quantity) {
+		this.quantity = quantity;
 	}
 	
 }

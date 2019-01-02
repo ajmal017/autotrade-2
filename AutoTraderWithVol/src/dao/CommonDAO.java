@@ -32,7 +32,7 @@ public interface CommonDAO {
 	Enum<SystemEnum.Trend> getLastTrendByScenario(Date date, String scenario);
 	
 	void insertNewTrendSign(TrendSign sign);
-	void updateLastTrendSignIBPrice(String scenario, String time, double price);
+	void updateLastTrendSignIBPrice(String scenario, String time, double price, int quantity);
 	
 	void cleanScenarioActiveData();
 	void cleanScenarioData();

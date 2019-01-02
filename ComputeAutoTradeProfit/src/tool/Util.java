@@ -127,7 +127,7 @@ public class Util {
         }
         
 		try {
-			FileOutputStream fout = new FileOutputStream("c://autotradedoc//trendprofit//" +
+			FileOutputStream fout = new FileOutputStream("c://autotradedoc_vol//trendprofit//" +
 		    		Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") +  
 		    		".xls");
 			wb.write(fout);

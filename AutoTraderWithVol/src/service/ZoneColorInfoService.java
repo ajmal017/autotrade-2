@@ -102,7 +102,7 @@ private volatile static ZoneColorInfoService instance;
 				
 				z1.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
 				//test
-//				zone.setColor(SystemEnum.Color.Green);
+//				z1.setColor(SystemEnum.Color.Green);
 			}
 			
 			for(Zone z2: getVolumeZoneList()){
@@ -114,7 +114,7 @@ private volatile static ZoneColorInfoService instance;
 				
 				z2.setColor(tool.Util.getColorEnumByColorRGB(rgb[0], rgb[1], rgb[2]));
 				//test
-//				zone.setColor(SystemEnum.Color.Yellow);
+//				z2.setColor(SystemEnum.Color.Yellow);
 			}
 			
 			return;

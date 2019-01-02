@@ -39,6 +39,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private String preOrderScenario;
 	private String preOrderTime;
 	private int preOrderQuantity;
+	private int preOrderQuantityIncrease;
 	private ScenarioGroupService groupServiceObj;
 	private int currentOrderId;
 	
@@ -63,7 +64,11 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			Element stockConf = foo.getChild("StockConfig");  //get <StockConfig>
 			
 			String actStr = ibApiConf.getChild("active").getText();
-			ibApiConfig.setActive(Boolean.valueOf(actStr));
+			if (actStr.equals("1")) {
+				ibApiConfig.setActive(true);
+			} else {
+				ibApiConfig.setActive(false);
+			}
 			String accTypeStr = ibApiConf.getChild("accounttype").getText();
 			ibApiConfig.setAccType(accTypeStr.equalsIgnoreCase("paper")?SystemEnum.IbAccountType.Paper:SystemEnum.IbAccountType.Live);
 			
@@ -150,6 +155,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	public void ibDisConnect() {
 		
 		m_client.eDisconnect();
+		
 		reader = null;
 		wrapper = null;
 	}
@@ -189,17 +195,18 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			actionStr = "SELL";
 		}
 		if(preOrderAction != SystemEnum.OrderAction.Default) {
-			quantity = preOrderQuantity + stockConfig.getOrderQuantity();
+			quantity = preOrderQuantityIncrease + stockConfig.getOrderQuantity();
 		} else if (stockConfig.getFirstOrderQuantityPercent() > 0) {
 			quantity = (int)(stockConfig.getFirstOrderQuantityPercent()*stockConfig.getOrderQuantity());
 		} else {
 			quantity = stockConfig.getOrderQuantity();
 		}
 		
-		preOrderQuantity = quantity - preOrderQuantity;
+		preOrderQuantityIncrease = quantity - preOrderQuantityIncrease;
 		preOrderAction = newAction;
 		setPreOrderScenario(scenario);
 		setPreOrderTime(time);
+		preOrderQuantity = quantity;
 		sendOrderToIB(actionStr, quantity);
 	}
 	
@@ -215,7 +222,8 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		}
 		setPreOrderScenario(scenario);
 		setPreOrderTime(time);
-		sendOrderToIB(actionStr, stockConfig.getOrderQuantity());
+		preOrderQuantity = preOrderQuantityIncrease;
+		sendOrderToIB(actionStr, preOrderQuantityIncrease);
 		preOrderAction = SystemEnum.OrderAction.Default;
 	}
 	
@@ -233,9 +241,10 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	@Override
 	public void updateTradePrice(double price) {
 		
+		System.out.println("from ib updateTradePrice:"+price);
 		if(getPreOrderScenario() == null) return;
 		
-		if (getGroupServiceObj() != null) { getGroupServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime());}
+		if (getGroupServiceObj() != null) { getGroupServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime(), preOrderQuantity);}
 		setPreOrderScenario(null);
 		setPreOrderTime(null);
 	}

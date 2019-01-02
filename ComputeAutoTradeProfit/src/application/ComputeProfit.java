@@ -40,6 +40,7 @@ public class ComputeProfit {
         		"profit_swim", 
         		"profit_ib",
         		"profit_swim - profit_ib", 
+        		"quantity",
         		"desc"};
         return strArray;
     }
@@ -116,6 +117,9 @@ public class ComputeProfit {
 					ts.setProfitIB(Double.valueOf(Util.getStrValueByCell(cell)));
 					
 					cell = row.getCell((short)9);
+					ts.setQuantity(Integer.valueOf(Util.getStrValueByCell(cell)));
+					
+					cell = row.getCell((short)10);
 					ts.setDesc(cell == null?"":cell.getStringCellValue());
 					
 					totalProfitSwim += ts.getProfitSwim();
@@ -194,6 +198,12 @@ public class ComputeProfit {
 				    double temp2 = sign.getProfitSwim() - sign.getProfitIB();
 				    if(temp2!=0) {
 				    	params.add(temp2+"");
+				    } else {
+				    	params.add("0");
+				    }
+				    
+				    if(sign.getQuantity()!=0) {
+				    	params.add(sign.getQuantity()+"");
 				    } else {
 				    	params.add("0");
 				    }

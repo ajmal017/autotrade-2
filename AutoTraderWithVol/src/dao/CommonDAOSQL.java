@@ -379,7 +379,8 @@ public class CommonDAOSQL implements CommonDAO {
 	        	sign.setRedCount(rs.getInt(6));
 	        	sign.setPriceSwim(rs.getDouble(7));
 	        	sign.setPriceIB(rs.getDouble(8));
-	        	sign.setDesc(rs.getString(9));
+	        	sign.setQuantity(rs.getInt(9));
+	        	sign.setDesc(rs.getString(10));
 	        	
 	        	list.add(sign);
 	        }
@@ -424,7 +425,7 @@ public class CommonDAOSQL implements CommonDAO {
 
 	@Override
 	public void insertNewTrendSign(TrendSign sign) {
-		final String sqlString = "insert into trend_sign (date,time,scenario,trend,green,red,price_swim,price_ib,desc) values (?,?,?,?,?,?,?,?,?)";
+		final String sqlString = "insert into trend_sign (date,time,scenario,trend,green,red,price_swim,price_ib,quantity,desc) values (?,?,?,?,?,?,?,?,?,?)";
 
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -441,7 +442,8 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setInt(6, sign.getRedCount());
 			stmt.setDouble(7, sign.getPriceSwim());
 			stmt.setDouble(8, sign.getPriceIB());
-			stmt.setString(9, sign.getDesc());
+			stmt.setInt(9, sign.getQuantity());
+			stmt.setString(10, sign.getDesc());
 			int i = stmt.executeUpdate();
 	        if (i == 0) {
 				//False
@@ -711,8 +713,8 @@ public class CommonDAOSQL implements CommonDAO {
 	}
 
 	@Override
-	public void updateLastTrendSignIBPrice(String scenario, String time, double price) {
-		final String sqlString = "update trend_sign set price_ib = ? where scenario = ? and time = ? and date = ?";
+	public void updateLastTrendSignIBPrice(String scenario, String time, double price, int quantity) {
+		final String sqlString = "update trend_sign set price_ib = ?,quantity = ? where scenario = ? and time = ? and date = ?";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -721,9 +723,10 @@ public class CommonDAOSQL implements CommonDAO {
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
 			stmt.setDouble(1,price);
-			stmt.setString(2, scenario);
-			stmt.setString(3, time);
-			stmt.setString(4,Util.getDateStringByDateAndFormatter(new Date(), "yyyy/MM/dd"));
+			stmt.setInt(2, quantity);
+			stmt.setString(3,scenario);
+			stmt.setString(4,time);
+			stmt.setString(5,Util.getDateStringByDateAndFormatter(new Date(), "yyyy/MM/dd"));
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {
