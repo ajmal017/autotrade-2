@@ -27,6 +27,15 @@ public class ComputeProfit {
 	
 	private static HSSFWorkbook work;
 	
+	private static String[] HALF_HOURS = {"07:00","07:30",
+										  "08:00","08:30",
+										  "09:00","09:30",
+										  "10:00","10:30",
+										  "11:00","11:30",
+										  "12:00","12:30",
+										  "13:00"};
+	private static int finishedHalfHourCount = 0;
+	
 	private static String[] excelTitle() {
         String[] strArray = { 
         		"time", 
@@ -41,6 +50,8 @@ public class ComputeProfit {
         		"profit_ib",
         		"profit_swim - profit_ib", 
         		"quantity",
+        		"half_hour_profit_swim",
+        		"half_hour_profit_ib",
         		"desc"};
         return strArray;
     }
@@ -59,13 +70,15 @@ public class ComputeProfit {
 			ArrayList<String> sheetList = new ArrayList<String>();
 	    	ArrayList<Map<String, List<String>>> mapList = new ArrayList<Map<String, List<String>>>();
 			
-			for(int sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++) {
+			for (int sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++) {
 				
 				HSSFSheet sheet = work.getSheetAt(sheetIndex);
 				sheetList.add(sheet.getSheetName());
 				
 				double totalProfitSwim = 0;
 				double totalProfitIB = 0;
+				double halfHourProfitSwim = 0;
+				double halfHourProfitIB = 0;
 				ArrayList<TrendSign> newTrendList = new ArrayList<TrendSign>();
 				int rowNo = sheet.getLastRowNum()+1;
 				TrendSign ts = new TrendSign();
@@ -122,8 +135,22 @@ public class ComputeProfit {
 					cell = row.getCell((short)10);
 					ts.setDesc(cell == null?"":cell.getStringCellValue());
 					
+					StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+		    		str.append(HALF_HOURS[finishedHalfHourCount]);
+					if(Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm").before(ts.getTime())) {
+						TrendSign lastTS = newTrendList.get(newTrendList.size()-1);
+						lastTS.setHalfHourProfitSwim(halfHourProfitSwim);
+						lastTS.setHalfHourProfitIB(halfHourProfitIB);
+						halfHourProfitSwim = 0;
+						halfHourProfitIB = 0;
+						finishedHalfHourCount++;
+					}
+					halfHourProfitSwim += ts.getProfitSwim();
+					halfHourProfitIB += ts.getProfitIB();
+					
 					totalProfitSwim += ts.getProfitSwim();
 					totalProfitIB += ts.getProfitIB();
+					
 					
 					newTrendList.add(ts);
 				}
@@ -166,38 +193,38 @@ public class ComputeProfit {
 				    }
 				    //price
 				    if(sign.getPriceSwim()!=0) {
-				    	params.add(sign.getPriceSwim()+"");
+				    	params.add(String.format("%.2f",sign.getPriceSwim()));
 				    } else {
 				    	params.add("0");
 				    }
 				    if(sign.getPriceIB()!=0) {
-				    	params.add(sign.getPriceIB()+"");
+				    	params.add(String.format("%.2f",sign.getPriceIB()));
 				    } else {
 				    	params.add("0");
 				    }
 				    
 				    double temp1 = sign.getPriceSwim() - sign.getPriceIB();
 				    if(temp1!=0) {
-				    	params.add(temp1+"");
+				    	params.add(String.format("%.2f",temp1));
 				    } else {
 				    	params.add("0");
 				    }
 				    
 				    //profit
 				    if(sign.getProfitSwim()!=0) {
-				    	params.add(sign.getProfitSwim()+"");
+				    	params.add(String.format("%.2f",sign.getProfitSwim()));
 				    } else {
 				    	params.add("0");
 				    }
 				    if(sign.getProfitIB()!=0) {
-				    	params.add(sign.getProfitIB()+"");
+				    	params.add(String.format("%.2f",sign.getProfitIB()));
 				    } else {
 				    	params.add("0");
 				    }
 				    
 				    double temp2 = sign.getProfitSwim() - sign.getProfitIB();
 				    if(temp2!=0) {
-				    	params.add(temp2+"");
+				    	params.add(String.format("%.2f",temp2));
 				    } else {
 				    	params.add("0");
 				    }
@@ -207,6 +234,19 @@ public class ComputeProfit {
 				    } else {
 				    	params.add("0");
 				    }
+				    
+				    if(sign.getHalfHourProfitSwim()!=0) {
+				    	params.add(String.format("%.2f",sign.getHalfHourProfitSwim()));
+				    } else {
+				    	params.add("");
+				    }
+				    
+				    if(sign.getHalfHourProfitIB()!=0) {
+				    	params.add(String.format("%.2f",sign.getHalfHourProfitIB())+"");
+				    } else {
+				    	params.add("");
+				    }
+				    
 				    
 				    //desc
 				    params.add(sign.getDesc());

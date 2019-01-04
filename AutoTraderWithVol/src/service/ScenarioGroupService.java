@@ -46,6 +46,8 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	private boolean needCloseApp;
 	private AutoTradeWithVol autoTradeObj;
 	
+	private int yellowZoneCount;
+	
 	private ScenarioGroupService ()  {
     	
 		this.activeScenarioGroupList = new ArrayList<ScenarioTrend>();
@@ -247,7 +249,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 
     	int g = 0;
     	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-    	for(Zone zone : zoneList) {
+    	for (Zone zone : zoneList) {
     		Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone.getZone());
     		if (c == SystemEnum.Color.Green) {g++;}
     	}
@@ -258,7 +260,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 
     	int r = 0;
     	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-    	for(Zone zone : zoneList) {
+    	for (Zone zone : zoneList) {
     		Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone.getZone());
     		if (c == SystemEnum.Color.Red) {r++;}
     	}
@@ -403,15 +405,33 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     		zService.getVolZoneColors().clear();
 		}
     	
+    	//new
+    	int yellowCount = 0;
+    	for (Zone vBar : zService.getVolumeZoneList()) {
+    		if(vBar.getColor() == SystemEnum.Color.Yellow) {
+    			yellowCount++;
+    			for (int i = 0; i < SystemConfig.ZONE_Y.length;i++) {
+    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(vBar.getZone(),String.valueOf(i+1),true);
+    				zService.getVolZoneColors().put(relatedZone.getZone(), relatedZone);
+    			}
+    			
+    		}
+    	}
+    	setYellowZoneCount(yellowCount);
+    	//new end
+
+    	/* 
+    	//old
     	ArrayList<String> yellowZone = new ArrayList<String>();
-    	for(Zone vBar : zService.getVolumeZoneList()) {
+    	for (Zone vBar : zService.getVolumeZoneList()) {
     		if(vBar.getColor() == SystemEnum.Color.Yellow) {
     			yellowZone.add(vBar.getZone());
     		}
     	}
+    	setYellowZoneCount(yellowZone.size());
     	if(yellowZone.size() == 0) return;
     	
-    	for(Volume vol : getWorkingVolumeList()) {
+    	for (Volume vol : getWorkingVolumeList()) {
     		
     		if(vol.getColumn() > yellowZone.size()) {
     			System.out.println("updateRelatedVolZone vol.getColumn()" +vol.getColumn()+ " > yellowZone.size()"+yellowZone.size());
@@ -424,11 +444,11 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     		} else {
     			activeColume = vol.getColumn();
     		}
-    		for(int i = 0; i < activeColume; i ++) {
+    		for (int i = 0; i < activeColume; i ++) {
     			
     			try {
     				String yz = yellowZone.get(yellowZone.size()-1-i);
-    				for(String row : vol.getRows()) {
+    				for (String row : vol.getRows()) {
     					Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,true);
 
     					if(!zService.getVolZoneColors().containsKey(relatedZone.getZone())) {
@@ -441,7 +461,8 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 				}
     		}
     	}
-    	
+    	//old end
+    	*/
     }
     
     public void exportTodayTrendProfit() {
@@ -473,12 +494,12 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     	checkVolumeTrend();
     	checkScenarioTrend();
     	
-    	for(ScenarioTrend groupTrend : getActiveScenarioGroupList()) {
+    	for (ScenarioTrend groupTrend : getActiveScenarioGroupList()) {
     		
     		Enum<SystemEnum.Trend> volTrend = SystemEnum.Trend.Default;
     		boolean volWorking = false;
     		Volume matchVol = null;
-    		for(Volume vol : getWorkingVolumeList()) {
+    		for (Volume vol : getWorkingVolumeList()) {
     			
     			if(vol.getScenario().equals(groupTrend.getScenario())) {
     				matchVol = vol;
@@ -491,7 +512,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     		Enum<SystemEnum.Trend> sceTrend = SystemEnum.Trend.Default;
     		boolean sceWorking = false;
     		Scenario matchSce = null;
-    		for(Scenario sce : getWorkingScenarioList()) {
+    		for (Scenario sce : getWorkingScenarioList()) {
     			
     			if(sce.getScenario().equals(groupTrend.getScenario())) {
     				matchSce = sce;
@@ -554,17 +575,19 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     
     private void checkVolumeTrend() {
     	
+    	if(getWorkingVolumeList().size() == 0) return;
+    	
     	ZoneColorInfoService zService = ZoneColorInfoService.getInstance();
     	
     	ArrayList<String> yellowZone = new ArrayList<String>();
-    	for(Zone vBar : zService.getVolumeZoneList()) {
+    	for (Zone vBar : zService.getVolumeZoneList()) {
     		if(vBar.getColor() == SystemEnum.Color.Yellow) {
     			yellowZone.add(vBar.getZone());
     		}
     	}
     	if(yellowZone.size() == 0) return;
     	
-    	for(Volume vol : getWorkingVolumeList()) {
+    	for (Volume vol : getWorkingVolumeList()) {
     		
     		if(vol.getColumn() > yellowZone.size()) {
     			System.out.println("checkVolumeTrend vol.getColumn()" +vol.getColumn()+ " > yellowZone.size()"+yellowZone.size());
@@ -582,11 +605,11 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     			activeColume = vol.getColumn();
     		}
     		
-			for(int i = 0; i < activeColume; i ++) {
+			for (int i = 0; i < activeColume; i ++) {
     			
 				try {
 					String yz = yellowZone.get(yellowZone.size()-1-i);
-	    			for(String row : vol.getRows()) {
+	    			for (String row : vol.getRows()) {
 	    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,false);
 	    				Enum<SystemEnum.Color> c = zService.getColorByVolZone(relatedZone.getZone());
 						if (c == SystemEnum.Color.Green) {volGreen++;}			
@@ -864,6 +887,14 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 
 	public void setAutoTradeObj(AutoTradeWithVol autoTradeObj) {
 		this.autoTradeObj = autoTradeObj;
+	}
+
+	public int getYellowZoneCount() {
+		return yellowZoneCount;
+	}
+
+	public void setYellowZoneCount(int yellowZoneCount) {
+		this.yellowZoneCount = yellowZoneCount;
 	}
 	
 

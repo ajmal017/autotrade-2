@@ -50,7 +50,7 @@ private volatile static ZoneColorInfoService instance;
 		
 		if(zoneList == null || zoneList.size() == 0) return;
 		
-		for(Zone zone : zoneList) {
+		for (Zone zone : zoneList) {
 			getVolumeZoneList().add(zone);
 		}
 	}
@@ -61,7 +61,7 @@ private volatile static ZoneColorInfoService instance;
 			getSceZoneColors().clear();
 		}
 		
-		for(Zone zone : zoneList) {
+		for (Zone zone : zoneList) {
 			getSceZoneColors().put(zone.getZone(),zone);
 		}
 	}
@@ -72,7 +72,7 @@ private volatile static ZoneColorInfoService instance;
 			getVolZoneColors().clear();
 		}
 		
-		for(Zone zone : zoneList) {
+		for (Zone zone : zoneList) {
 			getVolZoneColors().put(zone.getZone(),zone);
 		}
 	}
@@ -105,7 +105,7 @@ private volatile static ZoneColorInfoService instance;
 //				z1.setColor(SystemEnum.Color.Green);
 			}
 			
-			for(Zone z2: getVolumeZoneList()){
+			for (Zone z2: getVolumeZoneList()){
 				
 				int pixel = getBi().getRGB(z2.getxCoord(), z2.getyCoord());
 				rgb[0] = (pixel & 0xff0000) >> 16;

@@ -53,10 +53,11 @@ import javafx.scene.text.Font;
 
 public class AutoTradeWithVol extends Application implements ScenarioGroupServiceCallbackInterface {
 	
-	public static int timerRefreshMSec = 1000; //ms
+	public static int timerRefreshMSec = 700; //ms
 	
     private Timer secTimer;
     private int ibTimerCount = 0; //5
+    private int ibTimerCountMax = 10;
     private ArrayList<ScenarioTrend> sceTrendList;
 	
     private final Label startTimeLbl = new Label();
@@ -111,16 +112,6 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 	        }
 	    });
 	    
-	}
-	
-	private int getYellow() {
-		
-		int yellow = 0;
-		for(Zone z : ZoneColorInfoService.getInstance().getVolumeZoneList()){
-			
-			if (z.getColor() == SystemEnum.Color.Yellow) {yellow++;}
-		}
-		return yellow;
 	}
 	
 	@Override
@@ -441,7 +432,7 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 		}
 		
 		ibTimerCount ++;
-		if(ibTimerCount == 5) {
+		if(ibTimerCount == ibTimerCountMax) {
 			IBService ibService = IBService.getInstance();
 			if(ibService.getIbApiConfig().isActive()) {
 				if(ibService.isIBConnecting()) {
@@ -500,9 +491,9 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 			//check trend
 			scenarioService.checkScenarioGroupTrend();
 			
-			Platform.runLater(()->yellowCountLbl.setText(""+getYellow()));
+			Platform.runLater(()->yellowCountLbl.setText(""+scenarioService.getYellowZoneCount()));
 			
-			for(int i = 0; i < sceTrendList.size(); i++) {
+			for (int i = 0; i < sceTrendList.size(); i++) {
 				ScenarioTrend oldTrend = sceTrendList.get(i);
 				ScenarioTrend scenario = scenarioService.getActiveScenarioGroupList().get(i);
 				if(oldTrend.getTrend() != scenario.getTrend()) {

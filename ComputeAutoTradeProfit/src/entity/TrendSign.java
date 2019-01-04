@@ -23,6 +23,8 @@ public class TrendSign {
 	
 	private double profitSwim;
 	private double profitIB;
+	private double halfHourProfitSwim;
+	private double halfHourProfitIB;
 	
 	public TrendSign(Date time, 
 			String scenario, 
@@ -143,6 +145,22 @@ public class TrendSign {
 
 	public void setQuantity(int quantity) {
 		this.quantity = quantity;
+	}
+
+	public double getHalfHourProfitSwim() {
+		return halfHourProfitSwim;
+	}
+
+	public void setHalfHourProfitSwim(double halfHourProfitSwim) {
+		this.halfHourProfitSwim = halfHourProfitSwim;
+	}
+
+	public double getHalfHourProfitIB() {
+		return halfHourProfitIB;
+	}
+
+	public void setHalfHourProfitIB(double halfHourProfitIB) {
+		this.halfHourProfitIB = halfHourProfitIB;
 	}
 	
 }

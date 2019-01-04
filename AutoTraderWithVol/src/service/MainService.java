@@ -33,7 +33,7 @@ public class MainService {
     	if(resultList.size() == 0) return;
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	for(String[] result : resultList) {
+    	for (String[] result : resultList) {
     		String scenario = result[0];
     		int active = Integer.parseInt(result[1]);
     		commonDao.insertScenarioActive(scenario,active);
@@ -49,7 +49,7 @@ public class MainService {
     		ArrayList<String[]> resultList = Util.readCSVFile(as + "_scenario");
         	if(resultList.size() == 0) continue;
         	
-        	for(String[] result : resultList) {
+        	for (String[] result : resultList) {
         		String sname = result[0];
         		String starttime = result[1];
         		String endtime = result[2];
@@ -69,7 +69,7 @@ public class MainService {
     		ArrayList<String[]> resultList = Util.readCSVFile(as + "_area_zone");
         	if(resultList.size() == 0) continue;
 
-        	for(String[] result : resultList) {
+        	for (String[] result : resultList) {
         		String sname = result[0];
         		String starttime = result[1];
         		String area = result[2];
@@ -86,7 +86,7 @@ public class MainService {
     	if(resultList.size() == 0) return;
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	for(String[] result : resultList) {
+    	for (String[] result : resultList) {
     		String name = result[0];
     		int x = Integer.parseInt(result[1]);
     		int y = Integer.parseInt(result[2]);
@@ -102,7 +102,7 @@ public class MainService {
     	if(resultList.size() == 0) return;
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	for(String[] result : resultList) {
+    	for (String[] result : resultList) {
     		String zone = result[0];
     		commonDao.insertVolumeZone(zone);
     	}
@@ -114,7 +114,7 @@ public class MainService {
     	if(resultList.size() == 0) return;
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	for(String[] result : resultList) {
+    	for (String[] result : resultList) {
     		String scenario = result[0];
     		String start = result[1];
     		String end = result[2];
