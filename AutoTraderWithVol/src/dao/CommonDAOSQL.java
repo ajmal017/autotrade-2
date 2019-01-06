@@ -251,9 +251,9 @@ public class CommonDAOSQL implements CommonDAO {
 	}
 
 	@Override
-	public ArrayList<Zone> getVolumeZoneList() {
+	public ArrayList<Zone> getVolumeZoneList(String time) {
 
-		final String sqlString = "select zone from volume_zone";
+		final String sqlString = "select zone from volume_zone where time = ?";
 
 		ArrayList<Zone> list = new ArrayList<>();
 		Connection conn = null;
@@ -263,6 +263,7 @@ public class CommonDAOSQL implements CommonDAO {
 			
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
+			stmt.setString(1,time);
 			rs = stmt.executeQuery();
 	        while(rs.next()){
 	        	
@@ -667,8 +668,8 @@ public class CommonDAOSQL implements CommonDAO {
 	}
 
 	@Override
-	public void insertVolumeZone(String zone) {
-		final String sqlString = "insert into volume_zone values (?)";
+	public void insertVolumeZone(String time, String zone) {
+		final String sqlString = "insert into volume_zone values (?,?)";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -676,7 +677,8 @@ public class CommonDAOSQL implements CommonDAO {
 			
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,zone);
+			stmt.setString(1,time);
+			stmt.setString(2,zone);
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {
@@ -735,5 +737,32 @@ public class CommonDAOSQL implements CommonDAO {
 	        ConnectionUtils.closeAll(stmt,null);
 		}
 		
+	}
+
+	@Override
+	public ArrayList<String> getAllDistinctVolumeZoneStartTime() {
+		final String sqlString = "select distinct(time) from volume_zone";
+		ArrayList<String> list = new ArrayList<>();
+
+		Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			rs = stmt.executeQuery();
+	        while(rs.next()){
+	        	
+	        	list.add(rs.getString(1));
+	        }
+			return list;
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt, rs);
+		}
+		return list;
 	}
 }

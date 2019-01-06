@@ -98,6 +98,21 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 		}
 	}
 	
+	private boolean isVolZoneRefreshTime() {
+
+		ScenarioGroupService sService = ScenarioGroupService.getInstance();
+		if (sService.getVolZoneRefreshPlan().size() == 0 || sService.getVolZoneRefreshPlan().size() == sService.getPassedVolZoneRefreshPlanCount()) {
+			return false;
+		}
+		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
+		DailyScenarioRefresh nextFresh = sService.getVolZoneRefreshPlan().get(sService.getPassedVolZoneRefreshPlanCount());
+		if (nowTimeString.equals(nextFresh.getRefreshTime())) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	private void playSignAlertMusic() {
 		
 		ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
@@ -269,8 +284,14 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 			primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 			    @Override
 			    public void handle(WindowEvent t) {
-			        Platform.exit();
-			        System.exit(0);
+			    	
+			    	t.consume();
+			    	Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Close?");
+	                Optional<ButtonType> result = confirmation.showAndWait();
+	                if (result.isPresent() && result.get() == ButtonType.OK) {
+	                	Platform.exit();
+				        System.exit(0);
+	                }
 			    }
 			});
 			primaryStage.show();
@@ -477,6 +498,9 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 			//now is a refresh time
 			if(isSceRefreshTime()) {
 				scenarioService.updateWorkingScenarioListByRefreshPlan();
+			}
+			if(isVolZoneRefreshTime()) {
+				scenarioService.updateWorkingVolumeZoneListByRefreshPlan();
 			}
 			if(isVolRefreshTime()) {
 				scenarioService.updateWorkingVolumeListByRefreshPlan();

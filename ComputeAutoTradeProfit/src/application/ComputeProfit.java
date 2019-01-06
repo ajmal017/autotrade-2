@@ -20,6 +20,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.CellType;
 
 import entity.TrendSign;
+import javafx.application.Platform;
 import tool.Util;
 
 
@@ -259,7 +260,13 @@ public class ComputeProfit {
 			
 			
 			Util.createExcel(sheetList, mapList, excelTitle(), filePath);
-			
+			try {
+	            Thread.sleep(1000);
+	        } catch (Exception e) {
+	        	e.printStackTrace();
+	        }
+			Platform.exit();
+	        System.exit(0);
 			
 		} catch (Exception e) {
 			e.printStackTrace();

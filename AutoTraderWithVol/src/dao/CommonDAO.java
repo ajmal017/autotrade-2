@@ -17,6 +17,7 @@ public interface CommonDAO {
 
 	ArrayList<String> getAllDistinctVolumeStartTimeAndEndTime();
 	ArrayList<String> getAllDistinctScenarioStartTimeAndEndTime();
+	ArrayList<String> getAllDistinctVolumeZoneStartTime();
 	
 	ArrayList<Volume> getAllWorkingVolumeAtTime(Date time);
 	
@@ -25,7 +26,7 @@ public interface CommonDAO {
 	ArrayList<String> getOnlyActiveZoneListByScenarioArea(String scenario, String startTime, String area);
 	ArrayList<Zone> getRelatedZoneListByScenarioList(ArrayList<Scenario> scenarioList);
 	
-	ArrayList<Zone> getVolumeZoneList();
+	ArrayList<Zone> getVolumeZoneList(String time);
 	Rectangle getRectByName(String name);
 	
 	ArrayList<TrendSign> getTrendSignListByDate(Date date, String scenario);
@@ -54,7 +55,7 @@ public interface CommonDAO {
 			String zone,
 			int active);
 	void insertMyFrame(String name, int x, int y, int width, int height);
-	void insertVolumeZone(String zone);
+	void insertVolumeZone(String time, String zone);
 	void insertVolume(String scenario, 
 			String starttime, 
 			String endtime, 

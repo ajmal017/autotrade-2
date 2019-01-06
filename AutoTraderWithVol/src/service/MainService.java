@@ -103,8 +103,9 @@ public class MainService {
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	for (String[] result : resultList) {
-    		String zone = result[0];
-    		commonDao.insertVolumeZone(zone);
+    		String time = result[0];
+    		String zone = result[1];
+    		commonDao.insertVolumeZone(time,zone);
     	}
     }
     

@@ -41,6 +41,9 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	private ArrayList<DailyScenarioRefresh> sceRefreshPlan;
 	private int passedSceRefreshPlanCount = 0; 
 	
+	private ArrayList<DailyScenarioRefresh> volZoneRefreshPlan;
+	private int passedVolZoneRefreshPlanCount = 0; 
+	
 	private Map<String,ArrayList<TrendSign>> dailySignMap; //T10,List
 	
 	private boolean needCloseApp;
@@ -57,11 +60,43 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     	
     	this.sceRefreshPlan = new ArrayList<DailyScenarioRefresh>();
     	this.volRefreshPlan = new ArrayList<DailyScenarioRefresh>();
+    	this.volZoneRefreshPlan = new ArrayList<DailyScenarioRefresh>();
     	
     	this.dailySignMap = new HashMap<String, ArrayList<TrendSign>>();
     	
     	initAllScenarioGroupData();
     }
+	
+	private void initAllVolumeZoneData() {
+		
+		CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
+		
+		ArrayList<String> times = commonDao.getAllDistinctVolumeZoneStartTime();
+    	if (times.size() == 0) {
+			
+    		return;
+		}
+    	
+    	for (String d : times) {
+    		
+    		DailyScenarioRefresh refresh = new DailyScenarioRefresh();
+    		refresh.setRefreshTime(d);
+    		
+    		StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
+    		str.append(d);
+    		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
+    		
+    		if (dDate.before(new Date())) {
+    			refresh.setPassed(true); 
+    			int passed = getPassedVolZoneRefreshPlanCount() + 1;
+    			setPassedVolZoneRefreshPlanCount(passed);
+			} else {
+				refresh.setPassed(false);
+			}
+    		getVolZoneRefreshPlan().add(refresh);	
+		}
+		
+	}
 	
 	private void initAllVolumeData() {
 		
@@ -146,12 +181,18 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
         	getActiveScenarioGroupList().add(st);
         	getDailySignMap().put(nameString, new ArrayList<TrendSign>());
 		}
-		
-    	ZoneColorInfoService.getInstance().loadVolumeBarZoneListWithDefaultColor(commonDao.getVolumeZoneList());
     	
+    	initAllVolumeZoneData();
 		initAllVolumeData();
 		initAllScenarioData();
 	}
+	
+	private void newVolZonePlanRefreshed() {
+    	
+    	DailyScenarioRefresh refresh = getVolZoneRefreshPlan().get(getPassedVolZoneRefreshPlanCount());
+		refresh.setPassed(true);
+		setPassedVolZoneRefreshPlanCount(getPassedVolZoneRefreshPlanCount()+1);
+    }
 	
 	private void newVolPlanRefreshed() {
     	
@@ -324,6 +365,31 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 			workingVolumeList.add(workingVolume);
 		}
 		newVolPlanRefreshed();
+	}
+	
+	public void updateWorkingVolumeZoneListByRefreshPlan() {
+
+    	if (getActiveScenarioGroupList().size() == 0) {
+    		workingScenarioList.clear();
+    		
+    		return;
+    	}
+    	
+    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
+    	
+    	//get new working volumes
+    	DailyScenarioRefresh refresh = getVolZoneRefreshPlan().get(passedVolZoneRefreshPlanCount);
+    	ArrayList<Zone> newZones = commonDao.getVolumeZoneList(refresh.getRefreshTime());
+    	if (newZones.size() == 0) {
+    		
+    		ZoneColorInfoService.getInstance().getVolumeZoneList().clear();
+    		workingVolumeList.clear();
+    		newVolPlanRefreshed();
+    		return;
+		}
+
+    	ZoneColorInfoService.getInstance().loadVolumeBarZoneListWithDefaultColor(newZones);
+		newVolZonePlanRefreshed();
 	}
 	
 	//update when timer called
@@ -895,6 +961,22 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 
 	public void setYellowZoneCount(int yellowZoneCount) {
 		this.yellowZoneCount = yellowZoneCount;
+	}
+
+	public ArrayList<DailyScenarioRefresh> getVolZoneRefreshPlan() {
+		return volZoneRefreshPlan;
+	}
+
+	public void setVolZoneRefreshPlan(ArrayList<DailyScenarioRefresh> volZoneRefreshPlan) {
+		this.volZoneRefreshPlan = volZoneRefreshPlan;
+	}
+
+	public int getPassedVolZoneRefreshPlanCount() {
+		return passedVolZoneRefreshPlanCount;
+	}
+
+	public void setPassedVolZoneRefreshPlanCount(int passedVolZoneRefreshPlanCount) {
+		this.passedVolZoneRefreshPlanCount = passedVolZoneRefreshPlanCount;
 	}
 	
 
