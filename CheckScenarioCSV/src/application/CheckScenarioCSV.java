@@ -100,13 +100,13 @@ public class CheckScenarioCSV extends Application {
 	                			zoneCount++;
 	                			zones.append(zoneItem[3]+",");
 	                			i++;
-		                		if(i > 15) {
+		                		if(i > 14) {
 		                			zones.append("\n");
 		                			i = 0;
 		                		}
 	                		}
 	            		}
-	            		sb.append(zoneCount+", \n"+zones.toString()+"\n\n");
+	            		sb.append(zoneCount+", \n"+zones.toString()+"\n");
 	            	}
 	    			
 	            	for(String[] vol : volList) {
@@ -123,15 +123,35 @@ public class CheckScenarioCSV extends Application {
 	            	}
 	            	
 	            	
-	            	sb.append("\n\n");
+	            	sb.append("\n");
 	    		}
 	    	}
 			
-	    	
+	    	ArrayList<String[]> volZoneList = readCSVFile("volume_zone");
+	    	String preTime = null;
+	    	int i = 0;
+	    	for(String[] zones : volZoneList) {
+	    		
+	    		String time = zones[0];
+	    		String zone = zones[1];
+	    		if(!time.equals(preTime)) {
+	    			if(preTime != null) sb.append("\n");
+	    			sb.append(time + ": ");
+	    			preTime = time;
+	    			i = 0;
+	    		}
+	    			
+	    		sb.append(zone + ", ");	
+	    		i++;
+	    		if(i > 14) {
+	    			sb.append("\n");
+        			i = 0;
+        		}
+	    	}
 	    	
 	    		
 	    		Text l1 = new Text();
-	    		l1.setFont(new Font(16));
+	    		l1.setFont(new Font(12));
 	    		l1.setText(sb.toString());
 	    		
 	    		final VBox vbox = new VBox();
