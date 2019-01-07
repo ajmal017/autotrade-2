@@ -41,7 +41,6 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	private int passedVolRefreshPlanCount = 0;
 	private ArrayList<DailyScenarioRefresh> sceRefreshPlan;
 	private int passedSceRefreshPlanCount = 0; 
-	
 	private ArrayList<DailyScenarioRefresh> volZoneRefreshPlan;
 	private int passedVolZoneRefreshPlanCount = 0; 
 	
@@ -168,13 +167,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 			//none active scenario
     		return;
 		}
-    	/*
-    	ArrayList<Zone> volumeZoneList = commonDao.getVolumeZoneList();
-    	if (volumeZoneList.size() == 0) {
-			//none volume zone
-    		return;
-		}
-    	*/
+    	
     	for (String nameString : sceNames) {
     		ScenarioTrend st = new ScenarioTrend(nameString);
     		Enum<SystemEnum.Trend> lastTrend = getTodayLastTrendByScenario(nameString);

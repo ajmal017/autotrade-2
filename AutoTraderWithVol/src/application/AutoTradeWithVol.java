@@ -385,12 +385,15 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 		endTimeLbl.setText(Util.getDateStringByDateAndFormatter(finalEndTime, "HH:mm:ss"));
 		
 		int didPassedCountVol =  scenarioService.getPassedVolRefreshPlanCount();
+		int didPassedCountVolZone =  scenarioService.getPassedVolZoneRefreshPlanCount();
 		int didPassedCountSce =  scenarioService.getPassedSceRefreshPlanCount();
+		
 		
 		if (didPassedCountVol == scenarioService.getVolRefreshPlan().size() && 
 				didPassedCountSce == scenarioService.getSceRefreshPlan().size()) {
 			//every plan passed, including the close time
-			//set tomorrow timer
+			//todo set tomorrow timer for 24
+			/*
 			secTimer = new Timer();
 			Calendar c = Calendar.getInstance();
 			c.setTime(finalStartTime);
@@ -402,7 +405,7 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 		        	calledBySecondTimer();
 		        }
 			}, finalStartTime, timerRefreshMSec);
-			
+			*/
 			Alert alert = new Alert(AlertType.INFORMATION);
 			alert.setTitle("Warning");
 			alert.setHeaderText(null);
@@ -417,7 +420,7 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 		        	calledBySecondTimer();
 		        	
 		        }
-			}, finalStartTime, timerRefreshMSec);
+			}, 1, timerRefreshMSec); //start soon
 			
 		}  else {
 			
@@ -436,6 +439,15 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 				scenarioService.setPassedVolRefreshPlanCount(didPassedCountVol-1);
 				scenarioService.updateWorkingVolumeListByRefreshPlan();
 			}
+			
+			if (didPassedCountVolZone > 0) {
+				
+				DailyScenarioRefresh volRefresh = scenarioService.getVolZoneRefreshPlan().get(didPassedCountVol-1);
+				volRefresh.setPassed(false);
+				scenarioService.setPassedVolZoneRefreshPlanCount(didPassedCountVolZone-1);
+				scenarioService.updateWorkingVolumeZoneListByRefreshPlan();
+			}
+			
 			secTimer = new Timer ();
 			secTimer.scheduleAtFixedRate(new TimerTask() {
 		        public void run() {
@@ -461,7 +473,7 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 			IBService ibService = IBService.getInstance();
 			if(ibService.getIbApiConfig().isActive()) {
 				if(ibService.isIBConnecting()) {
-					System.out.println("IB connected.");
+					//System.out.println("IB connected.");
 				} else {
 					playSignAlertMusic();
 				}
@@ -473,24 +485,28 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 		//every plan passed
 		if (scenarioService.getPassedVolRefreshPlanCount() == scenarioService.getVolRefreshPlan().size() &&
 				scenarioService.getPassedSceRefreshPlanCount() == scenarioService.getSceRefreshPlan().size()) {
-			
-			scenarioService.exportTodayTrendProfit(); //export ºexcel
-			
+
+			secTimer = new Timer ();
+			//todo set tomorrow timer for 24
+			/*
 			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(startTimeLbl.getText());
-    		Date finalStarTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
+    		Date finalStartTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
 			secTimer = new Timer ();
 			Calendar c = Calendar.getInstance();
-			c.setTime(finalStarTime);
+			c.setTime(finalStartTime);
 			c.add(Calendar.DATE, +1);
 //			c.add(Calendar.SECOND, +1);
-			finalStarTime = c.getTime();
+			finalStartTime = c.getTime();
 			secTimer.scheduleAtFixedRate(new TimerTask() {
 		        public void run() {
 		        	calledBySecondTimer();
 		        	
 		        }
-			}, finalStarTime, timerRefreshMSec);
+			}, finalStartTime, timerRefreshMSec);
+			*/
+
+			scenarioService.exportTodayTrendProfit(); //export ºexcel
 			
 			Alert alert = new Alert(AlertType.INFORMATION);
 			alert.setTitle("Warning");
