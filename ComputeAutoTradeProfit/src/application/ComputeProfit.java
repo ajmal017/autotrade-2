@@ -44,6 +44,7 @@ public class ComputeProfit {
         		"trend", 
         		"green", 
         		"red", 
+        		"white",
         		"price_swim", 
         		"price_ib", 
         		"price_swim - price_ib", 
@@ -116,9 +117,12 @@ public class ComputeProfit {
 					ts.setRedCount(Integer.valueOf(Util.getStrValueByCell(cell)));
 					
 					cell = row.getCell((short)5);
-					ts.setPriceSwim(Double.valueOf(Util.getStrValueByCell(cell)));
+					ts.setWhiteCount(Integer.valueOf(Util.getStrValueByCell(cell)));
 					
 					cell = row.getCell((short)6);
+					ts.setPriceSwim(Double.valueOf(Util.getStrValueByCell(cell)));
+					
+					cell = row.getCell((short)7);
 					ts.setPriceIB(Double.valueOf(Util.getStrValueByCell(cell)));
 					
 					if(i > 1) {
@@ -127,13 +131,13 @@ public class ComputeProfit {
 						ts.setProfitSwim(Util.getProfit(preSign.getPriceSwim(), ts.getPriceSwim(), preSign.getTrend()));
 					}
 					
-					cell = row.getCell((short)8);
+					cell = row.getCell((short)9);
 					ts.setProfitIB(Double.valueOf(Util.getStrValueByCell(cell)));
 					
-					cell = row.getCell((short)9);
+					cell = row.getCell((short)10);
 					ts.setQuantity(Integer.valueOf(Util.getStrValueByCell(cell)));
 					
-					cell = row.getCell((short)10);
+					cell = row.getCell((short)11);
 					ts.setDesc(cell == null?"":cell.getStringCellValue());
 					
 					StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
@@ -189,6 +193,11 @@ public class ComputeProfit {
 				    }
 				    if(sign.getRedCount()>0) {
 				    	params.add(sign.getRedCount()+"");
+				    } else {
+				    	params.add("0");
+				    }
+				    if(sign.getWhiteCount()>0) {
+				    	params.add(sign.getWhiteCount()+"");
 				    } else {
 				    	params.add("0");
 				    }

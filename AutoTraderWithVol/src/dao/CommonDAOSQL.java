@@ -284,7 +284,7 @@ public class CommonDAOSQL implements CommonDAO {
 
 	@Override
 	public ArrayList<Volume> getAllWorkingVolumeAtTime(Date time) {
-		final String sqlString = "select scenario,column,percent,rows from volume where start_time <= ? and end_time > ?";
+		final String sqlString = "select scenario,column,percent,white_max,rows from volume where start_time <= ? and end_time > ?";
 		ArrayList<Volume> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -305,7 +305,8 @@ public class CommonDAOSQL implements CommonDAO {
 	        	volume.setScenario(rs.getString(1));
 	        	volume.setColumn(rs.getInt(2));
 	        	volume.setPercent(rs.getInt(3));
-	        	String rows = rs.getString(4);
+	        	volume.setWhiteMax(rs.getInt(4));
+	        	String rows = rs.getString(5);
 	        	String[] rowList = rows.split("_");
 	        	for (String row : rowList) { 
 	        		volume.getRows().add(row);
@@ -378,10 +379,11 @@ public class CommonDAOSQL implements CommonDAO {
 	        	sign.setTrend(Util.getTrendEnumByText(sign.getTrendText()));
 	        	sign.setGreenCount(rs.getInt(5));
 	        	sign.setRedCount(rs.getInt(6));
-	        	sign.setPriceSwim(rs.getDouble(7));
-	        	sign.setPriceIB(rs.getDouble(8));
-	        	sign.setQuantity(rs.getInt(9));
-	        	sign.setDesc(rs.getString(10));
+	        	sign.setWhiteCount(rs.getInt(7));
+	        	sign.setPriceSwim(rs.getDouble(8));
+	        	sign.setPriceIB(rs.getDouble(9));
+	        	sign.setQuantity(rs.getInt(10));
+	        	sign.setDesc(rs.getString(11));
 	        	
 	        	list.add(sign);
 	        }
@@ -426,7 +428,7 @@ public class CommonDAOSQL implements CommonDAO {
 
 	@Override
 	public void insertNewTrendSign(TrendSign sign) {
-		final String sqlString = "insert into trend_sign (date,time,scenario,trend,green,red,price_swim,price_ib,quantity,desc) values (?,?,?,?,?,?,?,?,?,?)";
+		final String sqlString = "insert into trend_sign (date,time,scenario,trend,green,red,white,price_swim,price_ib,quantity,desc) values (?,?,?,?,?,?,?,?,?,?,?)";
 
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -441,10 +443,11 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setString(4, sign.getTrendText());
 			stmt.setInt(5, sign.getGreenCount());
 			stmt.setInt(6, sign.getRedCount());
-			stmt.setDouble(7, sign.getPriceSwim());
-			stmt.setDouble(8, sign.getPriceIB());
-			stmt.setInt(9, sign.getQuantity());
-			stmt.setString(10, sign.getDesc());
+			stmt.setInt(6, sign.getWhiteCount());
+			stmt.setDouble(8, sign.getPriceSwim());
+			stmt.setDouble(9, sign.getPriceIB());
+			stmt.setInt(10, sign.getQuantity());
+			stmt.setString(11, sign.getDesc());
 			int i = stmt.executeUpdate();
 	        if (i == 0) {
 				//False
@@ -689,9 +692,9 @@ public class CommonDAOSQL implements CommonDAO {
 	}
 
 	@Override
-	public void insertVolume(String scenario, String starttime, String endtime, int column, int percent,
+	public void insertVolume(String scenario, String starttime, String endtime, int column, int percent, int whiteMax,
 			String rows) {
-		final String sqlString = "insert into volume values (?,?,?,?,?,?)";
+		final String sqlString = "insert into volume values (?,?,?,?,?,?,?)";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -704,7 +707,8 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setString(3,endtime);
 			stmt.setInt(4,column);
 			stmt.setInt(5,percent);
-			stmt.setString(6,rows);
+			stmt.setInt(6, whiteMax);
+			stmt.setString(7,rows);
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {

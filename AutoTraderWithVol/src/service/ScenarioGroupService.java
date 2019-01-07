@@ -18,6 +18,7 @@ import config.SystemConfig;
 import dao.CommonDAO;
 import dao.CommonDAOFactory;
 import entity.Area;
+import entity.ColorCount;
 import entity.DailyScenarioRefresh;
 import entity.Scenario;
 import entity.ScenarioTrend;
@@ -244,6 +245,11 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 		    } else {
 		    	params.add("0");
 		    }
+		    if(sign.getWhiteCount()>0) {
+		    	params.add(sign.getWhiteCount()+"");
+		    } else {
+		    	params.add("0");
+		    }
 		    //price
 		    if(sign.getPriceSwim()!=0) {
 		    	params.add(sign.getPriceSwim()+"");
@@ -282,35 +288,34 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     }
 	
 	private String[] excelTitle() {
-        String[] strArray = { "time", "scenario", "trend", "green", "red", "price_swim", "price_ib", "profit_swim", "profit_ib", "quantity", "desc"};
+        String[] strArray = { "time", "scenario", "trend", "green", "red", "white", "price_swim", "price_ib", "profit_swim", "profit_ib", "quantity", "desc"};
         return strArray;
     }
-	
-	private int getGreenCountBySceZoneList(ArrayList<Zone> zoneList) {
+	    
+    private ColorCount getColorCountBySceZoneList(ArrayList<Zone> zoneList) {
 
-    	int g = 0;
+    	ColorCount count =  new ColorCount();
     	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
     	for (Zone zone : zoneList) {
     		Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone.getZone());
-    		if (c == SystemEnum.Color.Green) {g++;}
+    		if (c == SystemEnum.Color.Green) {
+    			count.setGreen(count.getGreen()+1);
+    		} else if (c == SystemEnum.Color.Red) {
+    			count.setRed(count.getRed()+1);
+    		} else if (c == SystemEnum.Color.White) {
+    			count.setWhite(count.getWhite()+1);
+    		} else if (c == SystemEnum.Color.Yellow) {
+    			count.setYellow(count.getYellow()+1);
+    		} else {
+    			count.setOther(count.getOther()+1);
+    		}
     	}
-    	return g;
-    }
-    
-    private int getRedCountBySceZoneList(ArrayList<Zone> zoneList) {
-
-    	int r = 0;
-    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-    	for (Zone zone : zoneList) {
-    		Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone.getZone());
-    		if (c == SystemEnum.Color.Red) {r++;}
-    	}
-    	return r;
+    	return count;
     }
 	
 	public void closeOrderByScenario(String scenario) {
     	
-    	pushNewTrendSign(scenario, SystemEnum.Trend.Default, 0, 0);
+    	pushNewTrendSign(scenario, SystemEnum.Trend.Default, 0, 0, 0);
     }
 	
 	public void updateWorkingVolumeListByRefreshPlan() {
@@ -606,10 +611,12 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     					ArrayList<Scenario> ss = new ArrayList<Scenario>();
     					ss.add(matchSce);
     					ArrayList<Zone> zones = CommonDAOFactory.getCommonDAO().getRelatedZoneListByScenarioList(ss);
-    					int scenarioGreen = getGreenCountBySceZoneList(zones);
-    					int scenarioRed = getRedCountBySceZoneList(zones);
-    				
-    					pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),scenarioGreen+matchVol.getGreen(),scenarioRed+matchVol.getRed());
+    					ColorCount cc = getColorCountBySceZoneList(zones);
+    					pushNewTrendSign(groupTrend.getScenario(),
+    							groupTrend.getTrend(),
+    							cc.getGreen()+matchVol.getGreen(),
+    							cc.getRed()+matchVol.getRed(),
+    							cc.getWhite()+matchVol.getWhite());
     				}
     			} else {
     				
@@ -620,10 +627,8 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
         				ArrayList<Scenario> ss = new ArrayList<Scenario>();
     					ss.add(matchSce);
     					ArrayList<Zone> zones = CommonDAOFactory.getCommonDAO().getRelatedZoneListByScenarioList(ss);
-    					int scenarioGreen = getGreenCountBySceZoneList(zones);
-    					int scenarioRed = getRedCountBySceZoneList(zones);
-        				
-        				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),scenarioGreen,scenarioRed);
+    					ColorCount cc = getColorCountBySceZoneList(zones);
+        				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),cc.getGreen(),cc.getRed(),cc.getWhite());
         			}
     			}
     			
@@ -632,7 +637,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     			if(volTrend != SystemEnum.Trend.Default && volTrend != groupTrend.getTrend()) {
     				//trend change
     				groupTrend.setTrend(volTrend);
-    				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),matchVol.getGreen(),matchVol.getRed());
+    				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),matchVol.getGreen(),matchVol.getRed(),matchVol.getWhite());
     			}
     		}
     	} 
@@ -663,7 +668,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     		boolean trendAppear = false;
     		int volGreen = 0;
 			int volRed = 0;
-			  
+			int volWhite = 0;
 			int activeColume;
     		if (vol.getColumn() == 0) {
     			activeColume = yellowZone.size();
@@ -680,6 +685,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	    				Enum<SystemEnum.Color> c = zService.getColorByVolZone(relatedZone.getZone());
 						if (c == SystemEnum.Color.Green) {volGreen++;}			
 						if (c == SystemEnum.Color.Red) {volRed++;}
+						if (c == SystemEnum.Color.White) {volWhite++;}
 	    			}
 				} catch (Exception e) {
 					System.out.println("Exception vol:"+vol.getScenario()+" activeColume:"+activeColume+" i:"+i);
@@ -690,11 +696,12 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     		
 			vol.setGreen(volGreen);
 			vol.setRed(volRed);
+			vol.setWhite(volWhite);
 			
 			Enum<SystemEnum.Color> newColor = SystemEnum.Color.Default;
 			
-    		if ((volGreen + volRed == activeColume*vol.getRows().size() && volGreen > volRed && volRed <= vol.getPercent()) ||
-				    (volGreen + volRed == activeColume*vol.getRows().size() && volRed > volGreen && volGreen <= vol.getPercent())) {
+    		if ((volGreen + volRed + volWhite == activeColume*vol.getRows().size() && volGreen > volRed && volRed <= vol.getPercent() && volWhite <= vol.getWhiteMax()) ||
+				(volGreen + volRed + volWhite == activeColume*vol.getRows().size() && volRed > volGreen && volGreen <= vol.getPercent() && volWhite <= vol.getWhiteMax())) {
 					
     			trendAppear = true;
     			if(volGreen > volRed) {
@@ -735,13 +742,15 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 			for (Area area : scenario.getAreaList()) {
 				int areaGreen = 0;
 				int areaRed = 0;
+				int areaWhite = 0;
 				for (String zone : area.getZoneList()) {
 					Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone);
 					if (c == SystemEnum.Color.Green) {areaGreen++;}			
 					if (c == SystemEnum.Color.Red) {areaRed++;}
+					if (c == SystemEnum.Color.White) {areaWhite++;}
 				}
-				if ((areaGreen + areaRed == area.getZoneList().size() && areaGreen > areaRed && areaRed <= area.getPercent()) ||
-				    (areaGreen + areaRed == area.getZoneList().size() && areaRed > areaGreen && areaGreen <= area.getPercent())) {
+				if ((areaGreen + areaRed + areaWhite== area.getZoneList().size() && areaGreen > areaRed && areaGreen >= area.getPercent()) ||
+				    (areaGreen + areaRed + areaWhite== area.getZoneList().size() && areaRed > areaGreen && areaRed >= area.getPercent())) {
 					
 					if(preColor != SystemEnum.Color.Default) {
 						
@@ -784,7 +793,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 		}
 	}
     
-    public void pushNewTrendSign (String scenario, Enum<SystemEnum.Trend> trend, int green, int red) {
+    public void pushNewTrendSign (String scenario, Enum<SystemEnum.Trend> trend, int green, int red, int white) {
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	
@@ -804,7 +813,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     	Date now = new Date();
     	String nowTimeStr = Util.getDateStringByDateAndFormatter(now, "HH:mm:ss");
     	
-    	TrendSign newSign = new TrendSign(now, scenario, trend, green, red, priceSwim, 0, 0, "", 0, 0);
+    	TrendSign newSign = new TrendSign(now, scenario, trend, green, red, white, priceSwim, 0, 0, "", 0, 0);
     	
     	ArrayList<TrendSign> dailySignList = getDailySignMap().get(scenario);
     	dailySignList.add(newSign);

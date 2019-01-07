@@ -14,6 +14,7 @@ public class TrendSign {
 	private String trendText;
 	private int greenCount;
 	private int redCount;
+	private int whiteCount;
 	
 	private double priceSwim; //swim price
 	private double priceIB;
@@ -31,6 +32,7 @@ public class TrendSign {
 			Enum<SystemEnum.Trend> trend, 
 			int green, 
 			int red, 
+			int white,
 			double priceSwim, 
 			double priceIB,
 			int quantity,
@@ -43,6 +45,7 @@ public class TrendSign {
         setTrendText(Util.getTrendTextByEnum(trend));
         setGreenCount(green);
         setRedCount(red);
+        setWhiteCount(white);
         setPriceSwim(priceSwim);
         setPriceIB(priceIB);
         setQuantity(quantity);
@@ -161,6 +164,14 @@ public class TrendSign {
 
 	public void setHalfHourProfitIB(double halfHourProfitIB) {
 		this.halfHourProfitIB = halfHourProfitIB;
+	}
+
+	public int getWhiteCount() {
+		return whiteCount;
+	}
+
+	public void setWhiteCount(int whiteCount) {
+		this.whiteCount = whiteCount;
 	}
 	
 }

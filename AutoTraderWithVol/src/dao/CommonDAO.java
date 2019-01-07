@@ -61,5 +61,6 @@ public interface CommonDAO {
 			String endtime, 
 			int column, 
 			int percent, 
+			int whiteMax,
 			String rows);
 }

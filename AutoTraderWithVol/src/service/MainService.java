@@ -121,8 +121,9 @@ public class MainService {
     		String end = result[2];
     		int column = Integer.parseInt(result[3]);
     		int percent = Integer.parseInt(result[4]);
-    		String rows = result[5];
-    		commonDao.insertVolume(scenario,start,end,column,percent,rows);
+    		int whiteMax = Integer.parseInt(result[5]);
+    		String rows = result[6];
+    		commonDao.insertVolume(scenario,start,end,column,percent,whiteMax,rows);
     	}
     }
     

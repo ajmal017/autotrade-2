@@ -214,7 +214,7 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 	        yellowCountLbl.setFont(new Font(12));
 	        
 	        final VBox vbox = new VBox();
-	        vbox.setMinSize(400, 400);
+	        vbox.setMinSize(450, 400);
 	        vbox.setSpacing(5);
 	        vbox.setPadding(new Insets(10, 0, 0, 10));
 	        vbox.getChildren().addAll(hb1,hb2);
@@ -256,6 +256,10 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 	        	redCol.setCellValueFactory(
 	                new PropertyValueFactory<>("redCount"));
 	        
+	        	TableColumn whiteCol = new TableColumn("White");
+	        	whiteCol.setPrefWidth(50);
+	        	whiteCol.setCellValueFactory(
+	                new PropertyValueFactory<>("whiteCount"));
 	        
 	        	TableColumn swimCol = new TableColumn("SwPr");
 	        	swimCol.setPrefWidth(60);
@@ -268,14 +272,14 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 	                new PropertyValueFactory<>("ibPrice"));
 	        
 	        	trendTable.setItems(trendData);
-	        	trendTable.getColumns().addAll(timeCol, scenarioCol, trendCol,greenCol,redCol,swimCol,ibCol);
+	        	trendTable.getColumns().addAll(timeCol, scenarioCol, trendCol,greenCol,redCol,whiteCol,swimCol,ibCol);
 	        	vbox.getChildren().addAll(trendTable);
 	        	
 	        	tbDataHash.put(scenario.getScenario(), trendData);
 	        }
 	        
 			BorderPane root = new BorderPane();
-			root.setMinSize(400, 400);
+			root.setMinSize(450, 400);
 			root.setTop(vbox);
 			
 			Scene scene = new Scene(root);
@@ -528,8 +532,14 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 					TrendSign lastSign = signList.get(signList.size()-1); 
 					//insert into table
 					TrendTableItem trendItem = new TrendTableItem(
-							Util.getDateStringByDateAndFormatter(lastSign.getTime(), "HH:mm:ss"), lastSign.getScenario(),
-							Util.getTrendTextByEnum(lastSign.getTrend()),""+lastSign.getGreenCount(), ""+lastSign.getRedCount(), ""+lastSign.getPriceSwim(), ""+lastSign.getPriceIB());
+							Util.getDateStringByDateAndFormatter(lastSign.getTime(), "HH:mm:ss"),
+							lastSign.getScenario(),
+							Util.getTrendTextByEnum(lastSign.getTrend()),
+							""+lastSign.getGreenCount(), 
+							""+lastSign.getRedCount(), 
+							""+lastSign.getWhiteCount(),
+							""+lastSign.getPriceSwim(), 
+							""+lastSign.getPriceIB());
 					ObservableList<TrendTableItem> trendData = (ObservableList<TrendTableItem>) tbDataHash.get(lastSign.getScenario());
 					trendData.add(trendItem);
 					playSignAlertMusic();

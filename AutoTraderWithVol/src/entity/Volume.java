@@ -10,12 +10,14 @@ public class Volume {
 	
 	private int column;
 	private int percent;
+	private int whiteMax;
 	private ArrayList<String> rows;
 	
 	private Enum<SystemEnum.Trend> trend;
 
 	private int green;
 	private int red;
+	private int white;
 	
 	public Volume() {
 		
@@ -77,5 +79,21 @@ public class Volume {
 
 	public void setRed(int red) {
 		this.red = red;
+	}
+
+	public int getWhiteMax() {
+		return whiteMax;
+	}
+
+	public void setWhiteMax(int whiteMax) {
+		this.whiteMax = whiteMax;
+	}
+
+	public int getWhite() {
+		return white;
+	}
+
+	public void setWhite(int white) {
+		this.white = white;
 	}
 }

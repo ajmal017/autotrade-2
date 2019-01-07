@@ -118,7 +118,8 @@ public class CheckScenarioCSV extends Application {
 		            		sb.append("end:"+vol[2]+", ");
 		            		sb.append("column:"+vol[3]+", ");
 		            		sb.append("percent:"+vol[4]+", ");
-		            		sb.append("rows:"+vol[5]+"\n");
+		            		sb.append("white_max:"+vol[5]+", ");
+		            		sb.append("rows:"+vol[6]+"\n");
 	            		}
 	            	}
 	            	

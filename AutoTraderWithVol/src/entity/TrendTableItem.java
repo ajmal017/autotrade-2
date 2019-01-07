@@ -7,17 +7,19 @@ public class TrendTableItem {
 	private SimpleStringProperty time;
     private SimpleStringProperty scenario;
     private SimpleStringProperty trend;
-    private SimpleStringProperty redCount;
     private SimpleStringProperty greenCount;
+    private SimpleStringProperty redCount;
+    private SimpleStringProperty whiteCount;
     private SimpleStringProperty swimPrice;
     private SimpleStringProperty ibPrice;
 
-    public TrendTableItem(String time, String scenario, String trend, String green, String red, String swimPrice, String ibPrice) {
+    public TrendTableItem(String time, String scenario, String trend, String green, String red, String white, String swimPrice, String ibPrice) {
         this.time = new SimpleStringProperty(time);
         this.scenario = new SimpleStringProperty(scenario);
         this.trend = new SimpleStringProperty(trend);
-        this.redCount = new SimpleStringProperty(red);
         this.greenCount = new SimpleStringProperty(green);
+        this.redCount = new SimpleStringProperty(red);
+        this.whiteCount = new SimpleStringProperty(swimPrice);
         this.swimPrice = new SimpleStringProperty(swimPrice);
         this.ibPrice = new SimpleStringProperty(ibPrice);
     }
@@ -76,6 +78,14 @@ public class TrendTableItem {
 
 	public void setIbPrice(String i) {
 		ibPrice.set(i);
+	}
+
+	public String getWhiteCount() {
+		return whiteCount.get();
+	}
+
+	public void setWhiteCount(String w) {
+		whiteCount.set(w);
 	}
 
 }
