@@ -742,6 +742,41 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 					if (c == SystemEnum.Color.Red) {areaRed++;}
 					if (c == SystemEnum.Color.White) {areaWhite++;}
 				}
+				
+				if(areaGreen + areaRed + areaWhite == area.getZoneList().size()) {
+					
+					if ((areaGreen > areaRed && areaGreen > area.getPercent()) || 
+					    (areaRed > areaGreen && areaRed > area.getPercent()) ||
+					    (areaGreen > areaRed && areaGreen == area.getPercent() && areaWhite >= area.getWhiteMin()) ||
+					    (areaRed > areaGreen && areaRed == area.getPercent() && areaWhite >= area.getWhiteMin())) {
+						
+						if(preColor != SystemEnum.Color.Default) {
+							
+							if(areaGreen > areaRed) {
+								thisColor = SystemEnum.Color.Green;
+							} else {
+								thisColor = SystemEnum.Color.Red;
+							}
+							if(thisColor != preColor) {
+								trendAppear = trendAppear & false;
+							} else {
+								trendAppear = trendAppear & true; 
+							}
+						} else {
+							trendAppear = trendAppear & true; 
+						}
+						
+						
+					} else {
+						trendAppear = trendAppear & false;
+					}
+					
+				} else {
+					trendAppear = trendAppear & false;
+				}
+				
+				
+				/*
 				if ((areaGreen + areaRed + areaWhite== area.getZoneList().size() && areaGreen > areaRed && areaGreen >= area.getPercent()) ||
 				    (areaGreen + areaRed + areaWhite== area.getZoneList().size() && areaRed > areaGreen && areaRed >= area.getPercent())) {
 					
@@ -764,6 +799,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 				} else {
 					trendAppear = trendAppear & false;
 				}
+				*/
 				
 				if(areaGreen > areaRed) {
 					preColor = SystemEnum.Color.Green;

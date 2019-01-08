@@ -136,7 +136,7 @@ public class CommonDAOSQL implements CommonDAO {
 	
 	@Override
 	public ArrayList<Area> getAreaListWithoutZoneByScenario(String scenario,Date time) {
-		final String sqlString = "select start_time,end_time,area,percent from scenario where scenario = ? and start_time <= ? and end_time > ?";
+		final String sqlString = "select start_time,end_time,area,percent,white_min from scenario where scenario = ? and start_time <= ? and end_time > ?";
 		ArrayList<Area> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -158,6 +158,7 @@ public class CommonDAOSQL implements CommonDAO {
 	        	area.setEndTime(rs.getString(2));
 	        	area.setArea(rs.getString(3));
 	        	area.setPercent(rs.getInt(4));
+	        	area.setWhiteMin(rs.getInt(5));
 	        	area.setScenario(scenario);
 	        	list.add(area);
 	        }
@@ -599,8 +600,8 @@ public class CommonDAOSQL implements CommonDAO {
 	}
 
 	@Override
-	public void insertScenario(String scenario, String starttime, String endtime, String area, int percent) {
-		final String sqlString = "insert into scenario values (?,?,?,?,?)";
+	public void insertScenario(String scenario, String starttime, String endtime, String area, int percent, int whiteMin) {
+		final String sqlString = "insert into scenario values (?,?,?,?,?,?)";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -613,6 +614,7 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setString(3,endtime);
 			stmt.setString(4,area);
 			stmt.setInt(5, percent);
+			stmt.setInt(6, whiteMin);
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {

@@ -55,7 +55,8 @@ public class MainService {
         		String endtime = result[2];
         		String area = result[3];
         		int percent = Integer.parseInt(result[4]);
-        		commonDao.insertScenario(sname,starttime,endtime,area,percent);
+        		int white_min = Integer.parseInt(result[5]);
+        		commonDao.insertScenario(sname,starttime,endtime,area,percent,white_min);
         	}
     	}
     }

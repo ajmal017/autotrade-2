@@ -9,6 +9,7 @@ public class Area {
 	private String startTime;
 	private String endTime;
 	private int percent;
+	private int whiteMin;
 	private ArrayList<String> zoneList;
 	
 	public Area() {
@@ -58,6 +59,14 @@ public class Area {
 
 	public void setEndTime(String endTime) {
 		this.endTime = endTime;
+	}
+
+	public int getWhiteMin() {
+		return whiteMin;
+	}
+
+	public void setWhiteMin(int whiteMin) {
+		this.whiteMin = whiteMin;
 	}
 	
 }

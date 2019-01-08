@@ -486,7 +486,6 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 		if (scenarioService.getPassedVolRefreshPlanCount() == scenarioService.getVolRefreshPlan().size() &&
 				scenarioService.getPassedSceRefreshPlanCount() == scenarioService.getSceRefreshPlan().size()) {
 
-			secTimer = new Timer ();
 			//todo set tomorrow timer for 24
 			/*
 			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
@@ -506,6 +505,7 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 			}, finalStartTime, timerRefreshMSec);
 			*/
 
+			secTimer = new Timer (); //stop timer
 			scenarioService.exportTodayTrendProfit(); //export ºexcel
 			
 			Alert alert = new Alert(AlertType.INFORMATION);

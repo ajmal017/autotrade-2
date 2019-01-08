@@ -48,7 +48,8 @@ public interface CommonDAO {
 		String starttime, 
 		String endtime, 
 		String area, 
-		int percent);
+		int percent,
+		int whiteMin);
 	void insertAreaZone(String scenario, 
 			String starttime, 
 			String area,
