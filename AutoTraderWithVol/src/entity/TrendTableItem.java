@@ -19,7 +19,7 @@ public class TrendTableItem {
         this.trend = new SimpleStringProperty(trend);
         this.greenCount = new SimpleStringProperty(green);
         this.redCount = new SimpleStringProperty(red);
-        this.whiteCount = new SimpleStringProperty(swimPrice);
+        this.whiteCount = new SimpleStringProperty(white);
         this.swimPrice = new SimpleStringProperty(swimPrice);
         this.ibPrice = new SimpleStringProperty(ibPrice);
     }

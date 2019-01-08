@@ -444,7 +444,7 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setString(4, sign.getTrendText());
 			stmt.setInt(5, sign.getGreenCount());
 			stmt.setInt(6, sign.getRedCount());
-			stmt.setInt(6, sign.getWhiteCount());
+			stmt.setInt(7, sign.getWhiteCount());
 			stmt.setDouble(8, sign.getPriceSwim());
 			stmt.setDouble(9, sign.getPriceIB());
 			stmt.setInt(10, sign.getQuantity());
