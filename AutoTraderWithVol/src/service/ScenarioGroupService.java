@@ -50,6 +50,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	private AutoTradeWithVol autoTradeObj;
 	
 	private int yellowZoneCount;
+	private int wantCloseOrderCount;
 	
 	private ScenarioGroupService ()  {
     	
@@ -553,6 +554,29 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
         
     }
     
+    public void closeAllSceWhenAppWantClose() {
+    	
+    	ArrayList<String> sces = new ArrayList<String>();
+    	for(ScenarioTrend st : getActiveScenarioGroupList()) {
+    		if(st.getTrend() != SystemEnum.Trend.Default) {
+    			sces.add(st.getScenario());
+    		}
+    	}
+    	
+    	if(sces.size() > 0) {
+    		setNeedCloseApp(true);
+    		wantCloseOrderCount = sces.size();
+    		for(String s : sces) {
+    			closeOrderByScenario(s);
+    		}
+    	} else {
+    		if(getAutoTradeObj() != null) {
+    			getAutoTradeObj().closeAppAfterPriceUpdate();
+    	    }
+    	}
+    }
+    
+    
     public void checkScenarioGroupTrend () {
     	
     	checkVolumeTrend();
@@ -843,10 +867,8 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     	String nowTimeStr = Util.getDateStringByDateAndFormatter(now, "HH:mm:ss");
     	
     	TrendSign newSign = new TrendSign(now, scenario, trend, green, red, white, priceSwim, 0, 0, "", 0, 0);
-    	
     	ArrayList<TrendSign> dailySignList = getDailySignMap().get(scenario);
     	dailySignList.add(newSign);
-    	
     	commonDao.insertNewTrendSign(newSign);
     	
     	IBService ibService = IBService.getInstance();
@@ -865,6 +887,10 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     			
     			ibService.placeOrder(newAction, scenario, nowTimeStr);
     		}
+    		
+    	} else {
+    		
+    		if (isNeedCloseApp() && wantCloseOrderCount > 0) wantCloseOrderCount--;
     	}
     	
     	ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
@@ -884,6 +910,12 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
             	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
 	        }
 	    });
+	    
+	    if(wantCloseOrderCount == 0 && getAutoTradeObj() != null && isNeedCloseApp()) {
+
+			setNeedCloseApp(false);
+			getAutoTradeObj().closeAppAfterPriceUpdate();
+	    }
     }
     
     public Enum<SystemEnum.Trend> getTodayLastTrendByScenario(String scenario) {
@@ -907,10 +939,11 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime, int preQuantity) {
 		System.out.println("Scenario group service updateTradePrice:"+price+" preOrderScenario:"+preOrderScenario+" preOrderTime:"+preOrderTime);
 		CommonDAOFactory.getCommonDAO().updateLastTrendSignIBPrice(preOrderScenario, preOrderTime, price, preQuantity);
-		if(getAutoTradeObj() != null && isNeedCloseApp()) {
-			getAutoTradeObj().closeAppAfterPriceUpdate();
+		if(isNeedCloseApp() && wantCloseOrderCount > 0) wantCloseOrderCount--;
+		if(isNeedCloseApp() && getAutoTradeObj() != null && wantCloseOrderCount == 0) {
 			setNeedCloseApp(false);
-		}
+			getAutoTradeObj().closeAppAfterPriceUpdate();
+	    }
 	}
 
 	public ArrayList<ScenarioTrend> getActiveScenarioGroupList() {

@@ -505,7 +505,11 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 			}, finalStartTime, timerRefreshMSec);
 			*/
 
-			secTimer = new Timer (); //stop timer
+			try {
+				if (secTimer != null) secTimer.cancel();
+	        } catch (Exception e) {
+	        	e.printStackTrace();
+	        }
 			scenarioService.exportTodayTrendProfit(); //export ºexcel
 			
 			Alert alert = new Alert(AlertType.INFORMATION);
@@ -566,20 +570,19 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 	
 	private void closeApplication() {
 		
-		secTimer.cancel();
+		try {
+			if (secTimer != null) secTimer.cancel();
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
 		
-		boolean needCloseOrder = false;
 		//close order
 		for (ScenarioTrend st : sceTrendList) {
 			if(st.getTrend() != SystemEnum.Trend.Default) {
-				ScenarioGroupService scenarioService =  ScenarioGroupService.getInstance();
-				scenarioService.closeOrderByScenario(st.getScenario());
-				scenarioService.setNeedCloseApp(true);
-				needCloseOrder = true;
+				ScenarioGroupService.getInstance().closeAllSceWhenAppWantClose();
+				return;
 			}
 		}
-		
-		if(needCloseOrder) return; //close app after price update
 		
 		if(IBService.getInstance().getIbApiConfig().isActive() && IBService.getInstance().isIBConnecting()) {
 			IBService.getInstance().ibDisConnect();
