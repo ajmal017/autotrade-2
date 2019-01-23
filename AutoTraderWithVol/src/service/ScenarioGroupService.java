@@ -875,7 +875,12 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     	if(ibService.getIbApiConfig().isActive() && ibService.isIBConnecting()) {
     		
     		if (trend == SystemEnum.Trend.Default) { //close
+    			
     			ibService.closeTodayTrade(scenario, nowTimeStr);
+    			
+    			//test only T10
+    			if(isNeedCloseApp() && wantCloseOrderCount > 0 && !scenario.equals("T10")) wantCloseOrderCount--;
+    			
     		} else {
     			
     			Enum<SystemEnum.OrderAction> newAction = SystemEnum.OrderAction.Default;

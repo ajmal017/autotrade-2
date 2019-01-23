@@ -35,7 +35,6 @@ public class ComputeProfit {
 										  "11:00","11:30",
 										  "12:00","12:30",
 										  "13:00"};
-	private static int finishedHalfHourCount = 0;
 	
 	private static String[] excelTitle() {
         String[] strArray = { 
@@ -74,6 +73,7 @@ public class ComputeProfit {
 			
 			for (int sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++) {
 				
+				int finishedHalfHourCount = 0;
 				HSSFSheet sheet = work.getSheetAt(sheetIndex);
 				sheetList.add(sheet.getSheetName());
 				

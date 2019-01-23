@@ -184,6 +184,9 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	
 	public void placeOrder(Enum<SystemEnum.OrderAction> newAction, String scenario, String time) {
 		
+		//test only T10
+		if(!scenario.equals("T10")) return;
+		
 		if(newAction == SystemEnum.OrderAction.Default) return;
 		if(preOrderAction == newAction) return;
 		
@@ -211,6 +214,9 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	}
 	
 	public void closeTodayTrade(String scenario, String time) {
+		
+		//test only T10
+		if(!scenario.equals("T10")) return;
 		
 		if(preOrderAction == SystemEnum.OrderAction.Default) return;
 		
