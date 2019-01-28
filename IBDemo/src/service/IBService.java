@@ -20,6 +20,7 @@ import application.Main;
 import entity.IBApiConfig;
 import entity.IBServerConfig;
 import entity.StockConfig;
+import samples.testbed.orders.AvailableAlgoParams;
 import systemenum.SystemEnum;
 
 
@@ -107,6 +108,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		order.orderType(stockConfig.getOrderType());
 		order.totalQuantity(quantity);
 //		order.account(ibServerConfig.getAccount());
+		AvailableAlgoParams.FillAdaptiveParams(order, "Normal");
 		m_client.placeOrder(getCurrentOrderId(), stock, order);
 		setCurrentOrderId(getCurrentOrderId()+1);
 	}

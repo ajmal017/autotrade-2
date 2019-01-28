@@ -143,9 +143,11 @@ public class ComputeProfit {
 					StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
 		    		str.append(HALF_HOURS[finishedHalfHourCount]);
 					if(Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm").before(ts.getTime())) {
-						TrendSign lastTS = newTrendList.get(newTrendList.size()-1);
-						lastTS.setHalfHourProfitSwim(halfHourProfitSwim);
-						lastTS.setHalfHourProfitIB(halfHourProfitIB);
+						if(newTrendList.size() > 0) {
+							TrendSign lastTS = newTrendList.get(newTrendList.size()-1);
+							lastTS.setHalfHourProfitSwim(halfHourProfitSwim);
+							lastTS.setHalfHourProfitIB(halfHourProfitIB);
+						}
 						halfHourProfitSwim = 0;
 						halfHourProfitIB = 0;
 						finishedHalfHourCount++;
