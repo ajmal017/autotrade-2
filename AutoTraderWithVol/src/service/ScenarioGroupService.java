@@ -4,6 +4,7 @@ import java.awt.AWTException;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -879,7 +880,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     			ibService.closeTodayTrade(scenario, nowTimeStr);
     			
     			//test only T10
-    			if(isNeedCloseApp() && wantCloseOrderCount > 0 && !scenario.equals("T10")) wantCloseOrderCount--;
+    			if(isNeedCloseApp() && wantCloseOrderCount > 0 && !scenario.equals("T11")) wantCloseOrderCount--;
     			
     		} else {
     			
@@ -904,15 +905,18 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	        @Override
 	        public void run() {
 	        	//screen shot
-            	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            	Rectangle screenRectangle = new Rectangle(screenSize);
             	String shotPath = SystemConfig.DOC_PATH + "//screenshot//" + 
             					  Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") + "//"+ 
             					  scenario + "//" + 
             					  scenario + "_" + 
             					  Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + "_" +
             					  Util.getTrendTextByEnum(trend) +".png";
-            	Util.createScreenShotByRect(screenRectangle, shotPath, "png");
+            	File newFile = new File(shotPath);
+    			if(!newFile.exists()) {
+                	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                	Rectangle screenRectangle = new Rectangle(screenSize);
+    				Util.createScreenShotByRect(screenRectangle, shotPath, "png");
+    			}
 	        }
 	    });
 	    

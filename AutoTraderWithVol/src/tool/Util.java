@@ -228,8 +228,9 @@ public class Util {
 	public static void createScreenShotByRect(Rectangle rect, String filepath, String filetype) {
 		
 		try {
+			File newFile = new File(filepath);
 			BufferedImage image = new Robot().createScreenCapture(rect);
-			ImageIO.write(image, filetype, new File(filepath));
+			ImageIO.write(image, filetype, newFile);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
