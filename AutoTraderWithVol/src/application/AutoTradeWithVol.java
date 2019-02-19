@@ -442,7 +442,7 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 			
 			if (didPassedCountVolZone > 0) {
 				
-				DailyScenarioRefresh volRefresh = scenarioService.getVolZoneRefreshPlan().get(didPassedCountVol-1);
+				DailyScenarioRefresh volRefresh = scenarioService.getVolZoneRefreshPlan().get(didPassedCountVolZone-1);
 				volRefresh.setPassed(false);
 				scenarioService.setPassedVolZoneRefreshPlanCount(didPassedCountVolZone-1);
 				scenarioService.updateWorkingVolumeZoneListByRefreshPlan();
