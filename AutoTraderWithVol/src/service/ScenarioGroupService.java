@@ -33,10 +33,10 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	
 	private volatile static ScenarioGroupService instance;
 	
-	private ArrayList<ScenarioTrend> activeScenarioGroupList; //T10+trend T11 T12
+	private ArrayList<ScenarioTrend> activeScenarioGroupList;
 
-	private ArrayList<Volume> workingVolumeList; //T10
-	private ArrayList<Scenario> workingScenarioList; //T10
+	private ArrayList<Volume> workingVolumeList;
+	private ArrayList<Scenario> workingScenarioList;
 	 
 	private ArrayList<DailyScenarioRefresh> volRefreshPlan;
 	private int passedVolRefreshPlanCount = 0;
@@ -45,7 +45,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
 	private ArrayList<DailyScenarioRefresh> volZoneRefreshPlan;
 	private int passedVolZoneRefreshPlanCount = 0; 
 	
-	private Map<String,ArrayList<TrendSign>> dailySignMap; //T10,List
+	private Map<String,ArrayList<TrendSign>> dailySignMap;
 	
 	private boolean needCloseApp;
 	private AutoTradeWithVol autoTradeObj;
@@ -880,7 +880,7 @@ public class ScenarioGroupService implements IBServiceCallbackInterface {
     			ibService.closeTodayTrade(scenario, nowTimeStr);
     			
     			//test only T10
-    			if(isNeedCloseApp() && wantCloseOrderCount > 0 && !scenario.equals("T11")) wantCloseOrderCount--;
+    			if(isNeedCloseApp() && wantCloseOrderCount > 0 && !scenario.equals(SystemConfig.TRADE_SCENARIO)) wantCloseOrderCount--;
     			
     		} else {
     			

@@ -15,4 +15,6 @@ public class SystemConfig {
 	public static int[] E_X =    {1087,1119,1151,1183,1215,1247,1279,1311}; //unused
 	public static int[] F_X =    {1351,1383,1415,1448,1479,1511,1543,1576}; //unused
 	public static int[] G_X =    {1616,1648,1680,1712,1744,1776,1808,1841}; //unused
+	
+	public static String TRADE_SCENARIO = "T11";
 }
