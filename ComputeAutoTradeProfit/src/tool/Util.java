@@ -1,6 +1,9 @@
 package tool;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,6 +23,8 @@ import systemenum.SystemEnum.Trend;
 
 public class Util {
 
+	private static BufferedReader bReader;
+	
 	public static String getTrendTextByEnum(Enum<SystemEnum.Trend> trend) {
 		Trend t  = (Trend) trend;
 		switch (t) {
@@ -136,4 +141,30 @@ public class Util {
 			e.printStackTrace();
 		}
 	}
+	
+	public static ArrayList<String[]> readCSVFile(String filename) {
+
+    	ArrayList<String[]> resultList = new ArrayList<String[]>();
+    	
+    	String path = "c://autotradedoc_vol" + 
+				"//csv//" + 
+				filename + 
+				".csv";
+    	File file = new File(path);
+    	if (!file.exists()) return resultList;
+    	
+    	try {
+    		bReader = new BufferedReader(new FileReader(path));
+    		String line = null;
+    		while((line=bReader.readLine())!=null && line.length() > 0){
+    			String item[] = line.split(",");
+    			resultList.add(item);              
+    		}
+        	return resultList;
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+    	return resultList;
+    }
 }

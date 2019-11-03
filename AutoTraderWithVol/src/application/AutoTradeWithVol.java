@@ -228,7 +228,7 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
 	                FXCollections.observableArrayList();
 	        	
 	        	trendTable.setEditable(false);
-	        	trendTable.setMaxHeight(120);
+	        	trendTable.setMaxHeight(250);
 	        	trendTable.setFixedCellSize(22);
 	        
 	        	TableColumn timeCol = new TableColumn("Time");

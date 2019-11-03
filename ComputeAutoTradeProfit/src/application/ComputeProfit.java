@@ -28,6 +28,8 @@ public class ComputeProfit {
 	
 	private static HSSFWorkbook work;
 	
+	private static HashMap<String,String> notComputeIndex;
+	
 	private static String[] HALF_HOURS = {"07:00","07:30",
 										  "08:00","08:30",
 										  "09:00","09:30",
@@ -57,6 +59,16 @@ public class ComputeProfit {
         return strArray;
     }
 	
+	private static int getNotComputeIndex(String scenario) {
+		
+		if (notComputeIndex.size() == 0) return 0;
+		if (notComputeIndex.containsKey(scenario)) {
+			return Integer.parseInt(notComputeIndex.get(scenario));
+		} else {
+			return 0;
+		}
+	}
+	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		
@@ -67,6 +79,13 @@ public class ComputeProfit {
 		try {
 			work = new HSSFWorkbook(new FileInputStream(filePath));
 			int sheetCount = work.getNumberOfSheets();
+			notComputeIndex = new HashMap<String,String>();
+			ArrayList<String[]> csvData = Util.readCSVFile("not_compute_index");
+			if(csvData != null && csvData.size() > 0) {
+				for(String[] item : csvData) {
+					notComputeIndex.put(item[0], item[1]);
+				}
+			}
 			
 			ArrayList<String> sheetList = new ArrayList<String>();
 	    	ArrayList<Map<String, List<String>>> mapList = new ArrayList<Map<String, List<String>>>();
@@ -84,6 +103,7 @@ public class ComputeProfit {
 				ArrayList<TrendSign> newTrendList = new ArrayList<TrendSign>();
 				int rowNo = sheet.getLastRowNum()+1;
 				TrendSign ts = new TrendSign();
+				
 				for (int i = 1; i < rowNo; i++) {
 					ts = null;
 					ts = new TrendSign();
@@ -152,12 +172,13 @@ public class ComputeProfit {
 						halfHourProfitIB = 0;
 						finishedHalfHourCount++;
 					}
-					halfHourProfitSwim += ts.getProfitSwim();
-					halfHourProfitIB += ts.getProfitIB();
+					if (i > 1 + getNotComputeIndex(ts.getScenario())) {
+						halfHourProfitSwim += ts.getProfitSwim();
+						halfHourProfitIB += ts.getProfitIB();
 					
-					totalProfitSwim += ts.getProfitSwim();
-					totalProfitIB += ts.getProfitIB();
-					
+						totalProfitSwim += ts.getProfitSwim();
+						totalProfitIB += ts.getProfitIB();
+					}
 					
 					newTrendList.add(ts);
 				}
