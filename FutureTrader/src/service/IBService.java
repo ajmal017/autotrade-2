@@ -41,7 +41,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private String preOrderTime;
 	private int preOrderQuantity;
 	private int preOrderQuantityIncrease;
-	private ScenarioGroupService groupServiceObj;
+	private SettingService groupServiceObj;
 	private int currentOrderId;
 	
 	private IBService ()  {
@@ -189,7 +189,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	public void placeOrder(Enum<SystemEnum.OrderAction> newAction, String scenario, String time) {
 		
 		//test only T10
-		if(!scenario.equals(SystemConfig.TRADE_SCENARIO)) return;
+//		if(!scenario.equals(SystemConfig.TRADE_SCENARIO)) return;
 		
 		if(newAction == SystemEnum.OrderAction.Default) return;
 		if(preOrderAction == newAction) return;
@@ -220,7 +220,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	public void closeTodayTrade(String scenario, String time) {
 		
 		//test only T10
-		if(!scenario.equals(SystemConfig.TRADE_SCENARIO)) return;
+//		if(!scenario.equals(SystemConfig.TRADE_SCENARIO)) return;
 		
 		if(preOrderAction == SystemEnum.OrderAction.Default) return;
 		
@@ -254,7 +254,9 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		System.out.println("from ib updateTradePrice:"+price);
 		if(getPreOrderScenario() == null) return;
 		
-		if (getGroupServiceObj() != null) { getGroupServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime(), preOrderQuantity);}
+		if (getGroupServiceObj() != null) { 
+			getGroupServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime(), preOrderQuantity);
+		}
 		setPreOrderScenario(null);
 		setPreOrderTime(null);
 	}
@@ -287,11 +289,11 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		return ibApiConfig;
 	}
 
-	public ScenarioGroupService getGroupServiceObj() {
+	public SettingService getGroupServiceObj() {
 		return groupServiceObj;
 	}
 
-	public void setGroupServiceObj(ScenarioGroupService groupServiceObj) {
+	public void setGroupServiceObj(SettingService groupServiceObj) {
 		this.groupServiceObj = groupServiceObj;
 	}
 }
