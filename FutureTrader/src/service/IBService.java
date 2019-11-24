@@ -21,6 +21,7 @@ import config.SystemConfig;
 import entity.IBApiConfig;
 import entity.IBServerConfig;
 import entity.StockConfig;
+import service.SettingService;
 import systemenum.SystemEnum;
 
 
@@ -41,7 +42,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private String preOrderTime;
 	private int preOrderQuantity;
 	private int preOrderQuantityIncrease;
-	private SettingService groupServiceObj;
+	private SettingService settingServiceObj;
 	private int currentOrderId;
 	
 	private IBService ()  {
@@ -254,8 +255,8 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		System.out.println("from ib updateTradePrice:"+price);
 		if(getPreOrderScenario() == null) return;
 		
-		if (getGroupServiceObj() != null) { 
-			getGroupServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime(), preOrderQuantity);
+		if (getSettingServiceObj() != null) { 
+			getSettingServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime(), preOrderQuantity);
 		}
 		setPreOrderScenario(null);
 		setPreOrderTime(null);
@@ -289,11 +290,12 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		return ibApiConfig;
 	}
 
-	public SettingService getGroupServiceObj() {
-		return groupServiceObj;
+	public SettingService getSettingServiceObj() {
+		return settingServiceObj;
 	}
 
-	public void setGroupServiceObj(SettingService groupServiceObj) {
-		this.groupServiceObj = groupServiceObj;
+	public void setSettingServiceObj(SettingService settingServiceObj) {
+		this.settingServiceObj = settingServiceObj;
 	}
+
 }

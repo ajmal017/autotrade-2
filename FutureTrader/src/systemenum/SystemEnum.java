@@ -18,12 +18,12 @@ public interface SystemEnum {
 		On
 	}
 	
-	enum Trend implements SystemEnum {
-		
-		Default,
-		Up,
-		Down
-	}
+//	enum Trend implements SystemEnum {
+//		
+//		Default,
+//		Up,
+//		Down
+//	}
 	
 	enum DateType implements SystemEnum {
 		

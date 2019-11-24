@@ -15,15 +15,15 @@ import entity.OrderSign;
 //import entity.Volume;
 import entity.Zone;
 import systemenum.SystemEnum;
-import systemenum.SystemEnum.Trend;
+import systemenum.SystemEnum.OrderAction;
 import tool.Util;
 
 public class CommonDAOSQL implements CommonDAO {
 
 
 	@Override
-	public ArrayList<OrderSign> getTrendSignListByDate(Date date, String scenario) {
-		final String sqlString = "select * from trend_sign where date = ? and scenario = ?";
+	public ArrayList<OrderSign> getOrderSignListByDate(Date date, String setting) {
+		final String sqlString = "select * from order_sign where date = ? and setting = ?";
 		ArrayList<OrderSign> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -34,7 +34,7 @@ public class CommonDAOSQL implements CommonDAO {
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
 			stmt.setString(1, Util.getDateStringByDateAndFormatter(date, "yyyy/MM/dd"));
-			stmt.setString(2, scenario);
+			stmt.setString(2, setting);
 			rs = stmt.executeQuery();
 	        while(rs.next()){
 
@@ -43,16 +43,14 @@ public class CommonDAOSQL implements CommonDAO {
 	        	dateStr.append(rs.getString(2));
 	        	OrderSign sign = new OrderSign();
 	        	sign.setTime(Util.getDateByStringAndFormatter(dateStr.toString(), "yyyy/MM/dd HH:mm:ss"));
-	        	sign.setScenario(rs.getString(3));
-	        	sign.setTrendText(rs.getString(4));
-	        	sign.setTrend(Util.getTrendEnumByText(sign.getTrendText()));
-	        	sign.setGreenCount(rs.getInt(5));
-	        	sign.setRedCount(rs.getInt(6));
-	        	sign.setWhiteCount(rs.getInt(7));
-	        	sign.setPriceSwim(rs.getDouble(8));
-	        	sign.setPriceIB(rs.getDouble(9));
-	        	sign.setQuantity(rs.getInt(10));
-	        	sign.setDesc(rs.getString(11));
+	        	sign.setSetting(rs.getString(3));
+	        	sign.setActionText(rs.getString(4));
+	        	sign.setOrderAction(Util.getOrderActionEnumByText(sign.getActionText()));
+	        	sign.setOrderPrice(rs.getDouble(5));
+	        	sign.setTick(rs.getInt(6));
+	        	sign.setLimitPrice(rs.getDouble(7));
+	        	sign.setClosePrice(rs.getDouble(8));
+	        	sign.setTickProfit(rs.getDouble(9));
 	        	
 	        	list.add(sign);
 	        }
@@ -67,8 +65,8 @@ public class CommonDAOSQL implements CommonDAO {
 	}
 
 	@Override
-	public Enum<Trend> getLastTrendByScenario(Date date, String scenario) {
-		final String sqlString = "select trend from trend_sign where date = ? and scenario = ? order by time desc";
+	public Enum<SystemEnum.OrderAction> getLastActionBySetting(Date date, String setting) {
+		final String sqlString = "select action from order_sign where date = ? and setting = ? order by time desc";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -78,12 +76,12 @@ public class CommonDAOSQL implements CommonDAO {
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
 			stmt.setString(1, Util.getDateStringByDateAndFormatter(date, "yyyy/MM/dd"));
-			stmt.setString(2, scenario);
+			stmt.setString(2, setting);
 			rs = stmt.executeQuery();
 	        if(rs.next()){
 
-	        	String trendTextString = rs.getString(1);
-	        	return Util.getTrendEnumByText(trendTextString);
+	        	String actionTextString = rs.getString(1);
+	        	return Util.getOrderActionEnumByText(actionTextString);
 	        }
 			
 		} catch (SQLException e) {
@@ -92,12 +90,12 @@ public class CommonDAOSQL implements CommonDAO {
 	        ConnectionUtils.closeAll(stmt, rs);
 		}
 		
-		return SystemEnum.Trend.Default;
+		return SystemEnum.OrderAction.Default;
 	}
 
 	@Override
-	public void insertNewTrendSign(OrderSign sign) {
-		final String sqlString = "insert into trend_sign (date,time,scenario,trend,green,red,white,price_swim,price_ib,quantity,desc) values (?,?,?,?,?,?,?,?,?,?,?)";
+	public void insertNewOrderSign(OrderSign sign) {
+		final String sqlString = "insert into order_sign (date,time,setting,action,order_price,tick,limit_price,close_price,tick_profit) values (?,?,?,?,?,?,?,?,?)";
 
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -108,15 +106,13 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt = conn.prepareStatement(sqlString);
 			stmt.setString(1, Util.getDateStringByDateAndFormatter(sign.getTime(),"yyyy/MM/dd"));
 			stmt.setString(2, Util.getDateStringByDateAndFormatter(sign.getTime(),"HH:mm:ss"));
-			stmt.setString(3, sign.getScenario());
-			stmt.setString(4, sign.getTrendText());
-			stmt.setInt(5, sign.getGreenCount());
-			stmt.setInt(6, sign.getRedCount());
-			stmt.setInt(7, sign.getWhiteCount());
-			stmt.setDouble(8, sign.getPriceSwim());
-			stmt.setDouble(9, sign.getPriceIB());
-			stmt.setInt(10, sign.getQuantity());
-			stmt.setString(11, sign.getDesc());
+			stmt.setString(3, sign.getSetting());
+			stmt.setString(4, sign.getActionText());
+			stmt.setDouble(5, sign.getOrderPrice());
+			stmt.setInt(6, sign.getTick());
+			stmt.setDouble(7, sign.getLimitPrice());
+			stmt.setDouble(8, sign.getClosePrice());
+			stmt.setDouble(9, sign.getTickProfit());
 			int i = stmt.executeUpdate();
 	        if (i == 0) {
 				//False
@@ -132,8 +128,8 @@ public class CommonDAOSQL implements CommonDAO {
 	
 
 	@Override
-	public void updateLastTrendSignIBPrice(String scenario, String time, double price, int quantity) {
-		final String sqlString = "update trend_sign set price_ib = ?,quantity = ? where scenario = ? and time = ? and date = ?";
+	public void updateOrderInfo(String setting, String time, double limitPrice, double closePrice, double tickProfit) {
+		final String sqlString = "update order_sign set limit_price = ?, close_price = ?, tick_profit = ? where setting = ? and time = ? and date = ?";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -141,11 +137,12 @@ public class CommonDAOSQL implements CommonDAO {
 			
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
-			stmt.setDouble(1,price);
-			stmt.setInt(2, quantity);
-			stmt.setString(3,scenario);
-			stmt.setString(4,time);
-			stmt.setString(5,Util.getDateStringByDateAndFormatter(new Date(), "yyyy/MM/dd"));
+			stmt.setDouble(1,limitPrice);
+			stmt.setDouble(2,closePrice);
+			stmt.setDouble(3,tickProfit);
+			stmt.setString(4,setting);
+			stmt.setString(5,time);
+			stmt.setString(6,Util.getDateStringByDateAndFormatter(new Date(), "yyyy/MM/dd"));
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {

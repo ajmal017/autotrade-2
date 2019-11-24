@@ -8,7 +8,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 import systemenum.SystemEnum;
-import systemenum.SystemEnum.Trend;
+import systemenum.SystemEnum.OrderAction;
 
 import java.awt.AWTException;
 import java.awt.Dimension;
@@ -191,35 +191,58 @@ public class Util {
 		}
     }
 	
-	public static String getTrendTextByEnum(Enum<SystemEnum.Trend> trend) {
-		Trend t  = (Trend) trend;
-		switch (t) {
-		case Up:
-			return "up";
-		case Down:
-			return "down";
+//	public static String getTrendTextByEnum(Enum<SystemEnum.Trend> trend) {
+//		Trend t  = (Trend) trend;
+//		switch (t) {
+//		case Up:
+//			return "up";
+//		case Down:
+//			return "down";
+//		default:
+//			return "close";
+//		}
+//	}
+//	
+//	public static Enum<SystemEnum.Trend> getTrendEnumByText(String trend) {
+//		switch (trend) {
+//		case "up":
+//			return SystemEnum.Trend.Up;
+//		case "down":
+//			return SystemEnum.Trend.Down;
+//		default:
+//			return SystemEnum.Trend.Default;
+//		}
+//	}
+	
+	public static String getActionTextByEnum(Enum<SystemEnum.OrderAction> action) {
+		OrderAction a  = (OrderAction) action;
+		switch (a) {
+		case Buy:
+			return "BUY";
+		case Sell:
+			return "SELL";
 		default:
-			return "close";
+			return "CLOSE";
 		}
 	}
 	
-	public static Enum<SystemEnum.Trend> getTrendEnumByText(String trend) {
-		switch (trend) {
-		case "up":
-			return SystemEnum.Trend.Up;
-		case "down":
-			return SystemEnum.Trend.Down;
+	public static Enum<SystemEnum.OrderAction> getOrderActionEnumByText(String action) {
+		switch (action) {
+		case "BUY":
+			return SystemEnum.OrderAction.Buy;
+		case "SELL":
+			return SystemEnum.OrderAction.Sell;
 		default:
-			return SystemEnum.Trend.Default;
+			return SystemEnum.OrderAction.Default;
 		}
 	}
 	
-	public static double getProfit(double prePrice, double newPrice, Enum<SystemEnum.Trend> preTrend) {
+	public static double getProfit(double prePrice, double newPrice, Enum<SystemEnum.OrderAction> preAction) {
 		
 		double profit = 0;
-		if (preTrend == SystemEnum.Trend.Up) {
+		if (preAction == SystemEnum.OrderAction.Buy) {
 			profit = newPrice - prePrice;
-		} else if (preTrend == SystemEnum.Trend.Down) {
+		} else if (preAction == SystemEnum.OrderAction.Sell) {
 			profit = prePrice - newPrice;
 		}
 		return profit;

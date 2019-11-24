@@ -19,11 +19,10 @@ import config.SystemConfig;
 import dao.CommonDAO;
 import dao.CommonDAOFactory;
 import entity.ColorCount;
-import entity.DailyScenarioRefresh;
-import entity.Scenario;
-import entity.ScenarioTrend;
-import entity.TrendSign;
-import entity.Volume;
+import entity.DailySettingRefresh;
+import entity.CreatedOrder;
+import entity.Setting;
+import entity.OrderSign;
 import entity.Zone;
 import systemenum.SystemEnum;
 import tool.Util;
@@ -32,42 +31,33 @@ public class SettingService implements IBServiceCallbackInterface {
 	
 	private volatile static SettingService instance;
 	
-	private ArrayList<Setting> activeSettingList;
+	private ArrayList<String> activeSettingList;
 
-	private ArrayList<Volume> workingVolumeList;
-	private ArrayList<Scenario> workingScenarioList;
-	 
-	private ArrayList<DailyScenarioRefresh> volRefreshPlan;
-	private int passedVolRefreshPlanCount = 0;
-	private ArrayList<DailyScenarioRefresh> sceRefreshPlan;
-	private int passedSceRefreshPlanCount = 0; 
-	private ArrayList<DailyScenarioRefresh> volZoneRefreshPlan;
-	private int passedVolZoneRefreshPlanCount = 0; 
+	private ArrayList<Setting> workingSettingList;
 	
-	private Map<String,ArrayList<TrendSign>> dailySignMap;
+	private ArrayList<DailySettingRefresh> settingRefreshPlan;
+	private int passedSettingRefreshPlanCount = 0;
+
+	private Map<String,ArrayList<OrderSign>> dailySignMap; //all today's sign
+	private Map<String,ArrayList<CreatedOrder>> currentOrderMap; //current trend's orders
 	
 	private boolean needCloseApp;
 	private FutureTrader tradeObj;
-	
-	private int yellowZoneCount;
+
 	private int wantCloseOrderCount;
 	
 	private SettingService ()  {
     	
-		this.activeScenarioGroupList = new ArrayList<ScenarioTrend>();
-		
-    	this.workingScenarioList = new ArrayList<Scenario>();
-    	this.workingVolumeList = new ArrayList<Volume>();
-    	
-    	this.sceRefreshPlan = new ArrayList<DailyScenarioRefresh>();
-    	this.volRefreshPlan = new ArrayList<DailyScenarioRefresh>();
-    	this.volZoneRefreshPlan = new ArrayList<DailyScenarioRefresh>();
-    	
-    	this.dailySignMap = new HashMap<String, ArrayList<TrendSign>>();
+		this.activeSettingList = new ArrayList<String>();
+    	this.workingSettingList = new ArrayList<Setting>();
+    	this.settingRefreshPlan = new ArrayList<DailySettingRefresh>();
+    	this.dailySignMap = new HashMap<String, ArrayList<OrderSign>>();
+    	this.currentOrderMap = new HashMap<String, ArrayList<CreatedOrder>>();
     	
     	initAllScenarioGroupData();
     }
 	
+
 	private void initAllVolumeZoneData() {
 		
 		CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
@@ -174,7 +164,7 @@ public class SettingService implements IBServiceCallbackInterface {
     		Enum<SystemEnum.Trend> lastTrend = getTodayLastTrendByScenario(nameString);
         	st.setTrend(lastTrend);
         	getActiveScenarioGroupList().add(st);
-        	getDailySignMap().put(nameString, new ArrayList<TrendSign>());
+        	getDailySignMap().put(nameString, new ArrayList<OrderSign>());
 		}
     	
     	initAllVolumeZoneData();
@@ -203,14 +193,14 @@ public class SettingService implements IBServiceCallbackInterface {
 		setPassedSceRefreshPlanCount(getPassedSceRefreshPlanCount()+1);
     }
 	
-	private Map<String, List<String>> getTrendRecordWithProfit(String scenario) {
+	private Map<String, List<String>> getOrderRecordWithSetting(String setting) {
     	
         Map<String, List<String>> map = new HashMap<String, List<String>>();
-    	ArrayList<TrendSign> tsList = CommonDAOFactory.getCommonDAO().getTrendSignListByDate(new Date(), scenario);
+    	ArrayList<OrderSign> tsList = CommonDAOFactory.getCommonDAO().getTrendSignListByDate(new Date(), scenario);
         if(tsList.size() == 0) return map;
         
     	for (int i = 1; i < tsList.size(); i ++) {
-    		TrendSign tSign = tsList.get(i); //second trend
+    		OrderSign tSign = tsList.get(i); //second trend
     		double newProfitIB = Util.getProfit(tsList.get(i-1).getPriceIB(), tSign.getPriceIB(), tsList.get(i-1).getTrend());
 			tSign.setProfitIB(newProfitIB);
 		}
@@ -219,7 +209,7 @@ public class SettingService implements IBServiceCallbackInterface {
     	
 
         for (int i = 0; i < tsList.size(); i++) {
-        	TrendSign sign = tsList.get(i);
+        	OrderSign sign = tsList.get(i);
 		    ArrayList<String> params = new ArrayList<String>();
 		    
 		    //time
@@ -530,15 +520,15 @@ public class SettingService implements IBServiceCallbackInterface {
     	*/
     }
     
-    public void exportTodayTrendProfit() {
+    public void exportTodayOrderProfit() {
     	
     	//checkout sign records
     	ArrayList<String> sheetList = new ArrayList<String>();
     	ArrayList<Map<String, List<String>>> mapList = new ArrayList<Map<String, List<String>>>();
     	int trendCount = 0;
-    	for (ScenarioTrend s : getActiveScenarioGroupList()) {
-    		sheetList.add(s.getScenario());
-    		Map<String, List<String>> recordMap = getTrendRecordWithProfit(s.getScenario());
+    	for (String setting : activeSettingList) {
+    		sheetList.add(setting);
+    		Map<String, List<String>> recordMap = getOrderRecordWithSetting(setting);
     		mapList.add(recordMap);
     		trendCount += recordMap.size();
     	}
@@ -554,7 +544,7 @@ public class SettingService implements IBServiceCallbackInterface {
         
     }
     
-    public void closeAllSceWhenAppWantClose() {
+    public void closeAllSettingWhenAppWantClose() {
     	
     	ArrayList<String> sces = new ArrayList<String>();
     	for(ScenarioTrend st : getActiveScenarioGroupList()) {
@@ -850,24 +840,11 @@ public class SettingService implements IBServiceCallbackInterface {
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	
-    	//swim price
-    	Rectangle rect = commonDao.getRectByName("swim_price");
-    	Util.createScreenShotByRect(rect,
-    			SystemConfig.DOC_PATH + "//" + SystemConfig.PRICE_IMG_NAME,
-    			"png");
-    	String swimPriceStr = Util.getStringByScreenShotPng(SystemConfig.DOC_PATH,SystemConfig.PRICE_IMG_NAME);
-    	System.out.println("swimPriceStr:"+swimPriceStr);
-    	double priceSwim = 0.0;
-    	if(swimPriceStr != null && swimPriceStr.length() > 0) {
-    		priceSwim = Util.getPriceByString(swimPriceStr);
-    		System.out.println("priceSwim:"+priceSwim);
-    	}
-    	
     	Date now = new Date();
     	String nowTimeStr = Util.getDateStringByDateAndFormatter(now, "HH:mm:ss");
     	
-    	TrendSign newSign = new TrendSign(now, scenario, trend, green, red, white, priceSwim, 0, 0, "", 0, 0);
-    	ArrayList<TrendSign> dailySignList = getDailySignMap().get(scenario);
+    	OrderSign newSign = new OrderSign(now, scenario, trend, green, red, white, priceSwim, 0, 0, "", 0, 0);
+    	ArrayList<OrderSign> dailySignList = getDailySignMap().get(scenario);
     	dailySignList.add(newSign);
     	commonDao.insertNewTrendSign(newSign);
     	
@@ -926,16 +903,22 @@ public class SettingService implements IBServiceCallbackInterface {
 	    }
     }
     
-    public Enum<SystemEnum.Trend> getTodayLastTrendByScenario(String scenario) {
-    	return CommonDAOFactory.getCommonDAO().getLastTrendByScenario(new Date(), scenario);
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
 	public static SettingService getInstance() {  
 		if (instance == null) {  
 			synchronized (SettingService.class) {  
 				if (instance == null) {  
 					instance = new SettingService();
-					IBService.getInstance().setGroupServiceObj(instance);
+					IBService.getInstance().setSettingServiceObj(instance);
 				}	  
 			}  
 		}  
@@ -945,79 +928,16 @@ public class SettingService implements IBServiceCallbackInterface {
 
 	@Override
 	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime, int preQuantity) {
-		System.out.println("Scenario group service updateTradePrice:"+price+" preOrderScenario:"+preOrderScenario+" preOrderTime:"+preOrderTime);
-		CommonDAOFactory.getCommonDAO().updateLastTrendSignIBPrice(preOrderScenario, preOrderTime, price, preQuantity);
+		System.out.println("Setting service updateTradePrice:"+price+" preOrderScenario:"+preOrderScenario+" preOrderTime:"+preOrderTime);
+		//todo
+//		CommonDAOFactory.getCommonDAO().updateLastTrendSignIBPrice(preOrderScenario, preOrderTime, price, preQuantity);
 		if(isNeedCloseApp() && wantCloseOrderCount > 0) wantCloseOrderCount--;
-		if(isNeedCloseApp() && getAutoTradeObj() != null && wantCloseOrderCount == 0) {
+		if(isNeedCloseApp() && getTradeObj() != null && wantCloseOrderCount == 0) {
 			setNeedCloseApp(false);
-			getAutoTradeObj().closeAppAfterPriceUpdate();
+			getTradeObj().closeAppAfterPriceUpdate();
 	    }
 	}
-
-	public ArrayList<ScenarioTrend> getActiveScenarioGroupList() {
-		return activeScenarioGroupList;
-	}
-
-	public void setActiveScenarioGroupList(ArrayList<ScenarioTrend> activeScenarioGroupList) {
-		this.activeScenarioGroupList = activeScenarioGroupList;
-	}
-
-	public ArrayList<Volume> getWorkingVolumeList() {
-		return workingVolumeList;
-	}
-
-	public void setWorkingVolumeList(ArrayList<Volume> workingVolumeList) {
-		this.workingVolumeList = workingVolumeList;
-	}
-
-	public ArrayList<Scenario> getWorkingScenarioList() {
-		return workingScenarioList;
-	}
-
-	public void setWorkingScenarioList(ArrayList<Scenario> workingScenarioList) {
-		this.workingScenarioList = workingScenarioList;
-	}
-
-	public ArrayList<DailyScenarioRefresh> getSceRefreshPlan() {
-		return sceRefreshPlan;
-	}
-
-	public void setSceRefreshPlan(ArrayList<DailyScenarioRefresh> sceRefreshPlan) {
-		this.sceRefreshPlan = sceRefreshPlan;
-	}
-
-	public int getPassedSceRefreshPlanCount() {
-		return passedSceRefreshPlanCount;
-	}
-
-	public void setPassedSceRefreshPlanCount(int passedSceRefreshPlanCount) {
-		this.passedSceRefreshPlanCount = passedSceRefreshPlanCount;
-	}
-
-	public ArrayList<DailyScenarioRefresh> getVolRefreshPlan() {
-		return volRefreshPlan;
-	}
-
-	public void setVolRefreshPlan(ArrayList<DailyScenarioRefresh> volRefreshPlan) {
-		this.volRefreshPlan = volRefreshPlan;
-	}
-
-	public int getPassedVolRefreshPlanCount() {
-		return passedVolRefreshPlanCount;
-	}
-
-	public void setPassedVolRefreshPlanCount(int passedVolRefreshPlanCount) {
-		this.passedVolRefreshPlanCount = passedVolRefreshPlanCount;
-	}
-
-	public Map<String,ArrayList<TrendSign>> getDailySignMap() {
-		return dailySignMap;
-	}
-
-	public void setDailySignMap(Map<String,ArrayList<TrendSign>> dailySignMap) {
-		this.dailySignMap = dailySignMap;
-	}
-
+	
 	public boolean isNeedCloseApp() {
 		return needCloseApp;
 	}
@@ -1025,38 +945,44 @@ public class SettingService implements IBServiceCallbackInterface {
 	public void setNeedCloseApp(boolean needCloseApp) {
 		this.needCloseApp = needCloseApp;
 	}
-
-	public AutoTradeWithVol getAutoTradeObj() {
-		return autoTradeObj;
+	
+	public FutureTrader getTradeObj() {
+		return tradeObj;
 	}
 
-	public void setAutoTradeObj(AutoTradeWithVol autoTradeObj) {
-		this.autoTradeObj = autoTradeObj;
-	}
-
-	public int getYellowZoneCount() {
-		return yellowZoneCount;
-	}
-
-	public void setYellowZoneCount(int yellowZoneCount) {
-		this.yellowZoneCount = yellowZoneCount;
-	}
-
-	public ArrayList<DailyScenarioRefresh> getVolZoneRefreshPlan() {
-		return volZoneRefreshPlan;
-	}
-
-	public void setVolZoneRefreshPlan(ArrayList<DailyScenarioRefresh> volZoneRefreshPlan) {
-		this.volZoneRefreshPlan = volZoneRefreshPlan;
-	}
-
-	public int getPassedVolZoneRefreshPlanCount() {
-		return passedVolZoneRefreshPlanCount;
-	}
-
-	public void setPassedVolZoneRefreshPlanCount(int passedVolZoneRefreshPlanCount) {
-		this.passedVolZoneRefreshPlanCount = passedVolZoneRefreshPlanCount;
+	public void setTradeObj(FutureTrader tradeObj) {
+		this.tradeObj = tradeObj;
 	}
 	
+	public Map<String, ArrayList<CreatedOrder>> getCurrentOrderMap() {
+		return currentOrderMap;
+	}
 
+	public void setCurrentOrderMap(Map<String, ArrayList<CreatedOrder>> currentOrderMap) {
+		this.currentOrderMap = currentOrderMap;
+	}
+	
+	public ArrayList<String> getActiveSettingList() {
+		return activeSettingList;
+	}
+
+	public void setActiveSettingList(ArrayList<String> activeSettingList) {
+		this.activeSettingList = activeSettingList;
+	}
+	
+	public int getPassedSettingRefreshPlanCount() {
+		return passedSettingRefreshPlanCount;
+	}
+
+	public void setPassedSettingRefreshPlanCount(int passedSettingRefreshPlanCount) {
+		this.passedSettingRefreshPlanCount = passedSettingRefreshPlanCount;
+	}
+	
+	public ArrayList<DailySettingRefresh> getSettingRefreshPlan() {
+		return settingRefreshPlan;
+	}
+	
+	public void setSettingRefreshPlan(ArrayList<DailySettingRefresh> settingRefreshPlan) {
+		this.settingRefreshPlan = settingRefreshPlan;
+	}
 }

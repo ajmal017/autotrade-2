@@ -29,11 +29,11 @@ public interface CommonDAO {
 //	ArrayList<Zone> getVolumeZoneList(String time);
 //	Rectangle getRectByName(String name);
 	
-	ArrayList<OrderSign> getTrendSignListByDate(Date date, String scenario);
-	Enum<SystemEnum.Trend> getLastTrendByScenario(Date date, String scenario);
+	ArrayList<OrderSign> getOrderSignListByDate(Date date, String setting);
+	Enum<SystemEnum.OrderAction> getLastActionBySetting(Date date, String setting);
 	
-	void insertNewTrendSign(OrderSign sign);
-	void updateLastTrendSignIBPrice(String scenario, String time, double price, int quantity);
+	void insertNewOrderSign(OrderSign sign);
+	void updateOrderInfo(String setting, String time, double limitPrice, double closePrice, double tickProfit);
 	
 //	void cleanScenarioActiveData();
 //	void cleanScenarioData();

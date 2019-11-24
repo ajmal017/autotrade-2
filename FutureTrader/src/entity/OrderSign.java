@@ -11,145 +11,96 @@ public class OrderSign {
 	private String setting;
 	private Enum<SystemEnum.OrderAction> orderAction;
 	private String actionText;
-	
-	private double priceSwim;
-	private double priceIB;
-	private int tick;
-	private double 
-	private String desc;
-	
-	//xls
-	private double tickProfit; // tick * price difference
+
+	private double limitPrice; //限价（开单）
+	private double tick;
+	private double stopPrice;  //止盈（关单）
+	private double tickProfit; // tick * price difference(limitPrice,stopPrice)
 	
 	public OrderSign(Date time, 
-			String scenario, 
-			Enum<SystemEnum.Trend> trend, 
-			int green, 
-			int red, 
-			int white,
-			double priceSwim, 
-			double priceIB,
-			int quantity,
-			String desc,
-			double profitSwim,
-			double profitIB) {
+			String setting, 
+			Enum<SystemEnum.OrderAction> orderAction, 
+			double limitPrice,  
+			double tick,
+			double stopPrice,
+			double tickProfit) {
         setTime(time);
-        setScenario(scenario);
-        setTrend(trend);
-        setTrendText(Util.getTrendTextByEnum(trend));
-        setGreenCount(green);
-        setRedCount(red);
-        setWhiteCount(white);
-        setPriceSwim(priceSwim);
-        setPriceIB(priceIB);
-        setQuantity(quantity);
-        setDesc(desc);
-        setProfitSwim(priceSwim);
-        setProfitIB(priceIB);
+        setSetting(setting);
+        setOrderAction(orderAction);
+        setActionText(Util.getActionTextByEnum(orderAction));
+        setLimitPrice(limitPrice);
+        setTick(tick);
+        setStopPrice(stopPrice);
+        setTickProfit(tickProfit);
     }
 	
 	public OrderSign() {
 		
 //		super();
-		trend = SystemEnum.Trend.Default;
+		orderAction = SystemEnum.OrderAction.Default;
 	}
-	
 	public Date getTime() {
 		return time;
 	}
 	public void setTime(Date time) {
 		this.time = time;
 	}
-	public String getScenario() {
-		return scenario;
+
+	public String getSetting() {
+		return setting;
 	}
-	public void setScenario(String scenario) {
-		this.scenario = scenario;
+
+	public void setSetting(String setting) {
+		this.setting = setting;
 	}
-	public Enum<SystemEnum.Trend> getTrend() {
-		return trend;
+
+	public Enum<SystemEnum.OrderAction> getOrderAction() {
+		return orderAction;
 	}
-	public void setTrend(Enum<SystemEnum.Trend> trend) {
-		this.trend = trend;
+
+	public void setOrderAction(Enum<SystemEnum.OrderAction> orderAction) {
+		this.orderAction = orderAction;
+	}
+
+	public String getActionText() {
+		return actionText;
+	}
+
+	public void setActionText(String actionText) {
+		this.actionText = actionText;
+	}
+
+	public double getLimitPrice() {
+		return limitPrice;
+	}
+
+	public void setLimitPrice(double limitPrice) {
+		this.limitPrice = limitPrice;
 	}
 	
-	public String getDesc() {
-		return desc;
-	}
-	public void setDesc(String desc) {
-		this.desc = desc;
+	public double getStopPrice() {
+		return stopPrice;
 	}
 
-	public String getTrendText() {
-		return trendText;
+	public void setStopPrice(double stopPrice) {
+		this.stopPrice = stopPrice;
 	}
 
-	public void setTrendText(String trendText) {
-		this.trendText = trendText;
+	public double getTick() {
+		return tick;
 	}
 
-	public double getPriceSwim() {
-		return priceSwim;
+	public void setTick(double tick) {
+		this.tick = tick;
 	}
 
-	public void setPriceSwim(double priceSwim) {
-		this.priceSwim = priceSwim;
+	public double getTickProfit() {
+		return tickProfit;
 	}
 
-	public double getPriceIB() {
-		return priceIB;
+	public void setTickProfit(double tickProfit) {
+		this.tickProfit = tickProfit;
 	}
-
-	public void setPriceIB(double priceIB) {
-		this.priceIB = priceIB;
-	}
-
-	public double getProfitSwim() {
-		return profitSwim;
-	}
-
-	public void setProfitSwim(double profitSwim) {
-		this.profitSwim = profitSwim;
-	}
-
-	public double getProfitIB() {
-		return profitIB;
-	}
-
-	public void setProfitIB(double profitIB) {
-		this.profitIB = profitIB;
-	}
-
-	public int getGreenCount() {
-		return greenCount;
-	}
-
-	public void setGreenCount(int greenCount) {
-		this.greenCount = greenCount;
-	}
-
-	public int getRedCount() {
-		return redCount;
-	}
-
-	public void setRedCount(int redCount) {
-		this.redCount = redCount;
-	}
-
-	public int getQuantity() {
-		return quantity;
-	}
-
-	public void setQuantity(int quantity) {
-		this.quantity = quantity;
-	}
-
-	public int getWhiteCount() {
-		return whiteCount;
-	}
-
-	public void setWhiteCount(int whiteCount) {
-		this.whiteCount = whiteCount;
-	}
+	
 	
 }
