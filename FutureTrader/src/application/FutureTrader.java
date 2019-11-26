@@ -45,7 +45,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
     
     private final Label startTimeLbl = new Label();
 	private final Label endTimeLbl = new Label();
-	
+
 	private Hashtable<String,Object> tableDataHash;
 	
 	private boolean wantCloseApp;
@@ -53,11 +53,11 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	private boolean isSettingRefreshTime() {
 
 		SettingService sService = SettingService.getInstance();
-		if (sService.getSettingRefreshPlan().size() == 0 || sService.getSceRefreshPlan().size() == sService.getPassedSceRefreshPlanCount()) {
+		if (sService.getSettingRefreshPlan().size() == 0 || sService.getSettingRefreshPlan().size() == sService.getPassedSettingRefreshPlanCount()) {
 			return false;
 		}
 		String nowTimeString = Util.getDateStringByDateAndFormatter(new Date(), "HH:mm:ss");
-		DailyScenarioRefresh nextFresh = sService.getSceRefreshPlan().get(sService.getPassedSceRefreshPlanCount());
+		DailySettingRefresh nextFresh = sService.getSettingRefreshPlan().get(sService.getPassedSettingRefreshPlanCount());
 		if (nowTimeString.equals(nextFresh.getRefreshTime())) {
 			return true;
 		} else {
@@ -90,31 +90,12 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 		//every plan passed
 		if (settingService.getPassedSettingRefreshPlanCount() == settingService.getSettingRefreshPlan().size()) {
 
-			//todo set tomorrow timer for 24
-			/*
-			StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-    		str.append(startTimeLbl.getText());
-    		Date finalStartTime = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
-			secTimer = new Timer ();
-			Calendar c = Calendar.getInstance();
-			c.setTime(finalStartTime);
-			c.add(Calendar.DATE, +1);
-//			c.add(Calendar.SECOND, +1);
-			finalStartTime = c.getTime();
-			secTimer.scheduleAtFixedRate(new TimerTask() {
-		        public void run() {
-		        	calledBySecondTimer();
-		        	
-		        }
-			}, finalStartTime, timerRefreshMSec);
-			*/
-
 			try {
 				if (secTimer != null) secTimer.cancel();
 	        } catch (Exception e) {
 	        	e.printStackTrace();
 	        }
-			settingService.exportTodayOrderProfit(); //export ºexcel
+			settingService.exportTodayOrderProfit(); //export ï¿½excel
 			
 			Alert alert = new Alert(AlertType.INFORMATION);
 			alert.setTitle("Warning");
@@ -128,28 +109,33 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 				settingService.updateSettingListByRefreshPlan();
 			}
 			
-			for (int i = 0; i < sceTrendList.size(); i++) {
-				ScenarioTrend oldTrend = sceTrendList.get(i);
-				ScenarioTrend scenario = scenarioService.getActiveScenarioGroupList().get(i);
-				if(oldTrend.getTrend() != scenario.getTrend()) {
-					//update trend
-					oldTrend.setTrend(scenario.getTrend());
-					//get last sign
-					ArrayList<TrendSign> signList = scenarioService.getDailySignMap().get(scenario.getScenario());
-					TrendSign lastSign = signList.get(signList.size()-1); 
-					//insert into table
-					TrendTableItem trendItem = new TrendTableItem(
-							Util.getDateStringByDateAndFormatter(lastSign.getTime(), "HH:mm:ss"),
-							lastSign.getScenario(),
-							Util.getTrendTextByEnum(lastSign.getTrend()),
-							""+lastSign.getGreenCount(), 
-							""+lastSign.getRedCount(), 
-							""+lastSign.getWhiteCount(),
-							""+lastSign.getPriceSwim(), 
-							""+lastSign.getPriceIB());
-					ObservableList<TrendTableItem> trendData = (ObservableList<TrendTableItem>) tbDataHash.get(lastSign.getScenario());
-					trendData.add(trendItem);
-					playSignAlertMusic();
+			for (int i = 0; i < settingService.getActiveSettingList.size(); i++) {
+
+				String setting = settingService.getActiveSettingList().get(i);
+
+				ArrayList<OrderSign> shownList = settingService.getDailySignShowInTable.get(setting);
+				ArrayList<OrderSign> newestList = settingService.getDailySignMap().get(setting);
+				if(shownList.size() != newestList.size()) {
+
+					int shownCount = shownList.size();
+					for(int j = 0; j < newestList.size() - shownCount; j++) {
+
+						OrderSign newSign = newestList.get(shownCount+j);
+						shownList.add(newSign);
+						//insert into table
+						SignTableItem signItem = new SignTableItem(
+								Util.getDateStringByDateAndFormatter(newSign.getTime(), "HH:mm:ss"),
+								newSign.getScenario(),
+								Util.getActionTextByEnum(newSign.getOrderAction()),
+								""+newSign.getLimitPrice(),
+								""+newSign.getTick(),
+								""+newSign.getStopPrice(),
+								""+newSign.getTickProfit());
+						ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tbDataHash.get(setting);
+						signData.add(trendItem);
+						playSignAlertMusic();
+					}
+
 				}
 			}
 		}

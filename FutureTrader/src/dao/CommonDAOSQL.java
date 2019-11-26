@@ -47,7 +47,7 @@ public class CommonDAOSQL implements CommonDAO {
 	        	sign.setActionText(rs.getString(4));
 	        	sign.setOrderAction(Util.getOrderActionEnumByText(sign.getActionText()));
 	        	sign.setOrderPrice(rs.getDouble(5));
-	        	sign.setTick(rs.getInt(6));
+	        	sign.setTick(rs.getDouble(6));
 	        	sign.setLimitPrice(rs.getDouble(7));
 	        	sign.setClosePrice(rs.getDouble(8));
 	        	sign.setTickProfit(rs.getDouble(9));
@@ -95,7 +95,7 @@ public class CommonDAOSQL implements CommonDAO {
 
 	@Override
 	public void insertNewOrderSign(OrderSign sign) {
-		final String sqlString = "insert into order_sign (date,time,setting,action,order_price,tick,limit_price,close_price,tick_profit) values (?,?,?,?,?,?,?,?,?)";
+		final String sqlString = "insert into order_sign (date,time,setting,action,limit_price,tick,stop_price,tick_profit) values (?,?,?,?,?,?,?,?)";
 
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -108,11 +108,10 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setString(2, Util.getDateStringByDateAndFormatter(sign.getTime(),"HH:mm:ss"));
 			stmt.setString(3, sign.getSetting());
 			stmt.setString(4, sign.getActionText());
-			stmt.setDouble(5, sign.getOrderPrice());
-			stmt.setInt(6, sign.getTick());
-			stmt.setDouble(7, sign.getLimitPrice());
-			stmt.setDouble(8, sign.getClosePrice());
-			stmt.setDouble(9, sign.getTickProfit());
+			stmt.setDouble(5, sign.getLimitPrice());
+			stmt.setDouble(6, sign.getTick());
+			stmt.setDouble(7, sign.getStopPrice());
+			stmt.setDouble(8, sign.getTickProfit());
 			int i = stmt.executeUpdate();
 	        if (i == 0) {
 				//False

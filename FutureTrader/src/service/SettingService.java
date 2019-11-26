@@ -38,6 +38,7 @@ public class SettingService implements IBServiceCallbackInterface {
 	private ArrayList<DailySettingRefresh> settingRefreshPlan;
 	private int passedSettingRefreshPlanCount = 0;
 
+	private Map<String,ArrayList<OrderSign>> dailySignShownInTable;
 	private Map<String,ArrayList<OrderSign>> dailySignMap; //all today's sign
 	private Map<String,ArrayList<CreatedOrder>> currentOrderMap; //current trend's orders
 	
@@ -50,73 +51,13 @@ public class SettingService implements IBServiceCallbackInterface {
     	
 		this.activeSettingList = new ArrayList<String>();
     	this.workingSettingList = new ArrayList<Setting>();
-    	this.settingRefreshPlan = new ArrayList<DailySettingRefresh>();
+		this.settingRefreshPlan = new ArrayList<DailySettingRefresh>();
+		this.dailySignShownInTable = new HashMap<String, ArrayList<OrderSign>>();
     	this.dailySignMap = new HashMap<String, ArrayList<OrderSign>>();
     	this.currentOrderMap = new HashMap<String, ArrayList<CreatedOrder>>();
     	
-    	initAllScenarioGroupData();
+    	initAllSettingData();
     }
-	
-
-	private void initAllVolumeZoneData() {
-		
-		CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-		
-		ArrayList<String> times = commonDao.getAllDistinctVolumeZoneStartTime();
-    	if (times.size() == 0) {
-			
-    		return;
-		}
-    	
-    	for (String d : times) {
-    		
-    		DailyScenarioRefresh refresh = new DailyScenarioRefresh();
-    		refresh.setRefreshTime(d);
-    		
-    		StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-    		str.append(d);
-    		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
-    		
-    		if (dDate.before(new Date())) {
-    			refresh.setPassed(true); 
-    			int passed = getPassedVolZoneRefreshPlanCount() + 1;
-    			setPassedVolZoneRefreshPlanCount(passed);
-			} else {
-				refresh.setPassed(false);
-			}
-    		getVolZoneRefreshPlan().add(refresh);	
-		}
-		
-	}
-	
-	private void initAllVolumeData() {
-		
-		CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-		
-		ArrayList<String> times = commonDao.getAllDistinctVolumeStartTimeAndEndTime();
-    	if (times.size() == 0) {
-			
-    		return;
-		}
-    	
-    	for (String d : times) {
-    		
-    		DailyScenarioRefresh refresh = new DailyScenarioRefresh();
-    		refresh.setRefreshTime(d);
-    		StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
-    		str.append(d);
-    		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
-    		if (dDate.before(new Date())) {
-    			refresh.setPassed(true); 
-    			int passed = getPassedVolRefreshPlanCount() + 1;
-    			setPassedVolRefreshPlanCount(passed);
-			} else {
-				refresh.setPassed(false);
-			}
-    		getVolRefreshPlan().add(refresh);	
-		}
-    	
-	}
 	
 	private void initAllScenarioData() {
     	
@@ -147,7 +88,7 @@ public class SettingService implements IBServiceCallbackInterface {
 		}
 	}
 	
-	private void initAllScenarioGroupData() {
+	private void initAllSettingData() {
 		
 
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
@@ -953,7 +894,26 @@ public class SettingService implements IBServiceCallbackInterface {
 	public void setTradeObj(FutureTrader tradeObj) {
 		this.tradeObj = tradeObj;
 	}
-	
+
+
+
+
+	public Map<String, ArrayList<OrderSign>> getDailySignShownInTable() {
+		return dailySignShownInTable;
+	}
+
+	public void setDailySignShownInTable(Map<String, ArrayList<OrderSign>> dailySignShownInTable) {
+		this.dailySignShownInTable = dailySignShownInTable;
+	}
+
+	public Map<String, ArrayList<OrderSign>> getDailySignMap() {
+		return dailySignMap;
+	}
+
+	public void setDailySignMap(Map<String, ArrayList<OrderSign>> dailySignMap) {
+		this.dailySignMap = dailySignMap;
+	}
+
 	public Map<String, ArrayList<CreatedOrder>> getCurrentOrderMap() {
 		return currentOrderMap;
 	}

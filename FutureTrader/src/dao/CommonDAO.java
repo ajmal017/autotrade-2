@@ -30,7 +30,7 @@ public interface CommonDAO {
 //	Rectangle getRectByName(String name);
 	
 	ArrayList<OrderSign> getOrderSignListByDate(Date date, String setting);
-	Enum<SystemEnum.OrderAction> getLastActionBySetting(Date date, String setting);
+//	Enum<SystemEnum.OrderAction> getLastActionBySetting(Date date, String setting);
 	
 	void insertNewOrderSign(OrderSign sign);
 	void updateOrderInfo(String setting, String time, double limitPrice, double closePrice, double tickProfit);
