@@ -2,29 +2,33 @@ package entity;
 
 public class SingleOrderSetting {
 	
-	private double spread;
+	private double limitChange;
 	private double tick;
-	private double stopSpread;
+	private double stopChange;
 	
-	public double getSpread() {
-		return spread;
-	}
-	public void setSpread(double spread) {
-		this.spread = spread;
-	}
 	public double getTick() {
 		return tick;
 	}
+	
 	public void setTick(double tick) {
 		this.tick = tick;
 	}
-	public double getStopSpread() {
-		return stopSpread;
+
+	public double getLimitChange() {
+		return limitChange;
 	}
-	public void setStopSpread(double stopSpread) {
-		this.stopSpread = stopSpread;
+
+	public void setLimitChange(double limitChange) {
+		this.limitChange = limitChange;
 	}
-	
+
+	public double getStopChange() {
+		return stopChange;
+	}
+
+	public void setStopChange(double stopChange) {
+		this.stopChange = stopChange;
+	}
 	
 
 }

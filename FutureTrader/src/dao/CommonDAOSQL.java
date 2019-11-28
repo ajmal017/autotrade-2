@@ -12,6 +12,8 @@ import dao.ConnectionUtils;
 //import entity.Area;
 //import entity.Scenario;
 import entity.OrderSign;
+import entity.Setting;
+import entity.SingleOrderSetting;
 //import entity.Volume;
 import entity.Zone;
 import systemenum.SystemEnum;
@@ -46,11 +48,10 @@ public class CommonDAOSQL implements CommonDAO {
 	        	sign.setSetting(rs.getString(3));
 	        	sign.setActionText(rs.getString(4));
 	        	sign.setOrderAction(Util.getOrderActionEnumByText(sign.getActionText()));
-	        	sign.setOrderPrice(rs.getDouble(5));
+	        	sign.setLimitPrice(rs.getDouble(5));
 	        	sign.setTick(rs.getDouble(6));
-	        	sign.setLimitPrice(rs.getDouble(7));
-	        	sign.setClosePrice(rs.getDouble(8));
-	        	sign.setTickProfit(rs.getDouble(9));
+	        	sign.setStopPrice(rs.getDouble(7));
+	        	sign.setTickProfit(rs.getDouble(8));
 	        	
 	        	list.add(sign);
 	        }
@@ -62,35 +63,6 @@ public class CommonDAOSQL implements CommonDAO {
 	        ConnectionUtils.closeAll(stmt, rs);
 		}
 		return list;
-	}
-
-	@Override
-	public Enum<SystemEnum.OrderAction> getLastActionBySetting(Date date, String setting) {
-		final String sqlString = "select action from order_sign where date = ? and setting = ? order by time desc";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1, Util.getDateStringByDateAndFormatter(date, "yyyy/MM/dd"));
-			stmt.setString(2, setting);
-			rs = stmt.executeQuery();
-	        if(rs.next()){
-
-	        	String actionTextString = rs.getString(1);
-	        	return Util.getOrderActionEnumByText(actionTextString);
-	        }
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		
-		return SystemEnum.OrderAction.Default;
 	}
 
 	@Override
@@ -151,11 +123,11 @@ public class CommonDAOSQL implements CommonDAO {
 		}
 		
 	}
-	/*
+	
 	@Override
-	public ArrayList<String>getAllActiveScenarioName()  {
+	public ArrayList<String>getAllActiveSettingName()  {
 		
-		final String sqlString = "select scenario from scenario_active where active = ?";
+		final String sqlString = "select setting from setting_active where active = ?";
 		ArrayList<String> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -181,8 +153,9 @@ public class CommonDAOSQL implements CommonDAO {
 	}
 	
 	@Override
-	public ArrayList<String> getAllDistinctScenarioStartTimeAndEndTime() {
-		final String sqlString = "SELECT start_time FROM scenario UNION SELECT end_time FROM scenario";
+	public ArrayList<String> getAllSettingDistinctStartTimeAndEndTime() {
+		
+		final String sqlString = "SELECT start_time FROM setting UNION SELECT end_time FROM setting";
 		ArrayList<String> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -205,6 +178,216 @@ public class CommonDAOSQL implements CommonDAO {
 		}
 		return list;
 	}
+	
+	@Override
+	public ArrayList<Setting> getAllWorkingSettingAtTime(Date time) {
+		
+		final String sqlString = "select (setting,limit_change,tick,stop_change) from setting where start_time <= ? and end_time > ?";
+		ArrayList<Setting> list = new ArrayList<>();
+
+		Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+	    	String timeStr = tool.Util.getDateStringByDateAndFormatter(time, "HH:mm:ss");
+	    	
+			stmt.setString(1, timeStr);
+			stmt.setString(2, timeStr);
+			rs = stmt.executeQuery();
+	        while(rs.next()){
+	        	
+	        	String settingName = rs.getString(1);
+	        	if (list.size() == 0 || !list.get(list.size()-1).getSetting().equals(settingName)) {
+	        		Setting setting = new Setting();
+		        	setting.setSetting(rs.getString(1));
+		        	list.add(setting);
+				}
+	        	
+	        	SingleOrderSetting sos = new SingleOrderSetting();
+	        	sos.setLimitChange(rs.getDouble(2));
+	        	sos.setTick(rs.getDouble(3));
+	        	sos.setStopChange(rs.getDouble(4));
+	        }
+			return list;
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt, rs);
+		}
+		return list;
+	}
+	
+
+	@Override
+	public void insertSettingActive(String seting, int active) {
+		final String sqlString = "insert into setting_active values (?,?)";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setString(1,seting);
+			stmt.setInt(2, active);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+		
+	}
+
+	@Override
+	public void insertSetting(String setting, 
+			String startTime, 
+			String endTime, 
+			int orderIndex,
+			double limitChange,
+			double tick,
+			double stopChange) {
+		final String sqlString = "insert into setting values (?,?,?,?,?,?,?)";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setString(1, setting);
+			stmt.setString(2,startTime);
+			stmt.setString(3,endTime);
+			stmt.setInt(4,orderIndex);
+			stmt.setDouble(5, limitChange);
+			stmt.setDouble(6, tick);
+			stmt.setDouble(7, stopChange);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+	}
+
+	@Override
+	public void insertCloseZone(String name, int x, int y) {
+		final String sqlString = "insert into close_zone values (?,?,?)";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setString(1,name);
+			stmt.setInt(2,x);
+			stmt.setInt(3,y);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+	}
+	
+	@Override
+	public void cleanSettingActive() {
+		final String sqlString = "delete from setting_active";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+	}
+
+	@Override
+	public void cleanSetting() {
+		final String sqlString = "delete from setting";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}	
+	}
+	
+	@Override
+	public void cleanCloseZone() {
+		final String sqlString = "delete from close_zone";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+	}
+	
+	@Override
+	public ArrayList<Zone> getAllCloseMonitorZone() {
+		
+		final String sqlString = "SELECT * FROM close_zone where active = 1";
+		ArrayList<Zone> list = new ArrayList<>();
+
+		Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			rs = stmt.executeQuery();
+	        while(rs.next()){
+	        	Zone zone = new Zone();
+	        	zone.setZone(rs.getString(1));
+	        	zone.setxCoord(rs.getInt(2));
+	        	zone.setyCoord(rs.getInt(3));
+	        	list.add(zone);
+	        }
+			return list;
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt, rs);
+		}
+		return list;
+	}
+	
+	/*
+	
 	
 	@Override
 	public ArrayList<String> getAllDistinctVolumeStartTimeAndEndTime() {
@@ -232,39 +415,7 @@ public class CommonDAOSQL implements CommonDAO {
 		return list;
 	}
 	
-	@Override
-	public ArrayList<Scenario> getAllWorkingScenarioAtTime(Date time) {
-		
-		final String sqlString = "select distinct(scenario) from scenario where start_time <= ? and end_time > ?";
-		ArrayList<Scenario> list = new ArrayList<>();
-
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-	    	String timeStr = tool.Util.getDateStringByDateAndFormatter(time, "HH:mm:ss");
-	    	
-			stmt.setString(1, timeStr);
-			stmt.setString(2, timeStr);
-			rs = stmt.executeQuery();
-	        while(rs.next()){
-	        	
-	        	Scenario scenario = new Scenario();
-	        	scenario.setScenario(rs.getString(1));
-	        	list.add(scenario);
-	        }
-			return list;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return list;
-	}
+	
 	
 	@Override
 	public ArrayList<Area> getAreaListWithoutZoneByScenario(String scenario,Date time) {
@@ -647,30 +798,6 @@ public class CommonDAOSQL implements CommonDAO {
 	        ConnectionUtils.closeAll(stmt,null);
 		}
 	}
-	
-	@Override
-	public void insertAreaZone(String scenario, String starttime, String area, String zone, int active) {
-		final String sqlString = "insert into area_zone values (?,?,?,?,?)";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,scenario);
-			stmt.setString(2,starttime);
-			stmt.setString(3,area);
-			stmt.setString(4,zone);
-			stmt.setInt(5,active);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
 
 	@Override
 	public void insertMyFrame(String name, int x, int y, int width, int height) {
@@ -687,6 +814,30 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setInt(3,y);
 			stmt.setInt(4,width);
 			stmt.setInt(5,height);
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+	}
+	
+	@Override
+	public void insertAreaZone(String scenario, String starttime, String area, String zone, int active) {
+		final String sqlString = "insert into area_zone values (?,?,?,?,?)";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setString(1,scenario);
+			stmt.setString(2,starttime);
+			stmt.setString(3,area);
+			stmt.setString(4,zone);
+			stmt.setInt(5,active);
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {
@@ -770,6 +921,36 @@ public class CommonDAOSQL implements CommonDAO {
 	        ConnectionUtils.closeAll(stmt, rs);
 		}
 		return list;
+	}
+	
+	
+	@Override
+	public Enum<SystemEnum.OrderAction> getLastActionBySetting(Date date, String setting) {
+		final String sqlString = "select action from order_sign where date = ? and setting = ? order by time desc";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setString(1, Util.getDateStringByDateAndFormatter(date, "yyyy/MM/dd"));
+			stmt.setString(2, setting);
+			rs = stmt.executeQuery();
+	        if(rs.next()){
+
+	        	String actionTextString = rs.getString(1);
+	        	return Util.getOrderActionEnumByText(actionTextString);
+	        }
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt, rs);
+		}
+		
+		return SystemEnum.OrderAction.Default;
 	}
 	*/
 }

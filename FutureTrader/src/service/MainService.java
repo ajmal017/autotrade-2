@@ -29,130 +29,68 @@ public class MainService {
     	return instance;  
     }
     
-    /*
+   
     private void insertSettingActive() {
     	
-    	ArrayList<String[]> resultList = Util.readCSVFile("scenario_active");
+    	ArrayList<String[]> resultList = Util.readCSVFile("setting_active");
     	if(resultList.size() == 0) return;
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	for (String[] result : resultList) {
-    		String scenario = result[0];
+    		String setting = result[0];
     		int active = Integer.parseInt(result[1]);
-    		commonDao.insertScenarioActive(scenario,active);
+    		commonDao.insertSettingActive(setting,active);
     	}
     }
     
-    private void insertScenario() {
+    private void insertSetting() {
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	ArrayList<String> scenarioList = commonDao.getAllActiveScenarioName();
-    	for (String as : scenarioList) {
+    	
     		
-    		ArrayList<String[]> resultList = Util.readCSVFile(as + "_scenario");
-        	if(resultList.size() == 0) continue;
+    		ArrayList<String[]> resultList = Util.readCSVFile("setting");
+        	if(resultList.size() == 0) return;
         	
         	for (String[] result : resultList) {
         		String sname = result[0];
-        		String starttime = result[1];
-        		String endtime = result[2];
-        		String area = result[3];
-        		int percent = Integer.parseInt(result[4]);
-        		int white_min = Integer.parseInt(result[5]);
-        		commonDao.insertScenario(sname,starttime,endtime,area,percent,white_min);
+        		String startTime = result[1];
+        		String endTime = result[2];
+        		int orderIndex = Integer.parseInt(result[3]);
+        		double limitChange = Double.parseDouble(result[4]);
+        		double tick = Double.parseDouble(result[5]);
+        		double stop_change = Double.parseDouble(result[6]);
+        	
+        		commonDao.insertSetting(sname,startTime,endTime,orderIndex,limitChange,tick,stop_change);
         	}
-    	}
     }
     
-    private void insertAreaZone() {
-
-    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	ArrayList<String> scenarioList = commonDao.getAllActiveScenarioName();
-    	for (String as : scenarioList) {
-    		
-    		ArrayList<String[]> resultList = Util.readCSVFile(as + "_area_zone");
-        	if(resultList.size() == 0) continue;
-
-        	for (String[] result : resultList) {
-        		String sname = result[0];
-        		String starttime = result[1];
-        		String area = result[2];
-        		String zone = result[3];
-        		int active = Integer.parseInt(result[4]);
-        		commonDao.insertAreaZone(sname, starttime, area, zone, active);
-        	}
-    	}
-    }
-
-    private void insertMyFrame() {
+    private void insertCloseZone() {
 	
-    	ArrayList<String[]> resultList = Util.readCSVFile("my_frame");
+    	ArrayList<String[]> resultList = Util.readCSVFile("close_zone");
     	if(resultList.size() == 0) return;
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	for (String[] result : resultList) {
-    		String name = result[0];
+    		String zone = result[0];
     		int x = Integer.parseInt(result[1]);
     		int y = Integer.parseInt(result[2]);
-    		int width = Integer.parseInt(result[3]);
-    		int height = Integer.parseInt(result[4]);
-    		commonDao.insertMyFrame(name, x, y, width, height);
-    	}
-    }
-    
-    private void insertVolumeZone() {
-    	
-    	ArrayList<String[]> resultList = Util.readCSVFile("volume_zone");
-    	if(resultList.size() == 0) return;
-    	
-    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	for (String[] result : resultList) {
-    		String time = result[0];
-    		String zone = result[1];
-    		commonDao.insertVolumeZone(time,zone);
-    	}
-    }
-    
-    private void insertVolume() {
-    	
-    	ArrayList<String[]> resultList = Util.readCSVFile("volume");
-    	if(resultList.size() == 0) return;
-    	
-    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	for (String[] result : resultList) {
-    		String scenario = result[0];
-    		String start = result[1];
-    		String end = result[2];
-    		int column = Integer.parseInt(result[3]);
-    		int percent = Integer.parseInt(result[4]);
-    		int whiteMax = Integer.parseInt(result[5]);
-    		String rows = result[6];
-    		commonDao.insertVolume(scenario,start,end,column,percent,whiteMax,rows);
+    		commonDao.insertCloseZone(zone, x, y);
     	}
     }
     
     private void insertNewDataFromCSV() {
     	
-    	insertScenarioActive();
-    	insertScenario();
-    	insertAreaZone();
-    	insertMyFrame();
-    	insertVolumeZone();
-    	insertVolume();
+    	insertSettingActive();
+    	insertSetting();
+    	insertCloseZone();
     }
     
     private void cleanOldDataInDB() {
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	commonDao.cleanScenarioActiveData();
-    	
-    	commonDao.cleanScenarioData();
-    	commonDao.cleanAreaZone();
-    	
-    	commonDao.cleanMyFrame();
-    	
-    	commonDao.cleanVolumeZone();
-    	commonDao.cleanVolume();
+    	commonDao.cleanSettingActive();
+    	commonDao.cleanSetting();
+    	commonDao.cleanCloseZone();
     }
     
     public void refreshDBdataFromCSV() {
@@ -160,5 +98,4 @@ public class MainService {
     	cleanOldDataInDB();
     	insertNewDataFromCSV();
     }
-    */
 }

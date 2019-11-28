@@ -12,8 +12,7 @@ import entity.DailySettingRefresh;
 import entity.OrderSign;
 import entity.ScenarioTrend;
 import entity.Setting;
-import entity.TrendSign;
-import entity.TrendTableItem;
+import entity.SignTableItem;
 //import entity.ScenarioTrend;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -109,11 +108,11 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 				settingService.updateSettingListByRefreshPlan();
 			}
 			
-			for (int i = 0; i < settingService.getActiveSettingList.size(); i++) {
+			for (int i = 0; i < settingService.getActiveSettingList().size(); i++) {
 
 				String setting = settingService.getActiveSettingList().get(i);
 
-				ArrayList<OrderSign> shownList = settingService.getDailySignShowInTable.get(setting);
+				ArrayList<OrderSign> shownList = settingService.getDailySignShownInTable().get(setting);
 				ArrayList<OrderSign> newestList = settingService.getDailySignMap().get(setting);
 				if(shownList.size() != newestList.size()) {
 
@@ -125,14 +124,15 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 						//insert into table
 						SignTableItem signItem = new SignTableItem(
 								Util.getDateStringByDateAndFormatter(newSign.getTime(), "HH:mm:ss"),
-								newSign.getScenario(),
+								setting,
 								Util.getActionTextByEnum(newSign.getOrderAction()),
 								""+newSign.getLimitPrice(),
 								""+newSign.getTick(),
 								""+newSign.getStopPrice(),
 								""+newSign.getTickProfit());
-						ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tbDataHash.get(setting);
-						signData.add(trendItem);
+						@SuppressWarnings("unchecked")
+						ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tableDataHash.get(setting);
+						signData.add(signItem);
 						playSignAlertMusic();
 					}
 
@@ -182,8 +182,23 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 		}
 		
 		//init data from CSV file
+		MainService mainService = MainService.getInstance();
+		mainService.refreshDBdataFromCSV();
+		
 		SettingService settingService = SettingService.getInstance();
-		settingService.refreshDBdataFromCSV();
+		settingService.setTradeObj(this);
+		
+		if(settingService.getActiveSettingList().size() == 0) {
+			//none active scenario
+			Alert alert = new Alert(AlertType.INFORMATION);
+			alert.setTitle("Warning");
+			alert.setHeaderText(null);
+			alert.setContentText("none active setting");
+			alert.showAndWait();
+			return;
+		}
+		
+		
 		
 		
 		try {

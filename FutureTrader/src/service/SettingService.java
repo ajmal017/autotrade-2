@@ -32,15 +32,14 @@ public class SettingService implements IBServiceCallbackInterface {
 	private volatile static SettingService instance;
 	
 	private ArrayList<String> activeSettingList;
-
 	private ArrayList<Setting> workingSettingList;
 	
 	private ArrayList<DailySettingRefresh> settingRefreshPlan;
 	private int passedSettingRefreshPlanCount = 0;
 
-	private Map<String,ArrayList<OrderSign>> dailySignShownInTable;
-	private Map<String,ArrayList<OrderSign>> dailySignMap; //all today's sign
-	private Map<String,ArrayList<CreatedOrder>> currentOrderMap; //current trend's orders
+	private Map<String,ArrayList<OrderSign>> dailySignShownInTable; // <setting, signList>
+	private Map<String,ArrayList<OrderSign>> dailySignMap; //all today's sign <setting, signList>
+	private Map<String,ArrayList<CreatedOrder>> currentOrderMap; //current trend's orders <setting, orderList>
 	
 	private boolean needCloseApp;
 	private FutureTrader tradeObj;
@@ -59,12 +58,10 @@ public class SettingService implements IBServiceCallbackInterface {
     	initAllSettingData();
     }
 	
-	private void initAllScenarioData() {
+	private void initSettingRefreshPlan() {
     	
 		CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	//create scenario start time and end time
-    	//create scenario  refresh plan
-    	ArrayList<String> times = commonDao.getAllDistinctScenarioStartTimeAndEndTime();
+    	ArrayList<String> times = commonDao.getAllSettingDistinctStartTimeAndEndTime();
     	if (times.size() == 0) {
 			
     		return;
@@ -72,19 +69,19 @@ public class SettingService implements IBServiceCallbackInterface {
     	
     	for (String d : times) {
     		
-    		DailyScenarioRefresh refresh = new DailyScenarioRefresh();
+    		DailySettingRefresh refresh = new DailySettingRefresh();
     		refresh.setRefreshTime(d);
     		StringBuilder str = new StringBuilder(Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd"));
     		str.append(d);
     		Date dDate = Util.getDateByStringAndFormatter(str.toString(), "yyyyMMddHH:mm:ss");
     		if (dDate.before(new Date())) {
     			refresh.setPassed(true); 
-    			int passed = getPassedSceRefreshPlanCount() + 1;
-    			setPassedSceRefreshPlanCount(passed);
+    			int passed = getPassedSettingRefreshPlanCount() + 1;
+    			setPassedSettingRefreshPlanCount(passed);
 			} else {
 				refresh.setPassed(false);
 			}
-    		getSceRefreshPlan().add(refresh);	
+    		getSettingRefreshPlan().add(refresh);	
 		}
 	}
 	
@@ -94,50 +91,34 @@ public class SettingService implements IBServiceCallbackInterface {
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	
     	//get all scenario names and set active = true;
-    	ArrayList<String> sceNames = commonDao.getAllActiveScenarioName();
-    	if (sceNames.size() == 0) {
-			//none active scenario
+    	ArrayList<String> settings = commonDao.getAllActiveSettingName();
+    	if (settings.size() == 0) {
+			//none active setting
     		return;
 		}
     	
-    	for (String nameString : sceNames) {
-    		ScenarioTrend st = new ScenarioTrend(nameString);
-    		Enum<SystemEnum.Trend> lastTrend = getTodayLastTrendByScenario(nameString);
-        	st.setTrend(lastTrend);
-        	getActiveScenarioGroupList().add(st);
+    	for (String nameString : settings) {
+        	getActiveSettingList().add(nameString);
+        	getDailySignShownInTable().put(nameString, new ArrayList<OrderSign>());
         	getDailySignMap().put(nameString, new ArrayList<OrderSign>());
+        	getCurrentOrderMap().put(nameString, new ArrayList<CreatedOrder>());
 		}
     	
-    	initAllVolumeZoneData();
-		initAllVolumeData();
-		initAllScenarioData();
+		initSettingRefreshPlan();
+		ZoneColorInfoService.getInstance().loadCloseMonitorZoneListWithDefaultColor(commonDao.getAllCloseMonitorZone());
 	}
 	
-	private void newVolZonePlanRefreshed() {
+	private void newSettingPlanRefreshed() {
     	
-    	DailyScenarioRefresh refresh = getVolZoneRefreshPlan().get(getPassedVolZoneRefreshPlanCount());
+    	DailySettingRefresh refresh = getSettingRefreshPlan().get(getPassedSettingRefreshPlanCount());
 		refresh.setPassed(true);
-		setPassedVolZoneRefreshPlanCount(getPassedVolZoneRefreshPlanCount()+1);
-    }
-	
-	private void newVolPlanRefreshed() {
-    	
-    	DailyScenarioRefresh refresh = getVolRefreshPlan().get(getPassedVolRefreshPlanCount());
-		refresh.setPassed(true);
-		setPassedVolRefreshPlanCount(getPassedVolRefreshPlanCount()+1);
-    }
-	
-	private void newScePlanRefreshed() {
-    	
-    	DailyScenarioRefresh refresh = getSceRefreshPlan().get(getPassedSceRefreshPlanCount());
-		refresh.setPassed(true);
-		setPassedSceRefreshPlanCount(getPassedSceRefreshPlanCount()+1);
+		setPassedSettingRefreshPlanCount(getPassedSettingRefreshPlanCount()+1);
     }
 	
 	private Map<String, List<String>> getOrderRecordWithSetting(String setting) {
     	
         Map<String, List<String>> map = new HashMap<String, List<String>>();
-    	ArrayList<OrderSign> tsList = CommonDAOFactory.getCommonDAO().getTrendSignListByDate(new Date(), scenario);
+    	ArrayList<OrderSign> tsList = CommonDAOFactory.getCommonDAO().getOrderSignListByDate(new Date(), setting);
         if(tsList.size() == 0) return map;
         
     	for (int i = 1; i < tsList.size(); i ++) {

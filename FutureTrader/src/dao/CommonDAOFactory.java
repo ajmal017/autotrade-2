@@ -18,7 +18,7 @@ public class CommonDAOFactory {
 
 
 
-	//setting_acting
+	//setting_active
 	---------------------------------------------------------------------------------------------------
 	setting | active
 	String  | int
@@ -30,18 +30,18 @@ public class CommonDAOFactory {
 
 	//setting
 	---------------------------------------------------------------------------------------------------
-	setting | order_index | price_grow | tick | limit_
-	String
+	setting | start_time| end_time | order_index | limit_change | tick   | stop_change
+	String  | String    | String   | int         | double       | double | double
 	---------------------------------------------------------------------------------------------------
 
 
 
 	//close_zone
 	---------------------------------------------------------------------------------------------------
-	zone | x | y
-	String  | int | int
+	zone | x | y | active
+	String  | int | int | int
 	---------------------------------------------------------------------------------------------------
-	z1, 300, 200
+	z1, 300, 200, 1
 
 	*/
 }
