@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import entity.ColorCount;
 import entity.Zone;
 import systemenum.SystemEnum;
 
@@ -82,6 +83,26 @@ private volatile static ZoneColorInfoService instance;
 		}
         
 	}
+	
+    public ColorCount getColorCountByCloseZoneList() {
+
+    	ColorCount count =  new ColorCount();
+    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
+    	for (Zone zone : colorService.getCloseMonitorZoneList()) {
+    		if (zone.getColor() == SystemEnum.Color.Green) {
+    			count.setGreen(count.getGreen()+1);
+    		} else if (zone.getColor() == SystemEnum.Color.Red) {
+    			count.setRed(count.getRed()+1);
+    		} else if (zone.getColor() == SystemEnum.Color.White) {
+    			count.setWhite(count.getWhite()+1);
+    		} else if (zone.getColor() == SystemEnum.Color.Yellow) {
+    			count.setYellow(count.getYellow()+1);
+    		} else {
+    			count.setOther(count.getOther()+1);
+    		}
+    	}
+    	return count;
+    }
 	
 	public ArrayList<Zone> getCloseMonitorZoneList() {
 		return closeMonitorZoneList;

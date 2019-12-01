@@ -32,15 +32,18 @@ public class SettingService implements IBServiceCallbackInterface {
 	private volatile static SettingService instance;
 	
 	private ArrayList<String> activeSettingList;
-	private ArrayList<Setting> workingSettingList;
+	private ArrayList<Setting> workingSettingList; //must be active, and will refresh
 	
 	private ArrayList<DailySettingRefresh> settingRefreshPlan;
 	private int passedSettingRefreshPlanCount = 0;
 
 	private Map<String,ArrayList<OrderSign>> dailySignShownInTable; // <setting, signList>
 	private Map<String,ArrayList<OrderSign>> dailySignMap; //all today's sign <setting, signList>
-	private Map<String,ArrayList<CreatedOrder>> currentOrderMap; //current trend's orders <setting, orderList>
-	
+	private Map<String,ArrayList<CreatedOrder>> currentOrderMap; //current trend's orders <setting, orderList>. if stop, order will be clear
+	private HashMap<String, String> orderIsSettingMap; //<orderId, setting>
+
+	private int dailySignCount = 0;
+
 	private boolean needCloseApp;
 	private FutureTrader tradeObj;
 
@@ -121,10 +124,9 @@ public class SettingService implements IBServiceCallbackInterface {
     	ArrayList<OrderSign> tsList = CommonDAOFactory.getCommonDAO().getOrderSignListByDate(new Date(), setting);
         if(tsList.size() == 0) return map;
         
-    	for (int i = 1; i < tsList.size(); i ++) {
-    		OrderSign tSign = tsList.get(i); //second trend
-    		double newProfitIB = Util.getProfit(tsList.get(i-1).getPriceIB(), tSign.getPriceIB(), tsList.get(i-1).getTrend());
-			tSign.setProfitIB(newProfitIB);
+    	for (int i = 0; i < tsList.size(); i ++) {
+    		double profit = Util.getProfit(tsList.get(i).getLimitPrice(), tsList.get(i).getStopPrice(), tsList.get(i).getOrderAction());
+    		tsList.get(i).setTickProfit(profit);
 		}
     	
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
@@ -136,57 +138,35 @@ public class SettingService implements IBServiceCallbackInterface {
 		    
 		    //time
 		    params.add(df.format(sign.getTime()));
-		    //scenario
-		    params.add(sign.getScenario());
-		    //trend
-		    params.add(sign.getTrendText());
-		    //count
-		    if(sign.getGreenCount()>0) {
-		    	params.add(sign.getGreenCount()+"");
+		    //setting
+		    params.add(sign.getSetting());
+		    //action
+		    params.add(sign.getActionText());
+		    //limit price
+		    if(sign.getLimitPrice() > 0) {
+		    	params.add(sign.getLimitPrice()+"");
 		    } else {
 		    	params.add("0");
 		    }
-		    if(sign.getRedCount()>0) {
-		    	params.add(sign.getRedCount()+"");
+		    //tick
+		    if(sign.getTick() > 0) {
+		    	params.add(sign.getTick()+"");
 		    } else {
 		    	params.add("0");
 		    }
-		    if(sign.getWhiteCount()>0) {
-		    	params.add(sign.getWhiteCount()+"");
+		    //stop price
+		    if(sign.getStopPrice() > 0) {
+		    	params.add(sign.getStopPrice()+"");
 		    } else {
 		    	params.add("0");
 		    }
-		    //price
-		    if(sign.getPriceSwim()!=0) {
-		    	params.add(sign.getPriceSwim()+"");
-		    } else {
-		    	params.add("0");
-		    }
-		    if(sign.getPriceIB()!=0) {
-		    	params.add(sign.getPriceIB()+"");
-		    } else {
-		    	params.add("0");
-		    }
-		    
 		    //profit
-		    if(sign.getProfitSwim()!=0) {
-		    	params.add(sign.getProfitSwim()+"");
-		    } else {
-		    	params.add("0");
-		    }
-		    if(sign.getProfitIB()!=0) {
-		    	params.add(sign.getProfitIB()+"");
-		    } else {
-		    	params.add("0");
-		    }
-		    if(sign.getQuantity()!=0) {
-		    	params.add(sign.getQuantity()+"");
+		    if(sign.getTickProfit()!=0) {
+		    	params.add(sign.getTickProfit()+"");
 		    } else {
 		    	params.add("0");
 		    }
 		    
-		    //desc
-		    params.add(sign.getDesc());
 		    //map key
 		    map.put((i+1) + "", params);
 		}
@@ -194,23 +174,22 @@ public class SettingService implements IBServiceCallbackInterface {
     }
 	
 	private String[] excelTitle() {
-        String[] strArray = { "time", "scenario", "trend", "green", "red", "white", "price_swim", "price_ib", "profit_swim", "profit_ib", "quantity", "desc"};
+        String[] strArray = { "time", "setting", "action", "limit price", "tick", "stop price", "profit"};
         return strArray;
     }
 	    
-    private ColorCount getColorCountBySceZoneList(ArrayList<Zone> zoneList) {
+    private ColorCount getColorCountByCloseZoneList() {
 
     	ColorCount count =  new ColorCount();
     	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-    	for (Zone zone : zoneList) {
-    		Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone.getZone());
-    		if (c == SystemEnum.Color.Green) {
+    	for (Zone zone : colorService.getCloseMonitorZoneList()) {
+    		if (zone.getColor() == SystemEnum.Color.Green) {
     			count.setGreen(count.getGreen()+1);
-    		} else if (c == SystemEnum.Color.Red) {
+    		} else if (zone.getColor() == SystemEnum.Color.Red) {
     			count.setRed(count.getRed()+1);
-    		} else if (c == SystemEnum.Color.White) {
+    		} else if (zone.getColor() == SystemEnum.Color.White) {
     			count.setWhite(count.getWhite()+1);
-    		} else if (c == SystemEnum.Color.Yellow) {
+    		} else if (zone.getColor() == SystemEnum.Color.Yellow) {
     			count.setYellow(count.getYellow()+1);
     		} else {
     			count.setOther(count.getOther()+1);
@@ -219,227 +198,53 @@ public class SettingService implements IBServiceCallbackInterface {
     	return count;
     }
 	
-	public void closeOrderByScenario(String scenario) {
-    	
-    	pushNewTrendSign(scenario, SystemEnum.Trend.Default, 0, 0, 0);
-    }
-	
-	public void updateWorkingVolumeListByRefreshPlan() {
-
-    	if (getActiveScenarioGroupList().size() == 0) {
-    		workingScenarioList.clear();
-    		
-    		return;
-    	}
-    	
-    	CommonDAO commonDAO = CommonDAOFactory.getCommonDAO();
-    	
-    	//get new working volumes
-    	ArrayList<Volume> newVolumeList = commonDAO.getAllWorkingVolumeAtTime(new Date());
-    	if (newVolumeList.size() == 0) {
-    		
-    		workingVolumeList.clear();
-    		newVolPlanRefreshed();
-    		return;
-		}
-    	
-    	//get active working scenarios
-    	ArrayList<Volume> tempVolumeList = new ArrayList<Volume>();
-    	for (Volume newV : newVolumeList) {
-    		for (ScenarioTrend activeS : getActiveScenarioGroupList()) {
-    			if (newV.getScenario().equals(activeS.getScenario())) {
-    				tempVolumeList.add(newV);
-    				break;
-				}
-    		}
-		}
-    	if (tempVolumeList.size() == 0) {
-    		
-    		workingVolumeList.clear();
-    		newVolPlanRefreshed();
-    		return;
-		} else {
-			//close old working scenario order
-			for (Volume oldV : workingVolumeList) {
-				for (Volume newV : tempVolumeList) {
-					if (oldV.getScenario().equals(newV.getScenario())) {
-						newV.setTrend(oldV.getTrend()); //save trend
-						break;
-					}
-				}
-			}
-		}
-    	
-    	//update working scenario memory
-    	workingVolumeList.clear();
-    	for (Volume workingVolume : tempVolumeList) {
-			workingVolumeList.add(workingVolume);
-		}
-		newVolPlanRefreshed();
-	}
-	
-	public void updateWorkingVolumeZoneListByRefreshPlan() {
-
-    	if (getActiveScenarioGroupList().size() == 0) {
-    		workingScenarioList.clear();
-    		
-    		return;
-    	}
-    	
-    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	
-    	//get new working volumes
-    	DailyScenarioRefresh refresh = getVolZoneRefreshPlan().get(passedVolZoneRefreshPlanCount);
-    	ArrayList<Zone> newZones = commonDao.getVolumeZoneList(refresh.getRefreshTime());
-    	if (newZones.size() == 0) {
-    		
-    		ZoneColorInfoService.getInstance().getVolumeZoneList().clear();
-    		workingVolumeList.clear();
-    		newVolPlanRefreshed();
-    		return;
-		}
-
-    	ZoneColorInfoService.getInstance().loadVolumeBarZoneListWithDefaultColor(newZones);
-		newVolZonePlanRefreshed();
-	}
 	
 	//update when timer called
-    public void updateWorkingScenarioListByRefreshPlan() {
+    public void updateSettingListByRefreshPlan() {
     	
-    	if (getActiveScenarioGroupList().size() == 0) {
-    		workingScenarioList.clear();
+    	if (getActiveSettingList().size() == 0) {
     		
     		return;
     	}
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	
-    	//get new working scenarios
-    	ArrayList<Scenario> newScenarioList = commonDao.getAllWorkingScenarioAtTime(new Date());
-    	if (newScenarioList.size() == 0) {
+    	//get new working setting
+    	ArrayList<Setting> newSettingList = commonDao.getAllWorkingSettingAtTime(new Date());
+    	if (newSettingList.size() == 0) {
     		
-    		workingScenarioList.clear();
-    		newScePlanRefreshed();
-    		return;
-		}
-    	
-    	//get active working scenarios
-    	ArrayList<Scenario> tempScenarioList = new ArrayList<>();
-    	for (Scenario newS : newScenarioList) {
-    		for (ScenarioTrend activeS : getActiveScenarioGroupList()) {
-    			if (newS.getScenario().equals(activeS.getScenario())) {
-    				tempScenarioList.add(newS);
-    				break;
-				}
-    		}
-		}
-    	if (tempScenarioList.size() == 0) {
-    		//none new scenario
-    		workingScenarioList.clear();
-    		newScePlanRefreshed();
-    		return;
+    		workingSettingList.clear();
+    		
 		} else {
 			
-			for (Scenario oldS : workingScenarioList) {
-				for (Scenario newS : tempScenarioList) {
-					if (oldS.getScenario().equals(newS.getScenario())) {
-						newS.setTrend(oldS.getTrend()); //save trend
-						break;
+			//get active working setting
+	    	ArrayList<Setting> tempSettingList = new ArrayList<>();
+	    	for (Setting newS : newSettingList) {
+	    		for (String activeS : getActiveSettingList()) {
+	    			if (newS.getSetting().equals(activeS)) {
+	    				tempSettingList.add(newS);
+	    				break;
 					}
+	    		}
+			}
+	    	if (tempSettingList.size() == 0) {
+	    		//none new setting
+	    		workingSettingList.clear();
+	    		
+			} else {
+				
+		    	//update working setting
+		    	workingSettingList.clear();
+		    	for (Setting workingS : tempSettingList) {
+		    		workingSettingList.add(workingS);
 				}
 			}
+	    	
 		}
+		newSettingPlanRefreshed();
     	
-    	//add area to new scenario
-    	for (Scenario s : tempScenarioList) {
-    		
-    		ArrayList<Area> areaList  = 
-    				commonDao.getAreaListWithoutZoneByScenario(s.getScenario(),new Date());
-    		for (Area area : areaList) {
-    			ArrayList<String> zones = commonDao.getOnlyActiveZoneListByScenarioArea(area.getScenario(),area.getStartTime(), area.getArea());
-    			area.setZoneList(zones);
-			}
-    		s.setAreaList(areaList);
-		}
-    	
-    	//get new related zone by new scenario
-    	ArrayList<Zone> relatedZones = commonDao.getRelatedZoneListByScenarioList(tempScenarioList);
-    	
-    	//update working scenario memory
-    	workingScenarioList.clear();
-    	ZoneColorInfoService zcService = ZoneColorInfoService.getInstance();
-    	zcService.reloadSceZoneColorsByNewZoneListWithDefaultColor(relatedZones);
-    	for (Scenario workingScenario : tempScenarioList) {
-			workingScenarioList.add(workingScenario);
-		}
-		newScePlanRefreshed();
-    }
-	
-    public void updateRelatedVolZone() {
-    	
-    	ZoneColorInfoService zService = ZoneColorInfoService.getInstance();
-    	if (!zService.getVolZoneColors().isEmpty()) {
-    		zService.getVolZoneColors().clear();
-		}
-    	
-    	//new
-    	int yellowCount = 0;
-    	for (Zone vBar : zService.getVolumeZoneList()) {
-    		if(vBar.getColor() == SystemEnum.Color.Yellow) {
-    			yellowCount++;
-    			for (int i = 0; i < SystemConfig.ZONE_Y.length;i++) {
-    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(vBar.getZone(),String.valueOf(i+1),true);
-    				zService.getVolZoneColors().put(relatedZone.getZone(), relatedZone);
-    			}
-    			
-    		}
-    	}
-    	setYellowZoneCount(yellowCount);
-    	//new end
-
-    	/* 
-    	//old
-    	ArrayList<String> yellowZone = new ArrayList<String>();
-    	for (Zone vBar : zService.getVolumeZoneList()) {
-    		if(vBar.getColor() == SystemEnum.Color.Yellow) {
-    			yellowZone.add(vBar.getZone());
-    		}
-    	}
-    	setYellowZoneCount(yellowZone.size());
-    	if(yellowZone.size() == 0) return;
-    	
-    	for (Volume vol : getWorkingVolumeList()) {
-    		
-    		if(vol.getColumn() > yellowZone.size()) {
-    			System.out.println("updateRelatedVolZone vol.getColumn()" +vol.getColumn()+ " > yellowZone.size()"+yellowZone.size());
-    			continue;
-    		}
-    		
-    		int activeColume;
-    		if (vol.getColumn() == 0) {
-    			activeColume = yellowZone.size();
-    		} else {
-    			activeColume = vol.getColumn();
-    		}
-    		for (int i = 0; i < activeColume; i ++) {
-    			
-    			try {
-    				String yz = yellowZone.get(yellowZone.size()-1-i);
-    				for (String row : vol.getRows()) {
-    					Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,true);
-
-    					if(!zService.getVolZoneColors().containsKey(relatedZone.getZone())) {
-    						zService.getVolZoneColors().put(relatedZone.getZone(), relatedZone);
-    					}
-    				}
-    			}  catch (Exception e) {
-					System.out.println("Exception vol:"+vol.getScenario()+" activeColume:"+activeColume+" i:"+i);
-					e.printStackTrace();
-				}
-    		}
-    	}
-    	//old end
-    	*/
+		closeStopWorkingSettingOrder();
+		
     }
     
     public void exportTodayOrderProfit() {
@@ -468,297 +273,25 @@ public class SettingService implements IBServiceCallbackInterface {
     
     public void closeAllSettingWhenAppWantClose() {
     	
-    	ArrayList<String> sces = new ArrayList<String>();
-    	for(ScenarioTrend st : getActiveScenarioGroupList()) {
-    		if(st.getTrend() != SystemEnum.Trend.Default) {
-    			sces.add(st.getScenario());
+    	wantCloseOrderCount = 0;
+    	ArrayList<String> settings = new ArrayList<String>();
+    	for(String setting : getActiveSettingList()) {
+    		if(currentOrderMap.get(setting).size() > 0) {
+    	    	wantCloseOrderCount += currentOrderMap.get(setting).size();
     		}
     	}
     	
-    	if(sces.size() > 0) {
+    	if(wantCloseOrderCount > 0) {
     		setNeedCloseApp(true);
-    		wantCloseOrderCount = sces.size();
-    		for(String s : sces) {
-    			closeOrderByScenario(s);
-    		}
+    		closeAllOrderIfNeed();
     	} else {
-    		if(getAutoTradeObj() != null) {
-    			getAutoTradeObj().closeAppAfterPriceUpdate();
+    		if(getTradeObj() != null) {
+    			getTradeObj().closeAppAfterPriceUpdate();
     	    }
     	}
     }
     
-    
-    public void checkScenarioGroupTrend () {
-    	
-    	checkVolumeTrend();
-    	checkScenarioTrend();
-    	
-    	for (ScenarioTrend groupTrend : getActiveScenarioGroupList()) {
-    		
-    		Enum<SystemEnum.Trend> volTrend = SystemEnum.Trend.Default;
-    		boolean volWorking = false;
-    		Volume matchVol = null;
-    		for (Volume vol : getWorkingVolumeList()) {
-    			
-    			if(vol.getScenario().equals(groupTrend.getScenario())) {
-    				matchVol = vol;
-    				volWorking = true;
-    				volTrend = vol.getTrend();
-    				break;
-    			}
-    		}
-    		
-    		Enum<SystemEnum.Trend> sceTrend = SystemEnum.Trend.Default;
-    		boolean sceWorking = false;
-    		Scenario matchSce = null;
-    		for (Scenario sce : getWorkingScenarioList()) {
-    			
-    			if(sce.getScenario().equals(groupTrend.getScenario())) {
-    				matchSce = sce;
-    				sceWorking = true;
-    				sceTrend = sce.getTrend();
-    				break;
-    			}
-    		}
-    		
-    		if(!volWorking && !sceWorking && groupTrend.getTrend() != SystemEnum.Trend.Default) {
-    			groupTrend.setTrend(SystemEnum.Trend.Default);
-    			closeOrderByScenario(groupTrend.getScenario());
-    			continue;
-    		}
-    		
-    		if(sceWorking) {
-    			
-    			if(volWorking) {
-    				if (volTrend == sceTrend && 
-        					volTrend != SystemEnum.Trend.Default &&
-        					volTrend != groupTrend.getTrend()) {
-    					//trend change
-    					groupTrend.setTrend(volTrend);
-    					
-    					ArrayList<Scenario> ss = new ArrayList<Scenario>();
-    					ss.add(matchSce);
-    					ArrayList<Zone> zones = CommonDAOFactory.getCommonDAO().getRelatedZoneListByScenarioList(ss);
-    					ColorCount cc = getColorCountBySceZoneList(zones);
-    					pushNewTrendSign(groupTrend.getScenario(),
-    							groupTrend.getTrend(),
-    							cc.getGreen()+matchVol.getGreen(),
-    							cc.getRed()+matchVol.getRed(),
-    							cc.getWhite()+matchVol.getWhite());
-    				}
-    			} else {
-    				
-    				if(sceTrend != SystemEnum.Trend.Default && sceTrend != groupTrend.getTrend()) {
-        				//trend change
-        				groupTrend.setTrend(sceTrend);
-        				
-        				ArrayList<Scenario> ss = new ArrayList<Scenario>();
-    					ss.add(matchSce);
-    					ArrayList<Zone> zones = CommonDAOFactory.getCommonDAO().getRelatedZoneListByScenarioList(ss);
-    					ColorCount cc = getColorCountBySceZoneList(zones);
-        				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),cc.getGreen(),cc.getRed(),cc.getWhite());
-        			}
-    			}
-    			
-    		} else {
-    			
-    			if(volTrend != SystemEnum.Trend.Default && volTrend != groupTrend.getTrend()) {
-    				//trend change
-    				groupTrend.setTrend(volTrend);
-    				pushNewTrendSign(groupTrend.getScenario(),groupTrend.getTrend(),matchVol.getGreen(),matchVol.getRed(),matchVol.getWhite());
-    			}
-    		}
-    	} 
-    }
-    
-    
-    private void checkVolumeTrend() {
-    	
-    	if(getWorkingVolumeList().size() == 0) return;
-    	
-    	ZoneColorInfoService zService = ZoneColorInfoService.getInstance();
-    	
-    	ArrayList<String> yellowZone = new ArrayList<String>();
-    	for (Zone vBar : zService.getVolumeZoneList()) {
-    		if(vBar.getColor() == SystemEnum.Color.Yellow) {
-    			yellowZone.add(vBar.getZone());
-    		}
-    	}
-    	if(yellowZone.size() == 0) return;
-    	
-    	for (Volume vol : getWorkingVolumeList()) {
-    		
-    		if(vol.getColumn() > yellowZone.size()) {
-    			System.out.println("checkVolumeTrend vol.getColumn()" +vol.getColumn()+ " > yellowZone.size()"+yellowZone.size());
-    			continue;
-    		}
-    		
-    		boolean trendAppear = false;
-    		int volGreen = 0;
-			int volRed = 0;
-			int volWhite = 0;
-			int activeColume;
-    		if (vol.getColumn() == 0) {
-    			activeColume = yellowZone.size();
-    		} else {
-    			activeColume = vol.getColumn();
-    		}
-    		
-			for (int i = 0; i < activeColume; i ++) {
-    			
-				try {
-					String yz = yellowZone.get(yellowZone.size()-1-i);
-	    			for (String row : vol.getRows()) {
-	    				Zone relatedZone = Util.getRelatedZoneWithVolBarAndRow(yz,row,false);
-	    				Enum<SystemEnum.Color> c = zService.getColorByVolZone(relatedZone.getZone());
-						if (c == SystemEnum.Color.Green) {volGreen++;}			
-						if (c == SystemEnum.Color.Red) {volRed++;}
-						if (c == SystemEnum.Color.White) {volWhite++;}
-	    			}
-				} catch (Exception e) {
-					System.out.println("Exception vol:"+vol.getScenario()+" activeColume:"+activeColume+" i:"+i);
-					e.printStackTrace();
-				}
-				
-    		}
-    		
-			vol.setGreen(volGreen);
-			vol.setRed(volRed);
-			vol.setWhite(volWhite);
-			
-			Enum<SystemEnum.Color> newColor = SystemEnum.Color.Default;
-			
-    		if ((volGreen + volRed + volWhite == activeColume*vol.getRows().size() && volGreen > volRed && volRed <= vol.getPercent() && volWhite <= vol.getWhiteMax()) ||
-				(volGreen + volRed + volWhite == activeColume*vol.getRows().size() && volRed > volGreen && volGreen <= vol.getPercent() && volWhite <= vol.getWhiteMax())) {
-					
-    			trendAppear = true;
-    			if(volGreen > volRed) {
-    				newColor = SystemEnum.Color.Green;
-    			} else {
-    				newColor = SystemEnum.Color.Red;
-    			}
-			}
-    		
-			if (trendAppear) {
-
-				if(newColor == SystemEnum.Color.Green && vol.getTrend() != SystemEnum.Trend.Up) {
-					vol.setTrend(SystemEnum.Trend.Up);
-					System.out.println(vol.getScenario()+" vol trendAppear:"+Util.getTrendTextByEnum(vol.getTrend()) + " green:" + volGreen + " red:" + volRed);
-				}
-				if(newColor == SystemEnum.Color.Red && vol.getTrend() != SystemEnum.Trend.Down) {
-					vol.setTrend(SystemEnum.Trend.Down);
-					System.out.println(vol.getScenario()+" vol trendAppear:"+Util.getTrendTextByEnum(vol.getTrend()) + " green:" + volGreen + " red:" + volRed);
-				}
-			} else {
-				vol.setTrend(SystemEnum.Trend.Default);
-			}
-			
-			
-    	}
-    }
-    
-    private void checkScenarioTrend() {
-    	
-    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-    	
-    	for (Scenario scenario : getWorkingScenarioList()) {
-    		
-    		boolean trendAppear = true;
-    		
-    		Enum<SystemEnum.Color> preColor = SystemEnum.Color.Default;
-    		Enum<SystemEnum.Color> thisColor = SystemEnum.Color.Default;
-			for (Area area : scenario.getAreaList()) {
-				int areaGreen = 0;
-				int areaRed = 0;
-				int areaWhite = 0;
-				for (String zone : area.getZoneList()) {
-					Enum<SystemEnum.Color> c = colorService.getColorBySceZone(zone);
-					if (c == SystemEnum.Color.Green) {areaGreen++;}			
-					if (c == SystemEnum.Color.Red) {areaRed++;}
-					if (c == SystemEnum.Color.White) {areaWhite++;}
-				}
-				
-				if(areaGreen + areaRed + areaWhite == area.getZoneList().size()) {
-					
-					if ((areaGreen > areaRed && areaGreen > area.getPercent()) || 
-					    (areaRed > areaGreen && areaRed > area.getPercent()) ||
-					    (areaGreen > areaRed && areaGreen == area.getPercent() && areaWhite >= area.getWhiteMin()) ||
-					    (areaRed > areaGreen && areaRed == area.getPercent() && areaWhite >= area.getWhiteMin())) {
-						
-						if(preColor != SystemEnum.Color.Default) {
-							
-							if(areaGreen > areaRed) {
-								thisColor = SystemEnum.Color.Green;
-							} else {
-								thisColor = SystemEnum.Color.Red;
-							}
-							if(thisColor != preColor) {
-								trendAppear = trendAppear & false;
-							} else {
-								trendAppear = trendAppear & true; 
-							}
-						} else {
-							trendAppear = trendAppear & true; 
-						}
-						
-						
-					} else {
-						trendAppear = trendAppear & false;
-					}
-					
-				} else {
-					trendAppear = trendAppear & false;
-				}
-				
-				
-				/*
-				if ((areaGreen + areaRed + areaWhite== area.getZoneList().size() && areaGreen > areaRed && areaGreen >= area.getPercent()) ||
-				    (areaGreen + areaRed + areaWhite== area.getZoneList().size() && areaRed > areaGreen && areaRed >= area.getPercent())) {
-					
-					if(preColor != SystemEnum.Color.Default) {
-						
-						if(areaGreen > areaRed) {
-							thisColor = SystemEnum.Color.Green;
-						} else {
-							thisColor = SystemEnum.Color.Red;
-						}
-						if(thisColor != preColor) {
-							trendAppear = trendAppear & false;
-						} else {
-							trendAppear = trendAppear & true; 
-						}
-					} else {
-						trendAppear = trendAppear & true; 
-					}
-					
-				} else {
-					trendAppear = trendAppear & false;
-				}
-				*/
-				
-				if(areaGreen > areaRed) {
-					preColor = SystemEnum.Color.Green;
-				} else {
-					preColor = SystemEnum.Color.Red;
-				}
-				
-			}
-			if (trendAppear) {
-				
-				if(preColor == SystemEnum.Color.Green && scenario.getTrend() != SystemEnum.Trend.Up) {
-					scenario.setTrend(SystemEnum.Trend.Up);
-				}
-				if(preColor == SystemEnum.Color.Red && scenario.getTrend() != SystemEnum.Trend.Down) {
-					scenario.setTrend(SystemEnum.Trend.Down);
-				}
-			} else {
-				scenario.setTrend(SystemEnum.Trend.Default);
-			}
-		}
-	}
-    
-    public void pushNewTrendSign (String scenario, Enum<SystemEnum.Trend> trend, int green, int red, int white) {
+    public void createNewOrder (String setting, Enum<SystemEnum.Trend> trend, int green, int red, int white) {
     	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	
@@ -852,7 +385,7 @@ public class SettingService implements IBServiceCallbackInterface {
 	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime, int preQuantity) {
 		System.out.println("Setting service updateTradePrice:"+price+" preOrderScenario:"+preOrderScenario+" preOrderTime:"+preOrderTime);
 		//todo
-//		CommonDAOFactory.getCommonDAO().updateLastTrendSignIBPrice(preOrderScenario, preOrderTime, price, preQuantity);
+		CommonDAOFactory.getCommonDAO().updateLastTrendSignIBPrice(preOrderScenario, preOrderTime, price, preQuantity);
 		if(isNeedCloseApp() && wantCloseOrderCount > 0) wantCloseOrderCount--;
 		if(isNeedCloseApp() && getTradeObj() != null && wantCloseOrderCount == 0) {
 			setNeedCloseApp(false);
@@ -911,6 +444,14 @@ public class SettingService implements IBServiceCallbackInterface {
 		this.activeSettingList = activeSettingList;
 	}
 	
+	public ArrayList<Setting> getWorkingSettingList() {
+		return workingSettingList;
+	}
+
+	public void setWorkingSettingList(ArrayList<Setting> workingSettingList) {
+		this.workingSettingList = workingSettingList;
+	}
+
 	public int getPassedSettingRefreshPlanCount() {
 		return passedSettingRefreshPlanCount;
 	}
@@ -925,5 +466,21 @@ public class SettingService implements IBServiceCallbackInterface {
 	
 	public void setSettingRefreshPlan(ArrayList<DailySettingRefresh> settingRefreshPlan) {
 		this.settingRefreshPlan = settingRefreshPlan;
+	}
+	
+	public int getDailySignCount() {
+		return dailySignCount;
+	}
+
+	public void setDailySignCount(int dailySignCount) {
+		this.dailySignCount = dailySignCount;
+	}
+	
+	public HashMap<String, String> getOrderIsSettingMap() {
+		return orderIsSettingMap;
+	}
+
+	public void setOrderIsSettingMap(HashMap<String, String> orderIsSettingMap) {
+		this.orderIsSettingMap = orderIsSettingMap;
 	}
 }

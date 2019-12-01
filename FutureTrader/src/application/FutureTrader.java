@@ -7,10 +7,12 @@ import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.java4less.ocr.utils.a;
+
 import config.SystemConfig;
+import entity.ColorCount;
 import entity.DailySettingRefresh;
 import entity.OrderSign;
-import entity.ScenarioTrend;
 import entity.Setting;
 import entity.SignTableItem;
 //import entity.ScenarioTrend;
@@ -20,9 +22,9 @@ import javafx.collections.ObservableList;
 import javafx.stage.Stage;
 import service.IBService;
 import service.MainService;
-import service.ScenarioGroupService;
 import service.SettingService;
 import service.SettingServiceCallbackInterface;
+import service.ZoneColorInfoService;
 import systemenum.SystemEnum;
 //import service.IBService;
 import tool.MP3Player;
@@ -47,8 +49,6 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 
 	private Hashtable<String,Object> tableDataHash;
 	
-	private boolean wantCloseApp;
-	
 	private boolean isSettingRefreshTime() {
 
 		SettingService sService = SettingService.getInstance();
@@ -67,6 +67,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	private void calledBySecondTimer () {
 		
 		SettingService settingService = SettingService.getInstance();
+		ZoneColorInfoService colorInfoService = ZoneColorInfoService.getInstance();
 		
 		if (settingService.getActiveSettingList().size() == 0) {
 			
@@ -94,7 +95,8 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	        } catch (Exception e) {
 	        	e.printStackTrace();
 	        }
-			settingService.exportTodayOrderProfit(); //export �excel
+			//export profit report
+			settingService.exportTodayOrderProfit(); 
 			
 			Alert alert = new Alert(AlertType.INFORMATION);
 			alert.setTitle("Warning");
@@ -103,9 +105,26 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			alert.showAndWait();
 			
 		} else {
-			//now is a refresh time
-			if(isSettingRefreshTime()) {
-				settingService.updateSettingListByRefreshPlan();
+			
+			//update closeZone color
+			colorInfoService.updateCloseMonitorZoneColorByTimer();
+			//check closeZone color
+			ColorCount cc = colorInfoService.getColorCountByCloseZoneList();
+			if ((cc.getGreen() > 0 || cc.getRed() > 0) && settingService.getDailySignCount() > 0) {
+				//close all order
+				settingService.closeAllOrderIfNeed();
+			} else {
+				
+				//now is a refresh time
+				if(isSettingRefreshTime()) {
+					settingService.updateSettingListByRefreshPlan();
+				}
+				
+				//if market is open and every working setting need open first order 
+				if (settingService.getPassedSettingRefreshPlanCount() > 0) {
+					
+					settingService.openFirstOrderIfNeed();
+				}
 			}
 			
 			for (int i = 0; i < settingService.getActiveSettingList().size(); i++) {
@@ -255,6 +274,12 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	
 	@Override
 	public void closeAppAfterPriceUpdate() {
+		
+		try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
 		
 		if(IBService.getInstance().getIbApiConfig().isActive() && IBService.getInstance().isIBConnecting()) {
 			IBService.getInstance().ibDisConnect();

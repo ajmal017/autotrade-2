@@ -11,10 +11,10 @@ public class CommonDAOFactory {
 
 	//order_sign
 	---------------------------------------------------------------------------------------------------
-	date   | time   | setting | action | limit_price | tick   | close_price | tick_profit
-	String | String | String  | String | double      | double | double      | double
+	date   | time   | orderidinib | setting | action | limit_price | tick   | close_price | tick_profit
+	String | String | int         | String  | String | double      | double | double      | double
 	---------------------------------------------------------------------------------------------------
-	yyyy/MM/dd, HH:mm:ss, s1, BUY, 100.00, 2.0, 102.00, 4.00
+	yyyy/MM/dd, HH:mm:ss, 10, s1, BUY, 100.00, 2.0, 102.00, 4.00
 
 
 

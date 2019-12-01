@@ -45,13 +45,14 @@ public class CommonDAOSQL implements CommonDAO {
 	        	dateStr.append(rs.getString(2));
 	        	OrderSign sign = new OrderSign();
 	        	sign.setTime(Util.getDateByStringAndFormatter(dateStr.toString(), "yyyy/MM/dd HH:mm:ss"));
-	        	sign.setSetting(rs.getString(3));
-	        	sign.setActionText(rs.getString(4));
+	        	sign.setOrderIdInIB(rs.getInt(3));
+	        	sign.setSetting(rs.getString(4));
+	        	sign.setActionText(rs.getString(5));
 	        	sign.setOrderAction(Util.getOrderActionEnumByText(sign.getActionText()));
-	        	sign.setLimitPrice(rs.getDouble(5));
-	        	sign.setTick(rs.getDouble(6));
-	        	sign.setStopPrice(rs.getDouble(7));
-	        	sign.setTickProfit(rs.getDouble(8));
+	        	sign.setLimitPrice(rs.getDouble(6));
+	        	sign.setTick(rs.getDouble(7));
+	        	sign.setStopPrice(rs.getDouble(8));
+	        	sign.setTickProfit(rs.getDouble(9));
 	        	
 	        	list.add(sign);
 	        }
@@ -67,7 +68,7 @@ public class CommonDAOSQL implements CommonDAO {
 
 	@Override
 	public void insertNewOrderSign(OrderSign sign) {
-		final String sqlString = "insert into order_sign (date,time,setting,action,limit_price,tick,stop_price,tick_profit) values (?,?,?,?,?,?,?,?)";
+		final String sqlString = "insert into order_sign (date,time,orderidinib,setting,action,limit_price,tick,stop_price,tick_profit) values (?,?,?,?,?,?,?,?,?)";
 
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -78,12 +79,13 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt = conn.prepareStatement(sqlString);
 			stmt.setString(1, Util.getDateStringByDateAndFormatter(sign.getTime(),"yyyy/MM/dd"));
 			stmt.setString(2, Util.getDateStringByDateAndFormatter(sign.getTime(),"HH:mm:ss"));
-			stmt.setString(3, sign.getSetting());
-			stmt.setString(4, sign.getActionText());
-			stmt.setDouble(5, sign.getLimitPrice());
-			stmt.setDouble(6, sign.getTick());
-			stmt.setDouble(7, sign.getStopPrice());
-			stmt.setDouble(8, sign.getTickProfit());
+			stmt.setInt(3, sign.getOrderIdInIB());
+			stmt.setString(4, sign.getSetting());
+			stmt.setString(5, sign.getActionText());
+			stmt.setDouble(6, sign.getLimitPrice());
+			stmt.setDouble(7, sign.getTick());
+			stmt.setDouble(8, sign.getStopPrice());
+			stmt.setDouble(9, sign.getTickProfit());
 			int i = stmt.executeUpdate();
 	        if (i == 0) {
 				//False
@@ -99,8 +101,8 @@ public class CommonDAOSQL implements CommonDAO {
 	
 
 	@Override
-	public void updateOrderInfo(String setting, String time, double limitPrice, double closePrice, double tickProfit) {
-		final String sqlString = "update order_sign set limit_price = ?, close_price = ?, tick_profit = ? where setting = ? and time = ? and date = ?";
+	public void updateOrderInfo(int orderId, String setting, String time, double limitPrice, double closePrice, double tickProfit) {
+		final String sqlString = "update order_sign set limit_price = ?, close_price = ?, tick_profit = ? where orderidinib = ? and setting = ? and time = ? and date = ?";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -111,9 +113,10 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setDouble(1,limitPrice);
 			stmt.setDouble(2,closePrice);
 			stmt.setDouble(3,tickProfit);
-			stmt.setString(4,setting);
-			stmt.setString(5,time);
-			stmt.setString(6,Util.getDateStringByDateAndFormatter(new Date(), "yyyy/MM/dd"));
+			stmt.setInt(4, orderId);
+			stmt.setString(5,setting);
+			stmt.setString(6,time);
+			stmt.setString(7,Util.getDateStringByDateAndFormatter(new Date(), "yyyy/MM/dd"));
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {
@@ -221,7 +224,37 @@ public class CommonDAOSQL implements CommonDAO {
 		return list;
 	}
 	
+	@Override
+	public ArrayList<Zone> getAllCloseMonitorZone() {
+		
+		final String sqlString = "SELECT * FROM close_zone where active = 1";
+		ArrayList<Zone> list = new ArrayList<>();
 
+		Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			rs = stmt.executeQuery();
+	        while(rs.next()){
+	        	Zone zone = new Zone();
+	        	zone.setZone(rs.getString(1));
+	        	zone.setxCoord(rs.getInt(2));
+	        	zone.setyCoord(rs.getInt(3));
+	        	list.add(zone);
+	        }
+			return list;
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt, rs);
+		}
+		return list;
+	}
+	
 	@Override
 	public void insertSettingActive(String seting, int active) {
 		final String sqlString = "insert into setting_active values (?,?)";
@@ -355,36 +388,6 @@ public class CommonDAOSQL implements CommonDAO {
 		}
 	}
 	
-	@Override
-	public ArrayList<Zone> getAllCloseMonitorZone() {
-		
-		final String sqlString = "SELECT * FROM close_zone where active = 1";
-		ArrayList<Zone> list = new ArrayList<>();
-
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			rs = stmt.executeQuery();
-	        while(rs.next()){
-	        	Zone zone = new Zone();
-	        	zone.setZone(rs.getString(1));
-	        	zone.setxCoord(rs.getInt(2));
-	        	zone.setyCoord(rs.getInt(3));
-	        	list.add(zone);
-	        }
-			return list;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return list;
-	}
 	
 	/*
 	

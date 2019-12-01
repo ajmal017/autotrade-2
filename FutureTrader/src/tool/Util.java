@@ -237,13 +237,13 @@ public class Util {
 		}
 	}
 	
-	public static double getProfit(double prePrice, double newPrice, Enum<SystemEnum.OrderAction> preAction) {
+	public static double getProfit(double limit, double stop, Enum<SystemEnum.OrderAction> preAction) {
 		
 		double profit = 0;
 		if (preAction == SystemEnum.OrderAction.Buy) {
-			profit = newPrice - prePrice;
+			profit = stop - limit;
 		} else if (preAction == SystemEnum.OrderAction.Sell) {
-			profit = prePrice - newPrice;
+			profit = limit - stop;
 		}
 		return profit;
 	}

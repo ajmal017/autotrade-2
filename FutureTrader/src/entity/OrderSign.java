@@ -7,6 +7,7 @@ import tool.Util;
 
 public class OrderSign {
 
+	private int orderIdInIB;
 	private Date time;
 	private String setting;
 	private Enum<SystemEnum.OrderAction> orderAction;
@@ -17,13 +18,16 @@ public class OrderSign {
 	private double stopPrice;  //Ö¹Ó¯£¨¹Øµ¥£©
 	private double tickProfit; // tick * price difference(limitPrice,stopPrice)
 	
-	public OrderSign(Date time, 
+	public OrderSign(
+			int orderIdInIB, 
+			Date time, 
 			String setting, 
 			Enum<SystemEnum.OrderAction> orderAction, 
 			double limitPrice,  
 			double tick,
 			double stopPrice,
 			double tickProfit) {
+		setOrderIdInIB(orderIdInIB);
         setTime(time);
         setSetting(setting);
         setOrderAction(orderAction);
@@ -39,6 +43,15 @@ public class OrderSign {
 //		super();
 		orderAction = SystemEnum.OrderAction.Default;
 	}
+	
+	public int getOrderIdInIB() {
+		return orderIdInIB;
+	}
+
+	public void setOrderIdInIB(int orderIdInIB) {
+		this.orderIdInIB = orderIdInIB;
+	}
+
 	public Date getTime() {
 		return time;
 	}
