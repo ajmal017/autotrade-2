@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.poi.ss.formula.ptg.Deleted3DPxg;
+
 import application.FutureTrader;
 import config.SystemConfig;
 import dao.CommonDAO;
@@ -26,6 +28,7 @@ import entity.OrderSign;
 import entity.Zone;
 import systemenum.SystemEnum;
 import tool.Util;
+
 
 public class SettingService implements IBServiceCallbackInterface {
 	
@@ -48,6 +51,8 @@ public class SettingService implements IBServiceCallbackInterface {
 	private FutureTrader tradeObj;
 
 	private int wantCloseOrderCount;
+	
+	private String LOGIC_MODE = "1";
 	
 	private SettingService ()  {
     	
@@ -291,44 +296,12 @@ public class SettingService implements IBServiceCallbackInterface {
     	}
     }
     
-    public void createNewOrder (String setting, Enum<SystemEnum.Trend> trend, int green, int red, int white) {
+    public void deleteAnotherActionOrder() {
     	
-    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	
-    	Date now = new Date();
-    	String nowTimeStr = Util.getDateStringByDateAndFormatter(now, "HH:mm:ss");
-    	
-    	OrderSign newSign = new OrderSign(now, scenario, trend, green, red, white, priceSwim, 0, 0, "", 0, 0);
-    	ArrayList<OrderSign> dailySignList = getDailySignMap().get(scenario);
-    	dailySignList.add(newSign);
-    	commonDao.insertNewTrendSign(newSign);
-    	
-    	IBService ibService = IBService.getInstance();
-    	if(ibService.getIbApiConfig().isActive() && ibService.isIBConnecting()) {
-    		
-    		if (trend == SystemEnum.Trend.Default) { //close
-    			
-    			ibService.closeTodayTrade(scenario, nowTimeStr);
-    			
-    			//test only T10
-    			if(isNeedCloseApp() && wantCloseOrderCount > 0 && !scenario.equals(SystemConfig.TRADE_SCENARIO)) wantCloseOrderCount--;
-    			
-    		} else {
-    			
-    			Enum<SystemEnum.OrderAction> newAction = SystemEnum.OrderAction.Default;
-    			if (trend == SystemEnum.Trend.Up) {
-    				newAction = SystemEnum.OrderAction.Buy;
-    			} else {
-    				newAction = SystemEnum.OrderAction.Sell;
-    			}
-    			
-    			ibService.placeOrder(newAction, scenario, nowTimeStr);
-    		}
-    		
-    	} else {
-    		
-    		if (isNeedCloseApp() && wantCloseOrderCount > 0) wantCloseOrderCount--;
-    	}
+    	//todo
+    }
+    
+    private void createScreenShot(String setting, Enum<SystemEnum.OrderAction> action, double limitPrice) {
     	
     	ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
 	    cachedThreadPool.execute(new Runnable() {
@@ -338,10 +311,11 @@ public class SettingService implements IBServiceCallbackInterface {
 	        	//screen shot
             	String shotPath = SystemConfig.DOC_PATH + "//screenshot//" + 
             					  Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd") + "//"+ 
-            					  scenario + "//" + 
-            					  scenario + "_" + 
+            					  setting + "//" + 
+            					  setting + "_" + 
             					  Util.getDateStringByDateAndFormatter(new Date(), "HHmmss") + "_" +
-            					  Util.getTrendTextByEnum(trend) +".png";
+            					  Util.getActionTextByEnum(action) + "_" +
+            					  limitPrice + ".png";
             	File newFile = new File(shotPath);
     			if(!newFile.exists()) {
                 	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -350,23 +324,33 @@ public class SettingService implements IBServiceCallbackInterface {
     			}
 	        }
 	    });
-	    
-	    if(wantCloseOrderCount == 0 && getAutoTradeObj() != null && isNeedCloseApp()) {
-
-			setNeedCloseApp(false);
-			getAutoTradeObj().closeAppAfterPriceUpdate();
-	    }
     }
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+    private void createNewOrder (String setting, Enum<SystemEnum.OrderAction> action, double limitPrice, double stopPrice) {
+    	
+    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
+    	
+    	Date now = new Date();
+    	String nowTimeStr = Util.getDateStringByDateAndFormatter(now, "HH:mm:ss");
+    	
+    	OrderSign newSign = new OrderSign(); //todo
+    	ArrayList<OrderSign> dailySignList = getDailySignMap().get(setting);
+    	dailySignList.add(newSign);
+    	currentOrderMap.get(setting).add(new CreatedOrder()); //todo
+    	commonDao.insertNewOrderSign(newSign);
+    	
+    	IBService ibService = IBService.getInstance();
+    	if(ibService.getIbApiConfig().isActive() && ibService.isIBConnecting()) {
+    		
+    		
+    		ibService.placeOrder(action, setting);
+    		
+    	}
+    	
+    	createScreenShot();
+    	
+    }
     
 	public static SettingService getInstance() {  
 		if (instance == null) {  
@@ -385,12 +369,30 @@ public class SettingService implements IBServiceCallbackInterface {
 	public void updateTradePrice(double price, String preOrderScenario, String preOrderTime, int preQuantity) {
 		System.out.println("Setting service updateTradePrice:"+price+" preOrderScenario:"+preOrderScenario+" preOrderTime:"+preOrderTime);
 		//todo
-		CommonDAOFactory.getCommonDAO().updateLastTrendSignIBPrice(preOrderScenario, preOrderTime, price, preQuantity);
+		CommonDAOFactory.getCommonDAO().updateLastOrderSignIBPrice(preOrderScenario, preOrderTime, price, preQuantity);
 		if(isNeedCloseApp() && wantCloseOrderCount > 0) wantCloseOrderCount--;
 		if(isNeedCloseApp() && getTradeObj() != null && wantCloseOrderCount == 0) {
 			setNeedCloseApp(false);
 			getTradeObj().closeAppAfterPriceUpdate();
 	    }
+	}
+	
+	@Override
+	public void orderStop(int orderId) {
+	
+		//cancel no-active order
+		
+		//create new other action order
+	}
+	
+	@Override
+	public void orderActive(int orderId) {
+		
+		//if market first order, cancel another action order
+		
+		//change all pre-order's stop price
+		
+		//create new same action order
 	}
 	
 	public boolean isNeedCloseApp() {
@@ -408,10 +410,7 @@ public class SettingService implements IBServiceCallbackInterface {
 	public void setTradeObj(FutureTrader tradeObj) {
 		this.tradeObj = tradeObj;
 	}
-
-
-
-
+	
 	public Map<String, ArrayList<OrderSign>> getDailySignShownInTable() {
 		return dailySignShownInTable;
 	}

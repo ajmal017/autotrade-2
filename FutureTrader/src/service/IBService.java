@@ -37,11 +37,11 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private IBServerConfig ibServerConfig;
 	private StockConfig stockConfig;
 	
-	private Enum<SystemEnum.OrderAction> preOrderAction;
-	private String preOrderScenario;
-	private String preOrderTime;
-	private int preOrderQuantity;
-	private int preOrderQuantityIncrease;
+//	private Enum<SystemEnum.OrderAction> preOrderAction;
+//	private String preOrderScenario;
+//	private String preOrderTime;
+//	private int preOrderQuantity;
+//	private int preOrderQuantityIncrease;
 	private SettingService settingServiceObj;
 	private int currentOrderId;
 	
@@ -187,7 +187,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		return m_client.isConnected();
 	}
 	
-	public void placeOrder(Enum<SystemEnum.OrderAction> newAction, String scenario, String time) {
+	public void placeOrder(Enum<SystemEnum.OrderAction> newAction, String scenario) {
 		
 		//test only T10
 //		if(!scenario.equals(SystemConfig.TRADE_SCENARIO)) return;
