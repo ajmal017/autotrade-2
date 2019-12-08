@@ -101,8 +101,8 @@ public class CommonDAOSQL implements CommonDAO {
 	
 
 	@Override
-	public void updateOrderInfo(int orderId, String setting, String time, double limitPrice, double closePrice, double tickProfit) {
-		final String sqlString = "update order_sign set limit_price = ?, close_price = ?, tick_profit = ? where orderidinib = ? and setting = ? and time = ? and date = ?";
+	public void updateOrderInfo(int orderId, String setting, String time, double limitPrice, double stopPrice, double tickProfit) {
+		final String sqlString = "update order_sign set limit_price = ?, stop_price = ?, tick_profit = ? where orderidinib = ? and setting = ? and time = ? and date = ?";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -111,7 +111,7 @@ public class CommonDAOSQL implements CommonDAO {
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
 			stmt.setDouble(1,limitPrice);
-			stmt.setDouble(2,closePrice);
+			stmt.setDouble(2,stopPrice);
 			stmt.setDouble(3,tickProfit);
 			stmt.setInt(4, orderId);
 			stmt.setString(5,setting);

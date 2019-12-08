@@ -18,6 +18,7 @@ import ib.MyEWrapperImpl;
 import ib.MyEWrapperImplCallbackInterface;
 import samples.testbed.orders.AvailableAlgoParams;
 import config.SystemConfig;
+import entity.CreatedOrder;
 import entity.IBApiConfig;
 import entity.IBServerConfig;
 import entity.StockConfig;
@@ -37,11 +38,6 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private IBServerConfig ibServerConfig;
 	private StockConfig stockConfig;
 	
-//	private Enum<SystemEnum.OrderAction> preOrderAction;
-//	private String preOrderScenario;
-//	private String preOrderTime;
-//	private int preOrderQuantity;
-//	private int preOrderQuantityIncrease;
 	private SettingService settingServiceObj;
 	private int currentOrderId;
 	
@@ -50,7 +46,6 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		ibApiConfig = new IBApiConfig();
 		ibServerConfig = new IBServerConfig();
 		stockConfig = new StockConfig();
-		preOrderAction = SystemEnum.OrderAction.Default;
 		initConfigs();
     }
 
@@ -85,15 +80,15 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 				ibServerConfig.setPort(Integer.valueOf(ibServerConf.getChild("liveport").getText()));
 			}
 			
-			stockConfig.setStockSymbol(stockConf.getChild("stocksymbol").getText());
-			stockConfig.setOrderType(stockConf.getChild("ordertype").getText());
-			stockConfig.setSecurityType(stockConf.getChild("securitytype").getText());
-			stockConfig.setStockExchange(stockConf.getChild("stockexchange").getText());
-			stockConfig.setPrimaryExchange(stockConf.getChild("primaryexchange").getText());
-			stockConfig.setStockCurrency(stockConf.getChild("stockcurrency").getText());
-			stockConfig.setStockExpiry(Double.valueOf(stockConf.getChild("stockexpiry").getText()));
-			stockConfig.setOrderQuantity(Integer.valueOf(stockConf.getChild("orderquantity").getText()));
-			stockConfig.setFirstOrderQuantityPercent(Double.valueOf(stockConf.getChild("firstorderquantitypercent").getText())); 
+//			stockConfig.setStockSymbol(stockConf.getChild("stocksymbol").getText());
+//			stockConfig.setOrderType(stockConf.getChild("ordertype").getText());
+//			stockConfig.setSecurityType(stockConf.getChild("securitytype").getText());
+//			stockConfig.setStockExchange(stockConf.getChild("stockexchange").getText());
+//			stockConfig.setPrimaryExchange(stockConf.getChild("primaryexchange").getText());
+//			stockConfig.setStockCurrency(stockConf.getChild("stockcurrency").getText());
+//			stockConfig.setStockExpiry(Double.valueOf(stockConf.getChild("stockexpiry").getText()));
+//			stockConfig.setOrderQuantity(Integer.valueOf(stockConf.getChild("orderquantity").getText()));
+//			stockConfig.setFirstOrderQuantityPercent(Double.valueOf(stockConf.getChild("firstorderquantitypercent").getText())); 
 			
 		} catch (Exception e) {
         	e.printStackTrace();
@@ -102,22 +97,43 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	
 	private void sendOrderToIB(String action, int quantity) {
 		
-		Contract stock = new Contract();
-		stock.symbol(stockConfig.getStockSymbol());
-		stock.secType(stockConfig.getSecurityType());
-		stock.currency(stockConfig.getStockCurrency());
-		stock.exchange(stockConfig.getStockExchange());
-//		stock.primaryExch(stockConfig.getPrimaryExchange());		
+		Contract contract = new Contract();
+//		contract.symbol(stockConfig.getStockSymbol());
+//		contract.secType(stockConfig.getSecurityType());
+//		contract.currency(stockConfig.getStockCurrency());
+//		contract.exchange(stockConfig.getStockExchange());
+//		stock.primaryExch(stockConfig.getPrimaryExchange());	
+		
+		//指数
+//		contract.symbol = "DAX";
+//		contract.secType = "IND";
+//		contract.currency = "EUR";
+//		contract.exchange = "DTB";
+		
+		//期货 期货合约需要给出到期日期和标的物的代码。
+//		contract.symbol = "ES";
+//		contract.secType = "FUT";
+//		contract.exchange = "GLOBEX";
+//		contract.currency = "USD";
+//		contract.lastTradeDateOrContractMonth = "201612";
+		
+		//
+//		.order.limit(action, quantity, price, transmitOrder)
+//		.order.market(action, quantity, transmitOrder, goodAfterTime, goodTillDate)
+//		.order.marketClose(action, quantity, price, transmitOrder)
+//		.order.stop(action, quantity, price, transmitOrder, parentId, tif)
+//		.order.stopLimit(action, quantity, limitPrice, stopPrice, transmitOrder, parentId, tif)
+//		.order.trailingStop(action, quantity, auxPrice, tif, transmitOrder, parentId)
 		
 		Order order = new Order();
 		order.action(action);
-		order.orderType(stockConfig.getOrderType());
+		order.orderType("MKT");
 		order.totalQuantity(quantity);
 		
 		AvailableAlgoParams.FillAdaptiveParams(order, "Normal");
 		
 //		order.account(ibServerConfig.getAccount());
-		m_client.placeOrder(getCurrentOrderId(), stock, order);
+		m_client.placeOrder(getCurrentOrderId(), contract, order);
 		setCurrentOrderId(getCurrentOrderId()+1);
 	}
 	
@@ -187,55 +203,29 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		return m_client.isConnected();
 	}
 	
-	public void placeOrder(Enum<SystemEnum.OrderAction> newAction, String scenario) {
-		
-		//test only T10
-//		if(!scenario.equals(SystemConfig.TRADE_SCENARIO)) return;
+	public void placeOrder(Enum<SystemEnum.OrderAction> newAction, double limitPrice, double stopPrice, double tick) {
 		
 		if(newAction == SystemEnum.OrderAction.Default) return;
-		if(preOrderAction == newAction) return;
 		
 		String actionStr = null;
-		int quantity = 0;
 		if(newAction == SystemEnum.OrderAction.Buy) {
 			actionStr = "BUY";
 		} else {
 			actionStr = "SELL";
 		}
-		if(preOrderAction != SystemEnum.OrderAction.Default) {
-			quantity = preOrderQuantityIncrease + stockConfig.getOrderQuantity();
-		} else if (stockConfig.getFirstOrderQuantityPercent() > 0) {
-			quantity = (int)(stockConfig.getFirstOrderQuantityPercent()*stockConfig.getOrderQuantity());
-		} else {
-			quantity = stockConfig.getOrderQuantity();
-		}
 		
-		preOrderQuantityIncrease = quantity - preOrderQuantityIncrease;
-		preOrderAction = newAction;
-		setPreOrderScenario(scenario);
-		setPreOrderTime(time);
-		preOrderQuantity = quantity;
 		sendOrderToIB(actionStr, quantity);
 	}
 	
 	public void closeTodayTrade(String scenario, String time) {
 		
-		//test only T10
-//		if(!scenario.equals(SystemConfig.TRADE_SCENARIO)) return;
 		
-		if(preOrderAction == SystemEnum.OrderAction.Default) return;
 		
-		String actionStr = null;
-		if(preOrderAction == SystemEnum.OrderAction.Buy) {
-			actionStr = "SELL";
-		} else {
-			actionStr = "BUY";
-		}
-		setPreOrderScenario(scenario);
-		setPreOrderTime(time);
-		preOrderQuantity = preOrderQuantityIncrease;
 		sendOrderToIB(actionStr, preOrderQuantityIncrease);
-		preOrderAction = SystemEnum.OrderAction.Default;
+	}
+	
+	public void stopOrderWithMarketPrice(CreatedOrder order) {
+		//todo
 	}
 	
 	public static IBService getInstance() {  
@@ -261,23 +251,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		setPreOrderScenario(null);
 		setPreOrderTime(null);
 	}
-
-	public String getPreOrderScenario() {
-		return preOrderScenario;
-	}
-
-	public void setPreOrderScenario(String preOrderScenario) {
-		this.preOrderScenario = preOrderScenario;
-	}
-
-	public String getPreOrderTime() {
-		return preOrderTime;
-	}
-
-	public void setPreOrderTime(String preOrderTime) {
-		this.preOrderTime = preOrderTime;
-	}
-
+	
 	public int getCurrentOrderId() {
 		return currentOrderId;
 	}

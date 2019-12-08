@@ -16,6 +16,8 @@ import java.util.concurrent.Executors;
 
 import org.apache.poi.ss.formula.ptg.Deleted3DPxg;
 
+import com.ib.client.TickAttrib;
+
 import application.FutureTrader;
 import config.SystemConfig;
 import dao.CommonDAO;
@@ -45,7 +47,7 @@ public class SettingService implements IBServiceCallbackInterface {
 	private Map<String,ArrayList<CreatedOrder>> currentOrderMap; //current trend's orders <setting, orderList>. if stop, order will be clear
 	private HashMap<String, String> orderIsSettingMap; //<orderId, setting>
 
-	private int dailySignCount = 0;
+	private int dailyOrderCount = 0;
 
 	private boolean needCloseApp;
 	private FutureTrader tradeObj;
@@ -182,27 +184,6 @@ public class SettingService implements IBServiceCallbackInterface {
         String[] strArray = { "time", "setting", "action", "limit price", "tick", "stop price", "profit"};
         return strArray;
     }
-	    
-    private ColorCount getColorCountByCloseZoneList() {
-
-    	ColorCount count =  new ColorCount();
-    	ZoneColorInfoService colorService = ZoneColorInfoService.getInstance();
-    	for (Zone zone : colorService.getCloseMonitorZoneList()) {
-    		if (zone.getColor() == SystemEnum.Color.Green) {
-    			count.setGreen(count.getGreen()+1);
-    		} else if (zone.getColor() == SystemEnum.Color.Red) {
-    			count.setRed(count.getRed()+1);
-    		} else if (zone.getColor() == SystemEnum.Color.White) {
-    			count.setWhite(count.getWhite()+1);
-    		} else if (zone.getColor() == SystemEnum.Color.Yellow) {
-    			count.setYellow(count.getYellow()+1);
-    		} else {
-    			count.setOther(count.getOther()+1);
-    		}
-    	}
-    	return count;
-    }
-	
 	
 	//update when timer called
     public void updateSettingListByRefreshPlan() {
@@ -247,10 +228,50 @@ public class SettingService implements IBServiceCallbackInterface {
 	    	
 		}
 		newSettingPlanRefreshed();
-    	
-		closeStopWorkingSettingOrder();
-		
     }
+    
+    public void closeOrOpenOrderBySettingRefreshed() {
+		
+    	closeUnWorkingSettingOrder();
+		
+		//if market is open and every working setting need open first order 
+		if (getPassedSettingRefreshPlanCount() > 0 && getDailyOrderCount() == 0) {
+			
+			openFirstOrderIfNeed();
+		}
+	}
+    
+    public void closeAllOrder() {
+		
+    	//todo
+	}
+    
+    private void openFirstOrderIfNeed() {
+    	
+    	//todo
+    }
+    
+    private void closeUnWorkingSettingOrder() {
+    	
+    	for (String setting : getActiveSettingList()) {
+			
+    		boolean working = false;
+    		for(Setting setting2 : getWorkingSettingList()) {
+    			if (setting.equals(setting2.getSetting())) {
+					working = true;
+					break;
+				}
+    		}
+			if (!working && currentOrderMap.get(setting).size() > 0) {
+				
+				for (CreatedOrder cOrder : currentOrderMap.get(setting)) {
+					
+					IBService.getInstance().stopOrderWithMarketPrice(cOrder);
+				}
+			}
+		}
+    }
+    
     
     public void exportTodayOrderProfit() {
     	
@@ -279,7 +300,6 @@ public class SettingService implements IBServiceCallbackInterface {
     public void closeAllSettingWhenAppWantClose() {
     	
     	wantCloseOrderCount = 0;
-    	ArrayList<String> settings = new ArrayList<String>();
     	for(String setting : getActiveSettingList()) {
     		if(currentOrderMap.get(setting).size() > 0) {
     	    	wantCloseOrderCount += currentOrderMap.get(setting).size();
@@ -288,7 +308,7 @@ public class SettingService implements IBServiceCallbackInterface {
     	
     	if(wantCloseOrderCount > 0) {
     		setNeedCloseApp(true);
-    		closeAllOrderIfNeed();
+    		closeAllOrder();
     	} else {
     		if(getTradeObj() != null) {
     			getTradeObj().closeAppAfterPriceUpdate();
@@ -296,7 +316,7 @@ public class SettingService implements IBServiceCallbackInterface {
     	}
     }
     
-    public void deleteAnotherActionOrder() {
+    public void cancelAnotherActionOrder() {
     	
     	//todo
     }
@@ -327,29 +347,19 @@ public class SettingService implements IBServiceCallbackInterface {
     }
     
     
-    private void createNewOrder (String setting, Enum<SystemEnum.OrderAction> action, double limitPrice, double stopPrice) {
-    	
-    	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
-    	
-    	Date now = new Date();
-    	String nowTimeStr = Util.getDateStringByDateAndFormatter(now, "HH:mm:ss");
+    private void createNewOrder (String setting, Enum<SystemEnum.OrderAction> action, double limitPrice, double stopPrice, double tick) {
     	
     	OrderSign newSign = new OrderSign(); //todo
+    	CreatedOrder newOrder = new CreatedOrder(); //todo
     	ArrayList<OrderSign> dailySignList = getDailySignMap().get(setting);
     	dailySignList.add(newSign);
-    	currentOrderMap.get(setting).add(new CreatedOrder()); //todo
-    	commonDao.insertNewOrderSign(newSign);
+    	currentOrderMap.get(setting).add(newOrder);
     	
     	IBService ibService = IBService.getInstance();
     	if(ibService.getIbApiConfig().isActive() && ibService.isIBConnecting()) {
     		
-    		
-    		ibService.placeOrder(action, setting);
-    		
+    		ibService.placeOrder(action, limitPrice, stopPrice, tick);
     	}
-    	
-    	createScreenShot();
-    	
     }
     
 	public static SettingService getInstance() {  
@@ -383,6 +393,8 @@ public class SettingService implements IBServiceCallbackInterface {
 		//cancel no-active order
 		
 		//create new other action order
+		
+		//if need close app
 	}
 	
 	@Override
@@ -393,6 +405,11 @@ public class SettingService implements IBServiceCallbackInterface {
 		//change all pre-order's stop price
 		
 		//create new same action order
+	}
+	
+	@Override
+	public void responseFuturePrice(double price) {
+		
 	}
 	
 	public boolean isNeedCloseApp() {
@@ -467,12 +484,12 @@ public class SettingService implements IBServiceCallbackInterface {
 		this.settingRefreshPlan = settingRefreshPlan;
 	}
 	
-	public int getDailySignCount() {
-		return dailySignCount;
+	public int getDailyOrderCount() {
+		return dailyOrderCount;
 	}
 
-	public void setDailySignCount(int dailySignCount) {
-		this.dailySignCount = dailySignCount;
+	public void setDailyOrderCount(int dailyOrderCount) {
+		this.dailyOrderCount = dailyOrderCount;
 	}
 	
 	public HashMap<String, String> getOrderIsSettingMap() {

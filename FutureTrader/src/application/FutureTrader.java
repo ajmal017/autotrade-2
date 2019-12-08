@@ -90,6 +90,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 		//every plan passed
 		if (settingService.getPassedSettingRefreshPlanCount() == settingService.getSettingRefreshPlan().size()) {
 
+			//close timer
 			try {
 				if (secTimer != null) secTimer.cancel();
 	        } catch (Exception e) {
@@ -106,25 +107,22 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			
 		} else {
 			
+			//now is a refresh time
+			if(isSettingRefreshTime()) {
+				settingService.updateSettingListByRefreshPlan();
+			}
+			
 			//update closeZone color
 			colorInfoService.updateCloseMonitorZoneColorByTimer();
 			//check closeZone color
 			ColorCount cc = colorInfoService.getColorCountByCloseZoneList();
-			if ((cc.getGreen() > 0 || cc.getRed() > 0) && settingService.getDailySignCount() > 0) {
+			if (cc.getGreen() > 0 || cc.getRed() > 0) {
 				//close all order
-				settingService.closeAllOrderIfNeed();
+				settingService.closeAllOrder();
+				//todo
+				//stop timer and app if law need
 			} else {
-				
-				//now is a refresh time
-				if(isSettingRefreshTime()) {
-					settingService.updateSettingListByRefreshPlan();
-				}
-				
-				//if market is open and every working setting need open first order 
-				if (settingService.getPassedSettingRefreshPlanCount() > 0) {
-					
-					settingService.openFirstOrderIfNeed();
-				}
+				settingService.closeOrOpenOrderBySettingRefreshed();
 			}
 			
 			for (int i = 0; i < settingService.getActiveSettingList().size(); i++) {
