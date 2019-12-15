@@ -8,6 +8,7 @@ import tool.Util;
 public class OrderSign {
 
 	private int orderIdInIB;
+	private String orderState; //todo update in db
 	private Date time;
 	private String setting;
 	private Enum<SystemEnum.OrderAction> orderAction;
@@ -20,6 +21,7 @@ public class OrderSign {
 	
 	public OrderSign(
 			int orderIdInIB, 
+			String orderState,
 			Date time, 
 			String setting, 
 			Enum<SystemEnum.OrderAction> orderAction, 
@@ -28,6 +30,7 @@ public class OrderSign {
 			double stopPrice,
 			double tickProfit) {
 		setOrderIdInIB(orderIdInIB);
+		setOrderState(orderState);
         setTime(time);
         setSetting(setting);
         setOrderAction(orderAction);
@@ -113,6 +116,14 @@ public class OrderSign {
 
 	public void setTickProfit(double tickProfit) {
 		this.tickProfit = tickProfit;
+	}
+
+	public String getOrderState() {
+		return orderState;
+	}
+
+	public void setOrderState(String orderState) {
+		this.orderState = orderState;
 	}
 	
 	

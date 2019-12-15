@@ -43,4 +43,10 @@ public interface SystemEnum {
 		Live,
 		Paper
 	}
+	
+	enum PlaceOrderAction implements SystemEnum {
+		
+		Create,
+		Modify
+	}
 }

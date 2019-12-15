@@ -5,6 +5,8 @@ import javafx.beans.property.SimpleStringProperty;
 public class SignTableItem {
 
 	private SimpleStringProperty time;
+	private SimpleStringProperty ibOrderId;
+	private SimpleStringProperty orderState;
     private SimpleStringProperty setting;
     private SimpleStringProperty action;
     private SimpleStringProperty limitPrice;
@@ -12,8 +14,10 @@ public class SignTableItem {
     private SimpleStringProperty stopPrice;
     private SimpleStringProperty tickProfit;
 
-    public SignTableItem(String time, String setting, String action,  String limitPrice, String tick, String stopPrice, String tickProfit) {
+    public SignTableItem(String time, String ibOrderId, String orderState, String setting, String action,  String limitPrice, String tick, String stopPrice, String tickProfit) {
         this.time = new SimpleStringProperty(time);
+        this.ibOrderId = new SimpleStringProperty(ibOrderId);
+        this.orderState = new SimpleStringProperty(orderState);
         this.setting = new SimpleStringProperty(setting);
         this.action = new SimpleStringProperty(action);
         this.limitPrice = new SimpleStringProperty(limitPrice);
@@ -28,6 +32,22 @@ public class SignTableItem {
 
     public void setTime(String t) {
     	time.set(t);
+    }
+    
+    public String getIbOrderId() {
+        return ibOrderId.get();
+    }
+
+    public void setIbOrderId(String i) {
+    	ibOrderId.set(i);
+    }
+    
+    public String getOrderState() {
+        return orderState.get();
+    }
+
+    public void setOrderState(String o) {
+    	orderState.set(o);
     }
 
 	public String getSetting() {

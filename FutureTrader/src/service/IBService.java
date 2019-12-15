@@ -3,6 +3,7 @@ package service;
 
 
 import java.io.File;
+import java.util.IntSummaryStatistics;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -14,6 +15,7 @@ import com.ib.client.EReader;
 import com.ib.client.EReaderSignal;
 import com.ib.client.Order;
 
+import ch.qos.logback.core.joran.conditional.IfAction;
 import ib.MyEWrapperImpl;
 import ib.MyEWrapperImplCallbackInterface;
 import samples.testbed.orders.AvailableAlgoParams;
@@ -95,47 +97,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
         }
 	}
 	
-	private void sendOrderToIB(String action, int quantity) {
-		
-		Contract contract = new Contract();
-//		contract.symbol(stockConfig.getStockSymbol());
-//		contract.secType(stockConfig.getSecurityType());
-//		contract.currency(stockConfig.getStockCurrency());
-//		contract.exchange(stockConfig.getStockExchange());
-//		stock.primaryExch(stockConfig.getPrimaryExchange());	
-		
-		//指数
-//		contract.symbol = "DAX";
-//		contract.secType = "IND";
-//		contract.currency = "EUR";
-//		contract.exchange = "DTB";
-		
-		//期货 期货合约需要给出到期日期和标的物的代码。
-//		contract.symbol = "ES";
-//		contract.secType = "FUT";
-//		contract.exchange = "GLOBEX";
-//		contract.currency = "USD";
-//		contract.lastTradeDateOrContractMonth = "201612";
-		
-		//
-//		.order.limit(action, quantity, price, transmitOrder)
-//		.order.market(action, quantity, transmitOrder, goodAfterTime, goodTillDate)
-//		.order.marketClose(action, quantity, price, transmitOrder)
-//		.order.stop(action, quantity, price, transmitOrder, parentId, tif)
-//		.order.stopLimit(action, quantity, limitPrice, stopPrice, transmitOrder, parentId, tif)
-//		.order.trailingStop(action, quantity, auxPrice, tif, transmitOrder, parentId)
-		
-		Order order = new Order();
-		order.action(action);
-		order.orderType("MKT");
-		order.totalQuantity(quantity);
-		
-		AvailableAlgoParams.FillAdaptiveParams(order, "Normal");
-		
-//		order.account(ibServerConfig.getAccount());
-		m_client.placeOrder(getCurrentOrderId(), contract, order);
-		setCurrentOrderId(getCurrentOrderId()+1);
-	}
+	
 	
 	public void ibConnect() {
 		
@@ -203,7 +165,27 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		return m_client.isConnected();
 	}
 	
-	public void placeOrder(Enum<SystemEnum.OrderAction> newAction, double limitPrice, double stopPrice, double tick) {
+	public void createOrder() {
+		
+		
+	}
+	
+	public void modifyOrderStopPrice(int orderId, double newStopPrice) {
+		
+		
+	}
+	
+	public void cancelOrder(int orderId) {
+		
+		
+	}
+	
+	public void stopOrderWithMarketPrice(CreatedOrder order) {
+		
+		
+	}
+	
+	public void placeOrder(Enum<SystemEnum.PlaceOrderAction> placeOrderAction, int orderId, Enum<SystemEnum.OrderAction> newAction, double limitPrice, double stopPrice, double tick) {
 		
 		if(newAction == SystemEnum.OrderAction.Default) return;
 		
@@ -214,19 +196,47 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			actionStr = "SELL";
 		}
 		
-		sendOrderToIB(actionStr, quantity);
+		Contract contract = new Contract();
+//		contract.symbol(stockConfig.getStockSymbol());
+//		contract.secType(stockConfig.getSecurityType());
+//		contract.currency(stockConfig.getStockCurrency());
+//		contract.exchange(stockConfig.getStockExchange());
+//		stock.primaryExch(stockConfig.getPrimaryExchange());	
+		
+		//指数
+//		contract.symbol = "DAX";
+//		contract.secType = "IND";
+//		contract.currency = "EUR";
+//		contract.exchange = "DTB";
+		
+		//期货 期货合约需要给出到期日期和标的物的代码。
+//		contract.symbol = "ES";
+//		contract.secType = "FUT";
+//		contract.exchange = "GLOBEX";
+//		contract.currency = "USD";
+//		contract.lastTradeDateOrContractMonth = "201612";
+		
+		//
+//		.order.limit(action, quantity, price, transmitOrder)
+//		.order.market(action, quantity, transmitOrder, goodAfterTime, goodTillDate)
+//		.order.marketClose(action, quantity, price, transmitOrder)
+//		.order.stop(action, quantity, price, transmitOrder, parentId, tif)
+//		.order.stopLimit(action, quantity, limitPrice, stopPrice, transmitOrder, parentId, tif)
+//		.order.trailingStop(action, quantity, auxPrice, tif, transmitOrder, parentId)
+		
+		Order order = new Order();
+		order.action(actionStr);
+		order.orderType("MKT");
+		order.totalQuantity(tick);
+		AvailableAlgoParams.FillAdaptiveParams(order, "Normal");
+		
+//		order.account(ibServerConfig.getAccount());
+		m_client.placeOrder(orderId , contract, order);
+		if (placeOrderAction == SystemEnum.PlaceOrderAction.Create) {
+			setCurrentOrderId(getCurrentOrderId()+1);
+		}
 	}
 	
-	public void closeTodayTrade(String scenario, String time) {
-		
-		
-		
-		sendOrderToIB(actionStr, preOrderQuantityIncrease);
-	}
-	
-	public void stopOrderWithMarketPrice(CreatedOrder order) {
-		//todo
-	}
 	
 	public static IBService getInstance() {  
 		if (instance == null) {  
@@ -242,14 +252,14 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	@Override
 	public void updateTradePrice(double price) {
 		
-		System.out.println("from ib updateTradePrice:"+price);
-		if(getPreOrderScenario() == null) return;
-		
-		if (getSettingServiceObj() != null) { 
-			getSettingServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime(), preOrderQuantity);
-		}
-		setPreOrderScenario(null);
-		setPreOrderTime(null);
+//		System.out.println("from ib updateTradePrice:"+price);
+//		if(getPreOrderScenario() == null) return;
+//		
+//		if (getSettingServiceObj() != null) { 
+//			getSettingServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime(), preOrderQuantity);
+//		}
+//		setPreOrderScenario(null);
+//		setPreOrderTime(null);
 	}
 	
 	public int getCurrentOrderId() {

@@ -141,6 +141,8 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 						//insert into table
 						SignTableItem signItem = new SignTableItem(
 								Util.getDateStringByDateAndFormatter(newSign.getTime(), "HH:mm:ss"),
+								""+newSign.getOrderIdInIB(),
+								"", //todo orderstate
 								setting,
 								Util.getActionTextByEnum(newSign.getOrderAction()),
 								""+newSign.getLimitPrice(),
@@ -298,5 +300,11 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 		//shutdown
 		Platform.exit();
         System.exit(0);
+	}
+	
+	@Override
+	public void updateOrderInfoInTable(String setting, int orderId, double limitPrice, double stopPrice, String orderState) {
+		
+		//todo
 	}
 }
