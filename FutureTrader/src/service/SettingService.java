@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.swing.text.html.HTMLDocument.HTMLReader.PreAction;
+
 import org.apache.poi.ss.formula.ptg.Deleted3DPxg;
 
 import com.ib.client.Order;
@@ -240,7 +242,7 @@ public class SettingService implements IBServiceCallbackInterface {
 		//if market is open and every working setting need open first order 
 		if (getPassedSettingRefreshPlanCount() > 0 && getDailyOrderCount() == 0) {
 			
-			openFirstOrderIfNeed();
+			openDailyFirstOrderIfNeed();
 		}
 	}
     
@@ -249,7 +251,7 @@ public class SettingService implements IBServiceCallbackInterface {
     	//todo
 	}
     
-    private void openFirstOrderIfNeed() {
+    private void openDailyFirstOrderIfNeed() {
     	
     	//todo
     }
@@ -321,6 +323,8 @@ public class SettingService implements IBServiceCallbackInterface {
     
     private void createScreenShot(String setting, Enum<SystemEnum.OrderAction> action, double limitPrice) {
     	
+    	//todo when use this method
+    	
     	ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
 	    cachedThreadPool.execute(new Runnable() {
 	  
@@ -388,6 +392,8 @@ public class SettingService implements IBServiceCallbackInterface {
 	public void responseWhenOrderActive(int orderId, String orderState) {
 		
 		OrderIndexRecordBean record = orderRecordMap.get(Integer.valueOf(orderId));
+//		sign.setLimitPrice(limitPrice); //todo confirm price by test
+//		sign.setStopPrice(stopPrice);
 		dailySignShownInTable.get(record.getSetting()).get(record.getIndexInDailySignInTableMap()).setOrderState(orderState);
 		dailySignMap.get(record.getSetting()).get(record.getIndexInDailySignMap()).setOrderState(orderState);
 		currentOrderMap.get(record.getSetting()).get(record.getIndexInCurrentOrderMap()).setOrderState(orderState);
@@ -407,9 +413,9 @@ public class SettingService implements IBServiceCallbackInterface {
 				shouldCancelOrderId = currentOrderMap.get(record.getSetting()).get(0).getOrderIdInIB();
 			}
 			OrderIndexRecordBean record2 = orderRecordMap.get(Integer.valueOf(shouldCancelOrderId));
-			dailySignShownInTable.get(record2.getSetting()).remove(record2.getIndexInDailySignInTableMap());
-			dailySignMap.get(record2.getSetting()).remove(record2.getIndexInDailySignMap());
-			currentOrderMap.get(record2.getSetting()).remove(record2.getIndexInCurrentOrderMap());
+			dailySignShownInTable.get(record.getSetting()).remove(record2.getIndexInDailySignInTableMap());
+			dailySignMap.get(record.getSetting()).remove(record2.getIndexInDailySignMap());
+			currentOrderMap.get(record.getSetting()).remove(record2.getIndexInCurrentOrderMap());
 
 			IBService.getInstance().cancelOrder(shouldCancelOrderId);
 		}
@@ -431,15 +437,58 @@ public class SettingService implements IBServiceCallbackInterface {
 		}
 		
 		//create new same action order
-		//todo
+		ArrayList<SingleOrderSetting> orderSettingList = null;
+		for(Setting setting : workingSettingList) {
+			if (setting.getSetting().equals(record.getSetting())) {
+				orderSettingList = setting.getOrderSettingList();
+				break;
+			}
+		}
+		SingleOrderSetting newOrderSetting;
+		if (currentOrderMap.get(record.getSetting()).size() == orderSettingList.size()) {
+			//if order count = setting count, user last setting
+			newOrderSetting = orderSettingList.get(orderSettingList.size() - 1);
+		} else {
+			newOrderSetting = orderSettingList.get(currentOrderMap.get(record.getSetting()).size());
+		}
+		
+		CreatedOrder sameSettingPreOrder = currentOrderMap.get(record.getSetting()).get(currentOrderMap.get(record.getSetting()).size()-1);
+		CreatedOrder sameSettingFirstOrder = currentOrderMap.get(record.getSetting()).get(0);
+		double newLimitPrice;
+		double newStopPrice;
+		if (sameSettingPreOrder.getOrderAction() == SystemEnum.OrderAction.Buy) {
+			if (sameSettingPreOrder.getLimitPrice() == sameSettingFirstOrder.getLimitPrice()) {
+				//if only 1 order is in list, now create 2rd order
+				newLimitPrice = sameSettingPreOrder.getLimitPrice() - newOrderSetting.getLimitChange();
+				newStopPrice = sameSettingPreOrder.getLimitPrice() - newOrderSetting.getStopChange();
+			} else {
+				newLimitPrice = sameSettingPreOrder.getLimitPrice() - newOrderSetting.getLimitChange();
+				newStopPrice = sameSettingPreOrder.getStopPrice() - newOrderSetting.getStopChange();
+			}
+		} else { //sell
+			if (sameSettingPreOrder.getLimitPrice() == sameSettingFirstOrder.getLimitPrice()) {
+				//if only 1 order is in list, now create 2rd order
+				newLimitPrice = sameSettingPreOrder.getLimitPrice() + newOrderSetting.getLimitChange();
+				newStopPrice = sameSettingPreOrder.getLimitPrice() + newOrderSetting.getStopChange();
+			} else {
+				newLimitPrice = sameSettingPreOrder.getLimitPrice() + newOrderSetting.getLimitChange();
+				newStopPrice = sameSettingPreOrder.getStopPrice() + newOrderSetting.getStopChange();
+			}
+		}
+		createNewOrder(record.getSetting(), sameSettingPreOrder.getOrderAction(), newLimitPrice, newStopPrice, newOrderSetting.getTick());
 	}
 	
 	@Override
 	public void responseFuturePriceWhenOrderStop(int orderid, double limitPrice, double stopPrice, String orderState) {
 		
 		OrderIndexRecordBean record = getOrderRecordMap().get(Integer.valueOf(orderid));
+//		sign.setLimitPrice(limitPrice); //todo confirm price by test
+//		sign.setStopPrice(stopPrice);
+		dailySignShownInTable.get(record.getSetting()).get(record.getIndexInDailySignInTableMap()).setOrderState(orderState);
+		dailySignMap.get(record.getSetting()).get(record.getIndexInDailySignMap()).setOrderState(orderState);
+		currentOrderMap.get(record.getSetting()).get(record.getIndexInCurrentOrderMap()).setOrderState(orderState);
 		
-		ArrayList<OrderSign> list1 = dailySignMap.get(setting);
+		ArrayList<OrderSign> list1 = dailySignMap.get(record.getSetting());
 		for(int i = 0; i < list1.size(); i++) {
 			OrderSign sign = list1.get(list1.size()-1-i);
 			if (sign.getOrderIdInIB() == orderid) {
@@ -462,6 +511,7 @@ public class SettingService implements IBServiceCallbackInterface {
 		
 
 		//cancel last same action no-active order
+		
 		
 		//if need close app
 		
