@@ -388,13 +388,22 @@ public class SettingService implements IBServiceCallbackInterface {
 //		sign.setStopPrice(stopPrice);
 		String thisSetting = orderIdSettingMap.get(orderId);
 		for(OrderSign os : dailySignShownInTable.get(thisSetting)) {
-			if(os.getOrderIdInIB() == orderId) os.setOrderState(orderState);
+			if(os.getOrderIdInIB() == orderId) {
+				os.setOrderState(orderState);
+				break;
+			}
 		}
 		for(OrderSign os : dailySignMap.get(thisSetting)) {
-			if(os.getOrderIdInIB() == orderId) os.setOrderState(orderState);
+			if(os.getOrderIdInIB() == orderId) {
+				os.setOrderState(orderState);
+				break;
+			}
 		}
 		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
-			if(os.getOrderIdInIB() == orderId) os.setOrderState(orderState);
+			if(os.getOrderIdInIB() == orderId) {
+				os.setOrderState(orderState);
+				break;
+			}
 		}
 		
 		if(currentOrderMap.get(thisSetting).size() == 2 && 
@@ -413,13 +422,22 @@ public class SettingService implements IBServiceCallbackInterface {
 			}
 			
 			for(OrderSign os : dailySignShownInTable.get(thisSetting)) {
-				if(os.getOrderIdInIB() == shouldCancelOrderId) dailySignShownInTable.get(thisSetting).remove(os);
+				if(os.getOrderIdInIB() == shouldCancelOrderId) {
+					dailySignShownInTable.get(thisSetting).remove(os);
+					break;
+				}
 			}
 			for(OrderSign os : dailySignMap.get(thisSetting)) {
-				if(os.getOrderIdInIB() == shouldCancelOrderId) dailySignMap.get(thisSetting).remove(os);
+				if(os.getOrderIdInIB() == shouldCancelOrderId) {
+					dailySignMap.get(thisSetting).remove(os);
+					break;
+				}
 			}
 			for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
-				if(os.getOrderIdInIB() == shouldCancelOrderId) currentOrderMap.get(thisSetting).remove(os);
+				if(os.getOrderIdInIB() == shouldCancelOrderId) {
+					currentOrderMap.get(thisSetting).remove(os);
+					break;
+				}
 			}
 			IBService.getInstance().cancelOrder(shouldCancelOrderId);
 		}
@@ -427,15 +445,25 @@ public class SettingService implements IBServiceCallbackInterface {
 		if (currentOrderMap.get(thisSetting).size() > 1) {
 		
 			//change all pre-order's stop price
-			CreatedOrder last = currentOrderMap.get(thisSetting).get(currentOrderMap.get(record.getSetting()).size()-1);
-			for(int i = 0; i < currentOrderMap.get(record.getSetting()).size()-1;i++) {
-				CreatedOrder order = currentOrderMap.get(record.getSetting()).get(i);
-				if (order.getStopPrice() != last.getStopPrice()) {
-					order.setStopPrice(last.getStopPrice());
-					OrderIndexRecordBean r = orderRecordMap.get(Integer.valueOf(order.getOrderIdInIB()));
-					dailySignShownInTable.get(record.getSetting()).get(r.getIndexInDailySignInTableMap()).setStopPrice(last.getStopPrice());
-					dailySignMap.get(record.getSetting()).get(r.getIndexInDailySignMap()).setStopPrice(last.getStopPrice());
-					IBService.getInstance().modifyOrderStopPrice(order.getOrderIdInIB(), order.getStopPrice());
+			CreatedOrder last = currentOrderMap.get(thisSetting).get(currentOrderMap.get(thisSetting).size()-1);
+			for(int i = 0; i < currentOrderMap.get(thisSetting).size()-1;i++) {
+				CreatedOrder preOrder = currentOrderMap.get(thisSetting).get(i);
+				if (preOrder.getStopPrice() != last.getStopPrice()) {
+					preOrder.setStopPrice(last.getStopPrice());
+					
+					for(OrderSign os : dailySignShownInTable.get(thisSetting)) {
+						if(os.getOrderIdInIB() == preOrder.getOrderIdInIB()) {
+							os.setStopPrice(last.getStopPrice());
+							break;
+						}
+					}
+					for(OrderSign os : dailySignMap.get(thisSetting)) {
+						if(os.getOrderIdInIB() == preOrder.getOrderIdInIB()) {
+							os.setStopPrice(last.getStopPrice());
+							break;
+						}
+					}
+					IBService.getInstance().modifyOrderStopPrice(preOrder.getOrderIdInIB(), preOrder.getStopPrice());
 				}
 			}
 		}
@@ -443,21 +471,21 @@ public class SettingService implements IBServiceCallbackInterface {
 		//create new same action order
 		ArrayList<SingleOrderSetting> orderSettingList = null;
 		for(Setting setting : workingSettingList) {
-			if (setting.getSetting().equals(record.getSetting())) {
+			if (setting.getSetting().equals(thisSetting)) {
 				orderSettingList = setting.getOrderSettingList();
 				break;
 			}
 		}
 		SingleOrderSetting newOrderSetting;
-		if (currentOrderMap.get(record.getSetting()).size() == orderSettingList.size()) {
+		if (currentOrderMap.get(thisSetting).size() == orderSettingList.size()) {
 			//if order count = setting count, user last setting
 			newOrderSetting = orderSettingList.get(orderSettingList.size() - 1);
 		} else {
-			newOrderSetting = orderSettingList.get(currentOrderMap.get(record.getSetting()).size());
+			newOrderSetting = orderSettingList.get(currentOrderMap.get(thisSetting).size());
 		}
 		
-		CreatedOrder sameSettingPreOrder = currentOrderMap.get(record.getSetting()).get(currentOrderMap.get(record.getSetting()).size()-1);
-		CreatedOrder sameSettingFirstOrder = currentOrderMap.get(record.getSetting()).get(0);
+		CreatedOrder sameSettingPreOrder = currentOrderMap.get(thisSetting).get(currentOrderMap.get(thisSetting).size()-1);
+		CreatedOrder sameSettingFirstOrder = currentOrderMap.get(thisSetting).get(0);
 		double newLimitPrice;
 		double newStopPrice;
 		if (sameSettingPreOrder.getOrderAction() == SystemEnum.OrderAction.Buy) {
@@ -479,21 +507,39 @@ public class SettingService implements IBServiceCallbackInterface {
 				newStopPrice = sameSettingPreOrder.getStopPrice() + newOrderSetting.getStopChange();
 			}
 		}
-		createNewOrder(record.getSetting(), sameSettingPreOrder.getOrderAction(), newLimitPrice, newStopPrice, newOrderSetting.getTick());
+		createNewOrder(thisSetting, sameSettingPreOrder.getOrderAction(), newLimitPrice, newStopPrice, newOrderSetting.getTick());
 	}
 	
 	@Override
-	public void responseFuturePriceWhenOrderStop(int orderid, double limitPrice, double stopPrice, String orderState) {
+	public void responseFuturePriceWhenOrderStop(Integer orderId, double limitPrice, double stopPrice, String orderState, double tick) {
 		
-		OrderIndexRecordBean record = getOrderRecordMap().get(Integer.valueOf(orderid));
+		
 //		sign.setLimitPrice(limitPrice); //todo confirm price by test
 //		sign.setStopPrice(stopPrice);
-		dailySignShownInTable.get(record.getSetting()).get(record.getIndexInDailySignInTableMap()).setOrderState(orderState);
-		dailySignMap.get(record.getSetting()).get(record.getIndexInDailySignMap()).setOrderState(orderState);
-		currentOrderMap.get(record.getSetting()).get(record.getIndexInCurrentOrderMap()).setOrderState(orderState);
-		//todo math profit
+		String thisSetting = orderIdSettingMap.get(orderId);
+		int index = 0;
+		double profit = 0;
 		
-		//todo update in db
+		for(OrderSign os : dailySignShownInTable.get(thisSetting)) {
+			index++;
+			if(os.getOrderIdInIB() == orderId) {
+				os.setOrderState(orderState);
+				profit = Util.getProfit(limitPrice, stopPrice, os.getOrderAction())*tick;
+				CommonDAOFactory.getCommonDAO().updateOrderInfo(orderId, thisSetting, os.getTime(), limitPrice, stopPrice, profit);
+				break;
+			}
+		}
+		OrderSign os1 = dailySignMap.get(thisSetting).get(index);
+		os1.setOrderState(orderState);
+		os1.setTickProfit(profit);
+		
+		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
+			if(os.getOrderIdInIB() == orderId) {
+				currentOrderMap.get(thisSetting).remove(os);
+				break;
+			}
+		}
+		
 		
 		
 		//todo
@@ -501,7 +547,14 @@ public class SettingService implements IBServiceCallbackInterface {
 		
 
 		//cancel last same action no-active order
-		
+		dailySignShownInTable.get(thisSetting))
+		dailySignMap.get(thisSetting)) 
+		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
+			if(os.getOrderIdInIB() == shouldCancelOrderId) {
+				currentOrderMap.get(thisSetting).remove(os);
+				break;
+			}
+		}
 		
 		//if need close app
 		if(needCloseApp) {
