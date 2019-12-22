@@ -3,20 +3,39 @@ package entity;
 import java.util.Date;
 
 import systemenum.SystemEnum;
+import tool.Util;
 
 public class CreatedOrder {
 	
-	private int orderIdInIB;
+	private Integer orderIdInIB;
 	private String orderState;
-	private Date createTime;
+	private Date time;
 	private Enum<SystemEnum.OrderAction> orderAction;
 	private double limitPrice;
 	private double tick;
 	private double stopPrice;
-	public int getOrderIdInIB() {
+	
+	public CreatedOrder(
+			Integer orderIdInIB, 
+			String orderState,
+			Date time, 
+			Enum<SystemEnum.OrderAction> orderAction, 
+			double limitPrice,  
+			double tick,
+			double stopPrice) {
+		setOrderIdInIB(orderIdInIB);
+		setOrderState(orderState);
+        setTime(time);
+        setOrderAction(orderAction);
+        setLimitPrice(limitPrice);
+        setTick(tick);
+        setStopPrice(stopPrice);
+    }
+	
+	public Integer getOrderIdInIB() {
 		return orderIdInIB;
 	}
-	public void setOrderIdInIB(int orderIdInIB) {
+	public void setOrderIdInIB(Integer orderIdInIB) {
 		this.orderIdInIB = orderIdInIB;
 	}
 	
@@ -26,12 +45,15 @@ public class CreatedOrder {
 	public void setOrderState(String orderState) {
 		this.orderState = orderState;
 	}
-	public Date getCreateTime() {
-		return createTime;
+	
+	public Date getTime() {
+		return time;
 	}
-	public void setCreateTime(Date createTime) {
-		this.createTime = createTime;
+
+	public void setTime(Date time) {
+		this.time = time;
 	}
+
 	public Enum<SystemEnum.OrderAction> getOrderAction() {
 		return orderAction;
 	}
@@ -56,12 +78,11 @@ public class CreatedOrder {
 	public void setStopPrice(double stopPrice) {
 		this.stopPrice = stopPrice;
 	}
+
 	@Override
 	public String toString() {
-		return "CreatedOrder [orderIdInIB=" + orderIdInIB + ", orderState=" + orderState + ", createTime=" + createTime
+		return "CreatedOrder [orderIdInIB=" + orderIdInIB + ", orderState=" + orderState + ", time=" + time
 				+ ", orderAction=" + orderAction + ", limitPrice=" + limitPrice + ", tick=" + tick + ", stopPrice="
 				+ stopPrice + "]";
 	}
-	
-	
 }

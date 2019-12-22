@@ -303,7 +303,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	}
 	
 	@Override
-	public void updateOrderInfoInTable(String setting, int orderId, double limitPrice, double stopPrice, String orderState) {
+	public void updateOrderInfoInTable(String setting, Integer orderId, double limitPrice, double stopPrice, String orderState) {
 		
 		//todo
 	}

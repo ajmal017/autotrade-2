@@ -101,7 +101,7 @@ public class CommonDAOSQL implements CommonDAO {
 	
 
 	@Override
-	public void updateOrderInfo(int orderId, String setting, String time, double limitPrice, double stopPrice, double tickProfit) {
+	public void updateOrderInfo(Integer orderId, String setting, String time, double limitPrice, double stopPrice, double tickProfit) {
 		final String sqlString = "update order_sign set limit_price = ?, stop_price = ?, tick_profit = ? where orderidinib = ? and setting = ? and time = ? and date = ?";
 		
 		Connection conn = null;
@@ -113,7 +113,7 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setDouble(1,limitPrice);
 			stmt.setDouble(2,stopPrice);
 			stmt.setDouble(3,tickProfit);
-			stmt.setInt(4, orderId);
+			stmt.setInt(4, orderId.intValue());
 			stmt.setString(5,setting);
 			stmt.setString(6,time);
 			stmt.setString(7,Util.getDateStringByDateAndFormatter(new Date(), "yyyy/MM/dd"));

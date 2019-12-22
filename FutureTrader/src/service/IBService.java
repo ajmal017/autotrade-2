@@ -165,19 +165,19 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		return m_client.isConnected();
 	}
 	
-	public void createOrder() {
+	public void createOrder(CreatedOrder order) {
 		
-		
+		//todo
 	}
 	
 	public void modifyOrderStopPrice(int orderId, double newStopPrice) {
 		
-		
+		//todo
 	}
 	
 	public void cancelOrder(int orderId) {
 		
-		
+		//todo
 	}
 	
 	public void stopOrderWithMarketPrice(CreatedOrder order) {

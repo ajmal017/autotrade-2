@@ -21,7 +21,7 @@ public interface CommonDAO {
 	ArrayList<Zone> getAllCloseMonitorZone();
 	
 	void insertNewOrderSign(OrderSign sign);
-	void updateOrderInfo(int orderId, String setting, String time, double limitPrice, double closePrice, double tickProfit);
+	void updateOrderInfo(Integer orderId, String setting, String time, double limitPrice, double closePrice, double tickProfit);
 	ArrayList<OrderSign> getOrderSignListByDate(Date date, String setting);
 	
 	void cleanSettingActive();

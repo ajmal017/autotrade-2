@@ -7,7 +7,7 @@ import tool.Util;
 
 public class OrderSign {
 
-	private int orderIdInIB;
+	private Integer orderIdInIB;
 	private String orderState; //todo update in db
 	private Date time;
 	private String setting;
@@ -20,7 +20,7 @@ public class OrderSign {
 	private double tickProfit; // tick * price difference(limitPrice,stopPrice)
 	
 	public OrderSign(
-			int orderIdInIB, 
+			Integer orderIdInIB, 
 			String orderState,
 			Date time, 
 			String setting, 
@@ -47,11 +47,11 @@ public class OrderSign {
 		orderAction = SystemEnum.OrderAction.Default;
 	}
 	
-	public int getOrderIdInIB() {
+	public Integer getOrderIdInIB() {
 		return orderIdInIB;
 	}
 
-	public void setOrderIdInIB(int orderIdInIB) {
+	public void setOrderIdInIB(Integer orderIdInIB) {
 		this.orderIdInIB = orderIdInIB;
 	}
 
