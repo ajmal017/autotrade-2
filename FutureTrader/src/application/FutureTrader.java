@@ -11,6 +11,7 @@ import com.java4less.ocr.utils.a;
 
 import config.SystemConfig;
 import entity.ColorCount;
+import entity.CreatedOrder;
 import entity.DailySettingRefresh;
 import entity.OrderSign;
 import entity.Setting;
@@ -20,6 +21,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.stage.Stage;
+import samples.testbed.orders.OrderSamples;
 import service.IBService;
 import service.MainService;
 import service.SettingService;
@@ -241,11 +243,12 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
         }
 		
 		//close order
-		if(SettingService.getInstance().getCurrentOrderMap().size() > 0) {
-			SettingService.getInstance().closeAllSettingWhenAppWantClose();
-			return;
+		for(ArrayList<CreatedOrder> orders : SettingService.getInstance().getCurrentOrderMap().values()) {
+			if (orders.size() > 0) {
+				SettingService.getInstance().closeAllSettingWhenAppWantClose();
+				return;
+			}
 		}
-		
 		
 		if(IBService.getInstance().getIbApiConfig().isActive() && IBService.getInstance().isIBConnecting()) {
 			IBService.getInstance().ibDisConnect();

@@ -439,6 +439,7 @@ public class SettingService implements IBServiceCallbackInterface {
 					break;
 				}
 			}
+			
 			IBService.getInstance().cancelOrder(shouldCancelOrderId);
 		}
 		
@@ -540,34 +541,13 @@ public class SettingService implements IBServiceCallbackInterface {
 			}
 		}
 		
-		
-		
-		//todo
-		//notice update state in showntable
-		
-
-		//cancel last same action no-active order
-		dailySignShownInTable.get(thisSetting))
-		dailySignMap.get(thisSetting)) 
-		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
-			if(os.getOrderIdInIB() == shouldCancelOrderId) {
-				currentOrderMap.get(thisSetting).remove(os);
-				break;
-			}
-		}
-		
-		//if need close app
-		if(needCloseApp) {
+		//cancel last same action no-active order and create new different action order
+		if (currentOrderMap.get(thisSetting).size() == 1) { //all active order have stops
+			dailySignShownInTable.get(thisSetting).remove(dailySignShownInTable.get(thisSetting).size()-1);
+			dailySignMap.get(thisSetting).remove(dailySignMap.get(thisSetting).size()-1);
+			currentOrderMap.get(thisSetting).remove(currentOrderMap.get(thisSetting).size()-1);
 			
-			if(wantCloseOrderCount > 0) {
-				wantCloseOrderCount --;
-			} else {
-				tradeObj.closeAppAfterPriceUpdate();
-			}
-			
-		} else {
-
-			//create new 1st other action order
+			//create new 1st different action order
 			SystemEnum.OrderAction  newAction;
 			OrderSign lastOrder = dailySignMap.get(record.getSetting()).get(record.getIndexInDailySignMap());
 			if (lastOrder.getOrderAction() == SystemEnum.OrderAction.Buy) {
@@ -593,6 +573,25 @@ public class SettingService implements IBServiceCallbackInterface {
 			}
 			
 			createNewOrder(record.getSetting(), newAction, newLimitPrice, newStopPrice, orderSettingList.get(0).getTick());
+		}
+		
+		
+		//todo
+		//notice update state in showntable
+		//update in db
+		
+		//if need close app
+		if(needCloseApp) {
+			
+			if(wantCloseOrderCount > 0) {
+				wantCloseOrderCount --;
+			} else {
+				tradeObj.closeAppAfterPriceUpdate();
+			}
+			
+		} else {
+
+			
 		}
 	}
 	
