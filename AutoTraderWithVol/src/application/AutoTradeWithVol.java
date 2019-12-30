@@ -605,10 +605,6 @@ public class AutoTradeWithVol extends Application implements ScenarioGroupServic
         System.exit(0);
 	}
 	
-	public void stop() {
-		
-	}
-	
 	public static void main(String[] args) {
 		launch(args);
 	}

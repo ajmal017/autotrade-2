@@ -16,7 +16,7 @@ public class OrderSign {
 
 	private double limitPrice; //限价（开单）
 	private double tick;
-	private double stopPrice;  //止盈（关单）
+	private double profitLimitPrice;  //止盈（关单）
 	private double tickProfit; // tick * price difference(limitPrice,stopPrice)
 	
 	public OrderSign(
@@ -27,7 +27,7 @@ public class OrderSign {
 			Enum<SystemEnum.OrderAction> orderAction, 
 			double limitPrice,  
 			double tick,
-			double stopPrice,
+			double profitLimitPrice,
 			double tickProfit) {
 		setOrderIdInIB(orderIdInIB);
 		setOrderState(orderState);
@@ -37,7 +37,7 @@ public class OrderSign {
         setActionText(Util.getActionTextByEnum(orderAction));
         setLimitPrice(limitPrice);
         setTick(tick);
-        setStopPrice(stopPrice);
+        setProfitLimitPrice(profitLimitPrice);
         setTickProfit(tickProfit);
     }
 	
@@ -94,12 +94,12 @@ public class OrderSign {
 		this.limitPrice = limitPrice;
 	}
 	
-	public double getStopPrice() {
-		return stopPrice;
+	public double getProfitLimitPrice() {
+		return profitLimitPrice;
 	}
 
-	public void setStopPrice(double stopPrice) {
-		this.stopPrice = stopPrice;
+	public void setProfitLimitPrice(double profitLimitPrice) {
+		this.profitLimitPrice = profitLimitPrice;
 	}
 
 	public double getTick() {

@@ -149,7 +149,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 								Util.getActionTextByEnum(newSign.getOrderAction()),
 								""+newSign.getLimitPrice(),
 								""+newSign.getTick(),
-								""+newSign.getStopPrice(),
+								""+newSign.getProfitLimitPrice(),
 								""+newSign.getTickProfit());
 						@SuppressWarnings("unchecked")
 						ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tableDataHash.get(setting);

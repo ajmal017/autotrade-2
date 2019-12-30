@@ -46,7 +46,7 @@ public class Main extends Application implements IBServiceCallbackInterface {
 	            @Override
 	            public void handle(ActionEvent event) {
 	            	IBService ibService = IBService.getInstance();
-	            	ibService.placeOrder(SystemEnum.OrderAction.Buy, "T10", "10:00:00");
+	            	ibService.placeProfitLimitOrder(SystemEnum.OrderAction.Buy);
 	            }
 	        });
 	        
@@ -62,18 +62,31 @@ public class Main extends Application implements IBServiceCallbackInterface {
 	        });
 	        
 	        Button btn3 = new Button();
-	        btn3.setText("Close");
+	        btn3.setText("Cancel");
 	        btn3.setPrefSize(50, 15);
 	        btn3.setOnAction(new EventHandler<ActionEvent>() {
 	            @Override
 	            public void handle(ActionEvent event) {
 	            	IBService ibService = IBService.getInstance();
-	            	ibService.closeTodayTrade("T10", "10:00:00");
-	            	wantCloseApp = true;
+	            	ibService.cancelOrder(); 
 	            }
 	        });
 	        
-	        hb1.getChildren().addAll(btn1,btn2,btn3);
+	        Button btn4 = new Button();
+	        btn4.setText("Close");
+	        btn4.setPrefSize(50, 15);
+	        btn4.setOnAction(new EventHandler<ActionEvent>() {
+	            @Override
+	            public void handle(ActionEvent event) {
+	            	Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Close?");
+	                Optional<ButtonType> result = confirmation.showAndWait();
+	                if (result.isPresent() && result.get() == ButtonType.OK) {
+	                	closeApplication(); 
+	                }
+	            }
+	        });
+	        
+	        hb1.getChildren().addAll(btn1,btn2,btn3,btn4);
 	        hb1.setSpacing(3);
 			
 	        final VBox vbox = new VBox();
@@ -122,6 +135,15 @@ public class Main extends Application implements IBServiceCallbackInterface {
 	private void closeApplication() {
 		
 
+		try {
+			if (secTimer != null) secTimer.cancel();
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
+		
+		//close order
+		//IBService.getInstance().closeTodayTrade("T10", "10:00:00");
+		
 		IBService.getInstance().ibDisConnect();
 		
 		try {
@@ -132,7 +154,7 @@ public class Main extends Application implements IBServiceCallbackInterface {
 		
 		//shutdown
 		Platform.exit();
-		System.exit(0);
+        System.exit(0);
 	}
 	
 	@Override

@@ -51,7 +51,7 @@ public class CommonDAOSQL implements CommonDAO {
 	        	sign.setOrderAction(Util.getOrderActionEnumByText(sign.getActionText()));
 	        	sign.setLimitPrice(rs.getDouble(6));
 	        	sign.setTick(rs.getDouble(7));
-	        	sign.setStopPrice(rs.getDouble(8));
+	        	sign.setProfitLimitPrice(rs.getDouble(8));
 	        	sign.setTickProfit(rs.getDouble(9));
 	        	
 	        	list.add(sign);
@@ -84,7 +84,7 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setString(5, sign.getActionText());
 			stmt.setDouble(6, sign.getLimitPrice());
 			stmt.setDouble(7, sign.getTick());
-			stmt.setDouble(8, sign.getStopPrice());
+			stmt.setDouble(8, sign.getProfitLimitPrice());
 			stmt.setDouble(9, sign.getTickProfit());
 			int i = stmt.executeUpdate();
 	        if (i == 0) {
