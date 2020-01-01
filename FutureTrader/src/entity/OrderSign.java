@@ -7,10 +7,12 @@ import tool.Util;
 
 public class OrderSign {
 
-	private Integer orderIdInIB;
+	private String setting;
+	
+	private Integer parentOrderIdInIB;
+	private Integer profitLimitOrderIdInIB;
 	private String orderState; //todo update in db
 	private Date time;
-	private String setting;
 	private Enum<SystemEnum.OrderAction> orderAction;
 	private String actionText;
 
@@ -20,7 +22,8 @@ public class OrderSign {
 	private double tickProfit; // tick * price difference(limitPrice,stopPrice)
 	
 	public OrderSign(
-			Integer orderIdInIB, 
+			Integer parentOrderIdInIB, 
+			Integer profitLimitOrderIdInIB,
 			String orderState,
 			Date time, 
 			String setting, 
@@ -29,7 +32,8 @@ public class OrderSign {
 			double tick,
 			double profitLimitPrice,
 			double tickProfit) {
-		setOrderIdInIB(orderIdInIB);
+		setParentOrderIdInIB(parentOrderIdInIB);
+		setProfitLimitOrderIdInIB(profitLimitOrderIdInIB);
 		setOrderState(orderState);
         setTime(time);
         setSetting(setting);
@@ -47,12 +51,22 @@ public class OrderSign {
 		orderAction = SystemEnum.OrderAction.Default;
 	}
 	
-	public Integer getOrderIdInIB() {
-		return orderIdInIB;
+	
+
+	public Integer getParentOrderIdInIB() {
+		return parentOrderIdInIB;
 	}
 
-	public void setOrderIdInIB(Integer orderIdInIB) {
-		this.orderIdInIB = orderIdInIB;
+	public void setParentOrderIdInIB(Integer parentOrderIdInIB) {
+		this.parentOrderIdInIB = parentOrderIdInIB;
+	}
+
+	public Integer getProfitLimitOrderIdInIB() {
+		return profitLimitOrderIdInIB;
+	}
+
+	public void setProfitLimitOrderIdInIB(Integer profitLimitOrderIdInIB) {
+		this.profitLimitOrderIdInIB = profitLimitOrderIdInIB;
 	}
 
 	public Date getTime() {
@@ -124,6 +138,14 @@ public class OrderSign {
 
 	public void setOrderState(String orderState) {
 		this.orderState = orderState;
+	}
+
+	@Override
+	public String toString() {
+		return "OrderSign [setting=" + setting + ", parentOrderIdInIB=" + parentOrderIdInIB
+				+ ", profitLimitOrderIdInIB=" + profitLimitOrderIdInIB + ", orderState=" + orderState + ", time=" + time
+				+ ", orderAction=" + orderAction + ", actionText=" + actionText + ", limitPrice=" + limitPrice
+				+ ", tick=" + tick + ", profitLimitPrice=" + profitLimitPrice + ", tickProfit=" + tickProfit + "]";
 	}
 	
 	

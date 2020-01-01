@@ -47,12 +47,12 @@ public class SettingService implements IBServiceCallbackInterface {
 	private ArrayList<DailySettingRefresh> settingRefreshPlan;
 	private int passedSettingRefreshPlanCount = 0;
 
-	private Map<String,ArrayList<OrderSign>> dailySignShownInTable; // <setting, signList>
+//	private Map<String,ArrayList<OrderSign>> dailySignShownInTable; // <setting, signList>
 	private Map<String,ArrayList<OrderSign>> dailySignMap; //all today's sign <setting, signList>
 	private Map<String,ArrayList<CreatedOrder>> currentOrderMap; //current trend's parent orders <setting, orderList>. if stop, order will be clear
-	private Map<Integer,CreatedOrder> currentProfitLimitOrderMap; //parentOrderId,childProfitOrder
+//	private Map<Integer,CreatedOrder> currentProfitLimitOrderMap; //parentOrderId,childProfitOrder
 	
-	private Map<Integer,String> orderIdSettingMap; //<orderid,setting>
+	private Map<Integer,String> parentOrderIdSettingMap; //<parentOrderId,setting>
 
 	private int dailyOrderCount = 0;
 
@@ -68,11 +68,11 @@ public class SettingService implements IBServiceCallbackInterface {
 		this.activeSettingList = new ArrayList<String>();
     	this.workingSettingList = new ArrayList<Setting>();
 		this.settingRefreshPlan = new ArrayList<DailySettingRefresh>();
-		this.dailySignShownInTable = new HashMap<String, ArrayList<OrderSign>>();
+//		this.dailySignShownInTable = new HashMap<String, ArrayList<OrderSign>>();
     	this.dailySignMap = new HashMap<String, ArrayList<OrderSign>>();
     	this.currentOrderMap = new HashMap<String, ArrayList<CreatedOrder>>();
-    	this.currentProfitLimitOrderMap = new HashMap<Integer, CreatedOrder>();
-    	this.orderIdSettingMap = new HashMap<Integer,String>();
+//    	this.currentProfitLimitOrderMap = new HashMap<Integer, CreatedOrder>();
+    	this.parentOrderIdSettingMap = new HashMap<Integer,String>();
     	initAllSettingData();
     }
 	
@@ -117,10 +117,9 @@ public class SettingService implements IBServiceCallbackInterface {
     	
     	for (String nameString : settings) {
         	getActiveSettingList().add(nameString);
-        	getDailySignShownInTable().put(nameString, new ArrayList<OrderSign>());
+//        	getDailySignShownInTable().put(nameString, new ArrayList<OrderSign>());
         	getDailySignMap().put(nameString, new ArrayList<OrderSign>());
         	getCurrentOrderMap().put(nameString, new ArrayList<CreatedOrder>());
-        	getCurrentProfitLimitOrderMap().put(nameString, new ArrayList<CreatedOrder>());
 		}
     	
 		initSettingRefreshPlan();
@@ -277,15 +276,17 @@ public class SettingService implements IBServiceCallbackInterface {
 				for (CreatedOrder parentOrder : currentOrderMap.get(setting)) {
 					
 					if (parentOrder.getOrderState().equals("Submitted")) { //todo unfilled
-						 //when cancel unfilled - parent order, child order will be anto-canceled
+						 //when cancel unfilled parent order, profit-limit order will be anti-canceled
 						IBService.getInstance().cancelOrder(parentOrder.getOrderIdInIB());
 					} else if (parentOrder.getOrderState().equals("Filled")) {
-						//when cancel filled - parent order, must hand-cancel child profit-limit order first.
-						CreatedOrder profitLimitOrder = currentProfitLimitOrderMap.get(parentOrder.getOrderIdInIB());
-						IBService.getInstance().cancelOrder(profitLimitOrder.getOrderIdInIB());
+						//when stop filled parent order, must hand-cancel profit-limit order first. then create a ANTI-action MKT order.  maybe WRONG
+						//IBService.getInstance().cancelOrder(parentOrder.getProfitLimitOrderIdInIB());
+						
+						//when stop filled parent order, only need change profit-limit order¡®s ordertype to MKT.
+						
 						IBService.getInstance().stopOrderWithMarketPrice(parentOrder);
 					}
-					currentProfitLimitOrderMap.remove(parentOrder.getOrderIdInIB());
+	//				currentProfitLimitOrderMap.remove(parentOrder.getOrderIdInIB());
 				}
 				currentOrderMap.get(setting).clear();
 			}
@@ -365,12 +366,12 @@ public class SettingService implements IBServiceCallbackInterface {
     }
     
     
-    private void createNewOrder (String setting, Enum<SystemEnum.OrderAction> action, double limitPrice, double stopPrice, double tick) {
+    private void createNewBracketOrder (String setting, Enum<SystemEnum.OrderAction> action, double limitPrice, double stopPrice, double tick) {
     	
-    	OrderSign newSign = new OrderSign(IBService.getInstance().getCurrentOrderId(), "", new Date(), setting, action, limitPrice, tick, stopPrice, 0);
-    	CreatedOrder newOrder = new CreatedOrder(IBService.getInstance().getCurrentOrderId(), "", new Date(), action, limitPrice, tick, stopPrice);
+    	OrderSign newSign = new OrderSign(IBService.getInstance().getCurrentOrderId(), SystemConfig.IB_ORDER_STATE_Submitted, new Date(), setting, action, limitPrice, tick, stopPrice, 0);
+    	CreatedOrder newOrder = new CreatedOrder(IBService.getInstance().getCurrentOrderId(), SystemConfig.IB_ORDER_STATE_Submitted, new Date(), action, limitPrice, tick, stopPrice);
     	
-    	getDailySignShownInTable().get(setting).add(newSign);
+//    	getDailySignShownInTable().get(setting).add(newSign);
     	getDailySignMap().get(setting).add(newSign);
     	currentOrderMap.get(setting).add(newOrder);
     	CommonDAOFactory.getCommonDAO().insertNewOrderSign(newSign);
@@ -378,7 +379,7 @@ public class SettingService implements IBServiceCallbackInterface {
     	IBService ibService = IBService.getInstance();
     	if(ibService.getIbApiConfig().isActive() && ibService.isIBConnecting()) {
     		
-    		ibService.createOrder(newOrder);
+    		ibService.createBracketOrder(newOrder);
     	}
     }
     
@@ -394,20 +395,25 @@ public class SettingService implements IBServiceCallbackInterface {
 		return instance;  
 	}
 	
+	@Override
+	public void responseWhenOrderSubmitted(Integer parentOrderId, Integer orderId, String orderState) {
+		
+		//todo
+	}
 	
 	@Override
-	public void responseWhenOrderActive(Integer orderId, String orderState) {
+	public void responseWhenParentOrderFilled(Integer orderId, String orderState) {
 		
 		
 //		sign.setLimitPrice(limitPrice); //todo confirm price by test
 //		sign.setStopPrice(stopPrice);
-		String thisSetting = orderIdSettingMap.get(orderId);
-		for(OrderSign os : dailySignShownInTable.get(thisSetting)) {
-			if(os.getOrderIdInIB() == orderId) {
-				os.setOrderState(orderState);
-				break;
-			}
-		}
+		String thisSetting = parentOrderIdSettingMap.get(orderId);
+//		for(OrderSign os : dailySignShownInTable.get(thisSetting)) {
+//			if(os.getOrderIdInIB() == orderId) {
+//				os.setOrderState(orderState);
+//				break;
+//			}
+//		}
 		for(OrderSign os : dailySignMap.get(thisSetting)) {
 			if(os.getOrderIdInIB() == orderId) {
 				os.setOrderState(orderState);
@@ -527,21 +533,21 @@ public class SettingService implements IBServiceCallbackInterface {
 	}
 	
 	@Override
-	public void responseFuturePriceWhenOrderStop(Integer orderId, double limitPrice, double stopPrice, String orderState, double tick) {
+	public void responseWhenProfitLimitOrderFilled(Integer parentOrderId, Integer ordeId, double limitPrice, double stopPrice, String orderState, double tick) {
 		
 		
 //		sign.setLimitPrice(limitPrice); //todo confirm price by test
 //		sign.setStopPrice(stopPrice);
-		String thisSetting = orderIdSettingMap.get(orderId);
+		String thisSetting = parentOrderIdSettingMap.get(parentOrderId);
 		int index = 0;
 		double profit = 0;
 		
 		for(OrderSign os : dailySignShownInTable.get(thisSetting)) {
 			index++;
-			if(os.getOrderIdInIB() == orderId) {
+			if(os.getOrderIdInIB() == parentOrderId) {
 				os.setOrderState(orderState);
 				profit = Util.getProfit(limitPrice, stopPrice, os.getOrderAction())*tick;
-				CommonDAOFactory.getCommonDAO().updateOrderInfo(orderId, thisSetting, os.getTime(), limitPrice, stopPrice, profit);
+				CommonDAOFactory.getCommonDAO().updateOrderInfo(parentOrderId, thisSetting, os.getTime(), limitPrice, stopPrice, profit);
 				break;
 			}
 		}
@@ -550,7 +556,7 @@ public class SettingService implements IBServiceCallbackInterface {
 		os1.setTickProfit(profit);
 		
 		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
-			if(os.getOrderIdInIB() == orderId) {
+			if(os.getOrderIdInIB() == parentOrderId) {
 				currentOrderMap.get(thisSetting).remove(os);
 				break;
 			}
@@ -564,7 +570,7 @@ public class SettingService implements IBServiceCallbackInterface {
 			
 			//create new 1st different action order
 			SystemEnum.OrderAction  newAction;
-			OrderSign lastOrder = dailySignMap.get(record.getSetting()).get(record.getIndexInDailySignMap());
+			OrderSign lastOrder = dailySignMap.get(thisSetting).get(record.getIndexInDailySignMap());
 			if (lastOrder.getOrderAction() == SystemEnum.OrderAction.Buy) {
 				newAction = SystemEnum.OrderAction.Sell;
 			} else {
@@ -573,13 +579,13 @@ public class SettingService implements IBServiceCallbackInterface {
 			
 			ArrayList<SingleOrderSetting> orderSettingList = null;
 			for(Setting setting : workingSettingList) {
-				if (setting.getSetting().equals(record.getSetting())) {
+				if (setting.getSetting().equals(thisSetting)) {
 					orderSettingList = setting.getOrderSettingList();
 					break;
 				}
 			}
 			
-			double newLimitPrice = lastOrder.getStopPrice();
+			double newLimitPrice = lastOrder.getProfitLimitPrice();
 			double newStopPrice;
 			if (newAction == SystemEnum.OrderAction.Sell) {
 				newStopPrice = newLimitPrice - orderSettingList.get(0).getStopChange();
@@ -587,7 +593,7 @@ public class SettingService implements IBServiceCallbackInterface {
 				newStopPrice = newLimitPrice + orderSettingList.get(0).getStopChange();
 			}
 			
-			createNewOrder(record.getSetting(), newAction, newLimitPrice, newStopPrice, orderSettingList.get(0).getTick());
+			createNewOrder(thisSetting, newAction, newLimitPrice, newStopPrice, orderSettingList.get(0).getTick());
 		}
 		
 		
@@ -626,13 +632,13 @@ public class SettingService implements IBServiceCallbackInterface {
 		this.tradeObj = tradeObj;
 	}
 	
-	public Map<String, ArrayList<OrderSign>> getDailySignShownInTable() {
-		return dailySignShownInTable;
-	}
-
-	public void setDailySignShownInTable(Map<String, ArrayList<OrderSign>> dailySignShownInTable) {
-		this.dailySignShownInTable = dailySignShownInTable;
-	}
+//	public Map<String, ArrayList<OrderSign>> getDailySignShownInTable() {
+//		return dailySignShownInTable;
+//	}
+//
+//	public void setDailySignShownInTable(Map<String, ArrayList<OrderSign>> dailySignShownInTable) {
+//		this.dailySignShownInTable = dailySignShownInTable;
+//	}
 
 	public Map<String, ArrayList<OrderSign>> getDailySignMap() {
 		return dailySignMap;
@@ -650,13 +656,13 @@ public class SettingService implements IBServiceCallbackInterface {
 		this.currentOrderMap = currentOrderMap;
 	}
 	
-	public Map<String, ArrayList<CreatedOrder>> getCurrentProfitLimitOrderMap() {
-		return currentProfitLimitOrderMap;
-	}
-
-	public void setCurrentProfitLimitOrderMap(Map<String, ArrayList<CreatedOrder>> currentProfitLimitOrderMap) {
-		this.currentProfitLimitOrderMap = currentProfitLimitOrderMap;
-	}
+//	public Map<Integer,CreatedOrder> getCurrentProfitLimitOrderMap() {
+//		return currentProfitLimitOrderMap;
+//	}
+//
+//	public void setCurrentProfitLimitOrderMap(Map<Integer,CreatedOrder> currentProfitLimitOrderMap) {
+//		this.currentProfitLimitOrderMap = currentProfitLimitOrderMap;
+//	}
 
 	public ArrayList<String> getActiveSettingList() {
 		return activeSettingList;
@@ -698,12 +704,12 @@ public class SettingService implements IBServiceCallbackInterface {
 		this.dailyOrderCount = dailyOrderCount;
 	}
 
-	public Map<Integer, String> getOrderIdSettingMap() {
-		return orderIdSettingMap;
+	public Map<Integer, String> getParentOrderIdSettingMap() {
+		return parentOrderIdSettingMap;
 	}
 
-	public void setOrderIdSettingMap(Map<Integer, String> orderIdSettingMap) {
-		this.orderIdSettingMap = orderIdSettingMap;
+	public void setParentOrderIdSettingMap(Map<Integer, String> parentOrderIdSettingMap) {
+		this.parentOrderIdSettingMap = parentOrderIdSettingMap;
 	}
 
 	

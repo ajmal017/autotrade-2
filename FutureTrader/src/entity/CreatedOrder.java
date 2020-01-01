@@ -8,28 +8,31 @@ import tool.Util;
 public class CreatedOrder {
 	
 	private Integer orderIdInIB;
+	private Integer profitLimitOrderIdInIB;
 	private String orderState;
 	private Date time;
 	private Enum<SystemEnum.OrderAction> orderAction;
 	private double limitPrice;
 	private double tick;
-	private double stopPrice;
+	private double profitLimitPrice;
 	
 	public CreatedOrder(
 			Integer orderIdInIB, 
+			Integer profitLimitOrderIdInIB,
 			String orderState,
 			Date time, 
 			Enum<SystemEnum.OrderAction> orderAction, 
 			double limitPrice,  
 			double tick,
-			double stopPrice) {
+			double profitLimitPrice) {
 		setOrderIdInIB(orderIdInIB);
+		setProfitLimitOrderIdInIB(profitLimitOrderIdInIB);
 		setOrderState(orderState);
         setTime(time);
         setOrderAction(orderAction);
         setLimitPrice(limitPrice);
         setTick(tick);
-        setStopPrice(stopPrice);
+        setProfitLimitPrice(profitLimitPrice);
     }
 	
 	public Integer getOrderIdInIB() {
@@ -39,6 +42,16 @@ public class CreatedOrder {
 		this.orderIdInIB = orderIdInIB;
 	}
 	
+	
+	
+	public Integer getProfitLimitOrderIdInIB() {
+		return profitLimitOrderIdInIB;
+	}
+
+	public void setProfitLimitOrderIdInIB(Integer profitLimitOrderIdInIB) {
+		this.profitLimitOrderIdInIB = profitLimitOrderIdInIB;
+	}
+
 	public String getOrderState() {
 		return orderState;
 	}
@@ -72,17 +85,21 @@ public class CreatedOrder {
 	public void setTick(double tick) {
 		this.tick = tick;
 	}
-	public double getStopPrice() {
-		return stopPrice;
+	
+	public double getProfitLimitPrice() {
+		return profitLimitPrice;
 	}
-	public void setStopPrice(double stopPrice) {
-		this.stopPrice = stopPrice;
+
+	public void setProfitLimitPrice(double profitLimitPrice) {
+		this.profitLimitPrice = profitLimitPrice;
 	}
 
 	@Override
 	public String toString() {
-		return "CreatedOrder [orderIdInIB=" + orderIdInIB + ", orderState=" + orderState + ", time=" + time
-				+ ", orderAction=" + orderAction + ", limitPrice=" + limitPrice + ", tick=" + tick + ", stopPrice="
-				+ stopPrice + "]";
+		return "CreatedOrder [orderIdInIB=" + orderIdInIB + ", profitLimitOrderIdInIB=" + profitLimitOrderIdInIB
+				+ ", orderState=" + orderState + ", time=" + time + ", orderAction=" + orderAction + ", limitPrice="
+				+ limitPrice + ", tick=" + tick + ", profitLimitPrice=" + profitLimitPrice + "]";
 	}
+
+	
 }

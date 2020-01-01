@@ -202,15 +202,15 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		List<Order> bracket = OrderSamples.BracketOrder(getCurrentOrderId(), 
 				actionStr,
 				1, 
-				3240.00,3241.25, 0);
+				3236.00,3237., 0);
 //		order.account(ibServerConfig.getAccount());
 		//AvailableAlgoParams.FillAdaptiveParams(order, "Normal");
 		bracket.remove(2);
-		 for(Order o : bracket) {
+		for(Order o : bracket) {
 			 //AvailableAlgoParams.FillAdaptiveParams(o, "Normal");
 			 o.transmit(true);
 			 m_client.placeOrder(o.orderId(), contract, o);
-		 }
+		}
 
 		setCurrentOrderId(getCurrentOrderId()+2);
 		

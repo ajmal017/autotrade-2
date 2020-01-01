@@ -4,6 +4,7 @@ package service;
 
 import java.io.File;
 import java.util.IntSummaryStatistics;
+import java.util.List;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -19,6 +20,7 @@ import ch.qos.logback.core.joran.conditional.IfAction;
 import ib.MyEWrapperImpl;
 import ib.MyEWrapperImplCallbackInterface;
 import samples.testbed.orders.AvailableAlgoParams;
+import samples.testbed.orders.OrderSamples;
 import config.SystemConfig;
 import entity.CreatedOrder;
 import entity.IBApiConfig;
@@ -165,12 +167,12 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		return m_client.isConnected();
 	}
 	
-	public void createOrder(CreatedOrder order) {
+	public void createBracketOrder(CreatedOrder order) {
 		
-		//todo
+		placeBracketOrder(order.getOrderAction(),order.getLimitPrice(),order.getProfitLimitPrice(),order.getTick());
 	}
 	
-	public void modifyOrderStopPrice(int orderId, double newStopPrice) {
+	public void modifyOrderProfitLimitPrice(CreatedOrder order, double newProfitLimitPrice) {
 		
 		//todo
 	}
@@ -185,56 +187,46 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		
 	}
 	
-	public void placeOrder(Enum<SystemEnum.PlaceOrderAction> placeOrderAction, int orderId, Enum<SystemEnum.OrderAction> newAction, double limitPrice, double stopPrice, double tick) {
+	private void placeBracketOrder(Enum<SystemEnum.OrderAction> orderAction, double limitPrice, double profitLimitPrice, double tick) {
 		
-		if(newAction == SystemEnum.OrderAction.Default) return;
+		if(orderAction == SystemEnum.OrderAction.Default) return;
 		
 		String actionStr = null;
-		if(newAction == SystemEnum.OrderAction.Buy) {
+		if(orderAction == SystemEnum.OrderAction.Buy) {
 			actionStr = "BUY";
 		} else {
 			actionStr = "SELL";
 		}
 		
 		Contract contract = new Contract();
-//		contract.symbol(stockConfig.getStockSymbol());
-//		contract.secType(stockConfig.getSecurityType());
-//		contract.currency(stockConfig.getStockCurrency());
-//		contract.exchange(stockConfig.getStockExchange());
-//		stock.primaryExch(stockConfig.getPrimaryExchange());	
+		contract.symbol("ES");
+		contract.secType("FUT");
+		contract.exchange("GLOBEX");
+		contract.currency("USD");
+		contract.lastTradeDateOrContractMonth("202003");		
 		
-		//指数
-//		contract.symbol = "DAX";
-//		contract.secType = "IND";
-//		contract.currency = "EUR";
-//		contract.exchange = "DTB";
-		
-		//期货 期货合约需要给出到期日期和标的物的代码。
-//		contract.symbol = "ES";
-//		contract.secType = "FUT";
-//		contract.exchange = "GLOBEX";
-//		contract.currency = "USD";
-//		contract.lastTradeDateOrContractMonth = "201612";
-		
-		//
-//		.order.limit(action, quantity, price, transmitOrder)
-//		.order.market(action, quantity, transmitOrder, goodAfterTime, goodTillDate)
-//		.order.marketClose(action, quantity, price, transmitOrder)
-//		.order.stop(action, quantity, price, transmitOrder, parentId, tif)
-//		.order.stopLimit(action, quantity, limitPrice, stopPrice, transmitOrder, parentId, tif)
-//		.order.trailingStop(action, quantity, auxPrice, tif, transmitOrder, parentId)
-		
-		Order order = new Order();
-		order.action(actionStr);
-		order.orderType("MKT");
-		order.totalQuantity(tick);
-		AvailableAlgoParams.FillAdaptiveParams(order, "Normal");
-		
+		List<Order> bracket = OrderSamples.BracketOrder(getCurrentOrderId(), 
+				actionStr,
+				tick, 
+				limitPrice,profitLimitPrice, 0);
 //		order.account(ibServerConfig.getAccount());
-		m_client.placeOrder(orderId , contract, order);
-		if (placeOrderAction == SystemEnum.PlaceOrderAction.Create) {
-			setCurrentOrderId(getCurrentOrderId()+1);
+		//AvailableAlgoParams.FillAdaptiveParams(order, "Normal");
+		bracket.remove(2);
+		for(Order o : bracket) {
+			 //AvailableAlgoParams.FillAdaptiveParams(o, "Normal");
+			 o.transmit(true);
+			 m_client.placeOrder(o.orderId(), contract, o);
 		}
+
+		setCurrentOrderId(getCurrentOrderId()+2);
+		
+		
+		//order excample
+		//open order: orderId=510 action=BUY quantity=1.0 cashQty= conid=346577697 symbol=ES secType=FUT lastTradeDate=20200320 strike=0.0 right=? multiplier=50 exchange=GLOBEX primaryExch=null currency=USD localSymbol=ESH0 tradingClass=ES type=LMT lmtPrice=3240.0 auxPrice=0.0 TIF=DAY localSymbol=ESH0 client Id=0 parent Id=0 permId=410647624 outsideRth=false hidden=false discretionaryAmt=0.0 displaySize=0 triggerMethod=0 goodAfterTime=null goodTillDate=null faGroup=null faMethod=null faPercentage=null faProfile=null shortSaleSlot=0 designatedLocation=null exemptCode=-1 ocaGroup=null ocaType=3 rule80A=null allOrNone=false minQty= percentOffset= eTradeOnly=false firmQuoteOnly=false nbboPriceCap= optOutSmartRouting=false auctionStrategy=0 startingPrice= stockRefPrice= delta= stockRangeLower= stockRangeUpper= volatility= volatilityType=0 deltaNeutralOrderType=None deltaNeutralAuxPrice= deltaNeutralConId=0 deltaNeutralSettlingFirm=null deltaNeutralClearingAccount=null deltaNeutralClearingIntent=null deltaNeutralOpenClose=? deltaNeutralShortSale=false deltaNeutralShortSaleSlot=0 deltaNeutralDesignatedLocation=null continuousUpdate=0 referencePriceType=0 trailStopPrice=3241.0 trailingPercent= scaleInitLevelSize= scaleSubsLevelSize= scalePriceIncrement= scalePriceAdjustValue= scalePriceAdjustInterval= scaleProfitOffset= scaleAutoReset=false scaleInitPosition= scaleInitFillQty= scaleRandomPercent=false hedgeType=null hedgeParam=null account=DU1300317 modelCode=null settlingFirm=null clearingAccount=null clearingIntent=IB notHeld=false whatIf=false solicited=false randomize size=false randomize price=false dontUseAutoPriceForHedge=true isOmsContainer=false discretionaryUpToLimitPrice=false status=Submitted initMarginBefore=null maintMarginBefore=null equityWithLoanBefore=null initMarginChange=null maintMarginChange=null equityWithLoanChange=null initMarginAfter=null maintMarginAfter=null equityWithLoanAfter=null commission= minCommission= maxCommission= commissionCurrency=null warningText=null
+		// OrderStatus. Id: 510, Status: Submitted, Filled0.0, Remaining: 1.0, AvgFillPrice: 0.0, PermId: 410647624, ParentId: 0, LastFillPrice: 0.0, ClientId: 0, WhyHeld: null, MktCapPrice: 0.0
+		//open order: orderId=511 action=SELL quantity=1.0 cashQty= conid=346577697 symbol=ES secType=FUT lastTradeDate=20200320 strike=0.0 right=? multiplier=50 exchange=GLOBEX primaryExch=null currency=USD localSymbol=ESH0 tradingClass=ES type=LMT lmtPrice=3241.25 auxPrice=0.0 TIF=DAY localSymbol=ESH0 client Id=0 parent Id=510 permId=410647625 outsideRth=false hidden=false discretionaryAmt=0.0 displaySize=0 triggerMethod=0 goodAfterTime=null goodTillDate=null faGroup=null faMethod=null faPercentage=null faProfile=null shortSaleSlot=0 designatedLocation=null exemptCode=-1 ocaGroup=410647624 ocaType=3 rule80A=null allOrNone=false minQty= percentOffset= eTradeOnly=false firmQuoteOnly=false nbboPriceCap= optOutSmartRouting=false auctionStrategy=0 startingPrice= stockRefPrice= delta= stockRangeLower= stockRangeUpper= volatility= volatilityType=0 deltaNeutralOrderType=None deltaNeutralAuxPrice= deltaNeutralConId=0 deltaNeutralSettlingFirm=null deltaNeutralClearingAccount=null deltaNeutralClearingIntent=null deltaNeutralOpenClose=? deltaNeutralShortSale=false deltaNeutralShortSaleSlot=0 deltaNeutralDesignatedLocation=null continuousUpdate=0 referencePriceType=0 trailStopPrice=3240.25 trailingPercent= scaleInitLevelSize= scaleSubsLevelSize= scalePriceIncrement= scalePriceAdjustValue= scalePriceAdjustInterval= scaleProfitOffset= scaleAutoReset=false scaleInitPosition= scaleInitFillQty= scaleRandomPercent=false hedgeType=null hedgeParam=null account=DU1300317 modelCode=null settlingFirm=null clearingAccount=null clearingIntent=IB notHeld=false whatIf=false solicited=false randomize size=false randomize price=false dontUseAutoPriceForHedge=true isOmsContainer=false discretionaryUpToLimitPrice=false status=PreSubmitted initMarginBefore=null maintMarginBefore=null equityWithLoanBefore=null initMarginChange=null maintMarginChange=null equityWithLoanChange=null initMarginAfter=null maintMarginAfter=null equityWithLoanAfter=null commission= minCommission= maxCommission= commissionCurrency=null warningText=null
+		// OrderStatus. Id: 511, Status: PreSubmitted, Filled0.0, Remaining: 1.0, AvgFillPrice: 0.0, PermId: 410647625, ParentId: 510, LastFillPrice: 0.0, ClientId: 0, WhyHeld: child,locate, MktCapPrice: 0.0
+
 	}
 	
 	
