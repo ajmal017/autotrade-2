@@ -19,6 +19,9 @@ public class OrderSign {
 	private double limitPrice; //限价（开单）
 	private double tick;
 	private double profitLimitPrice;  //止盈（关单）
+	
+	private double limitFilledPrice;
+	private double profitLimitFilledPrice;
 	private double tickProfit; // tick * price difference(limitPrice,stopPrice)
 	
 	public OrderSign(
@@ -31,6 +34,8 @@ public class OrderSign {
 			double limitPrice,  
 			double tick,
 			double profitLimitPrice,
+			double limitFilledPrice,
+			double profitLimitFilledPrice,
 			double tickProfit) {
 		setParentOrderIdInIB(parentOrderIdInIB);
 		setProfitLimitOrderIdInIB(profitLimitOrderIdInIB);
@@ -41,7 +46,10 @@ public class OrderSign {
         setActionText(Util.getActionTextByEnum(orderAction));
         setLimitPrice(limitPrice);
         setTick(tick);
+        setLimitFilledPrice(limitFilledPrice);
+        setProfitLimitFilledPrice(profitLimitFilledPrice);
         setProfitLimitPrice(profitLimitPrice);
+        
         setTickProfit(tickProfit);
     }
 	
@@ -139,13 +147,30 @@ public class OrderSign {
 	public void setOrderState(String orderState) {
 		this.orderState = orderState;
 	}
+	
+	public double getLimitFilledPrice() {
+		return limitFilledPrice;
+	}
+
+	public void setLimitFilledPrice(double limitFilledPrice) {
+		this.limitFilledPrice = limitFilledPrice;
+	}
+
+	public double getProfitLimitFilledPrice() {
+		return profitLimitFilledPrice;
+	}
+
+	public void setProfitLimitFilledPrice(double profitLimitFilledPrice) {
+		this.profitLimitFilledPrice = profitLimitFilledPrice;
+	}
 
 	@Override
 	public String toString() {
 		return "OrderSign [setting=" + setting + ", parentOrderIdInIB=" + parentOrderIdInIB
 				+ ", profitLimitOrderIdInIB=" + profitLimitOrderIdInIB + ", orderState=" + orderState + ", time=" + time
 				+ ", orderAction=" + orderAction + ", actionText=" + actionText + ", limitPrice=" + limitPrice
-				+ ", tick=" + tick + ", profitLimitPrice=" + profitLimitPrice + ", tickProfit=" + tickProfit + "]";
+				+ ", tick=" + tick + ", profitLimitPrice=" + profitLimitPrice + ", limitFilledPrice=" + limitFilledPrice
+				+ ", profitLimitFilledPrice=" + profitLimitFilledPrice + ", tickProfit=" + tickProfit + "]";
 	}
 	
 	
