@@ -244,14 +244,6 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	@Override
 	public void updateTradePrice(double price) {
 		
-//		System.out.println("from ib updateTradePrice:"+price);
-//		if(getPreOrderScenario() == null) return;
-//		
-//		if (getSettingServiceObj() != null) { 
-//			getSettingServiceObj().updateTradePrice(price, getPreOrderScenario(), getPreOrderTime(), preOrderQuantity);
-//		}
-//		setPreOrderScenario(null);
-//		setPreOrderTime(null);
 	}
 	
 	public int getCurrentOrderId() {

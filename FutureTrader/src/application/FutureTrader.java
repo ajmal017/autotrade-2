@@ -114,6 +114,10 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 				settingService.updateSettingListByRefreshPlan();
 			}
 			
+			if (settingService.getPassedSettingRefreshPlanCount() == 0) {
+				return;
+			}
+			
 			//update closeZone color
 			colorInfoService.updateCloseMonitorZoneColorByTimer();
 			//check closeZone color
@@ -131,19 +135,18 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 
 				String setting = settingService.getActiveSettingList().get(i);
 
-				ArrayList<OrderSign> shownList = settingService.getDailySignShownInTable().get(setting);
+				@SuppressWarnings("unchecked")
+				ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tableDataHash.get(setting);
 				ArrayList<OrderSign> newestList = settingService.getDailySignMap().get(setting);
-				if(shownList.size() != newestList.size()) {
-
-					int shownCount = shownList.size();
+				if(signData.size() != newestList.size()) {
+					int shownCount = signData.size();
 					for(int j = 0; j < newestList.size() - shownCount; j++) {
 
 						OrderSign newSign = newestList.get(shownCount+j);
-						shownList.add(newSign);
 						//insert into table
 						SignTableItem signItem = new SignTableItem(
 								Util.getDateStringByDateAndFormatter(newSign.getTime(), "HH:mm:ss"),
-								""+newSign.getOrderIdInIB(),
+								""+newSign.getParentOrderIdInIB(),
 								"", //todo orderstate
 								setting,
 								Util.getActionTextByEnum(newSign.getOrderAction()),
@@ -151,8 +154,6 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 								""+newSign.getTick(),
 								""+newSign.getProfitLimitPrice(),
 								""+newSign.getTickProfit());
-						@SuppressWarnings("unchecked")
-						ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tableDataHash.get(setting);
 						signData.add(signItem);
 						playSignAlertMusic();
 					}

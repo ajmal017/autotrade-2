@@ -4,7 +4,7 @@ public class SingleOrderSetting {
 	
 	private double limitChange;
 	private double tick;
-	private double stopChange;
+	private double profitLimitChange;
 	
 	public double getTick() {
 		return tick;
@@ -22,13 +22,14 @@ public class SingleOrderSetting {
 		this.limitChange = limitChange;
 	}
 
-	public double getStopChange() {
-		return stopChange;
+	public double getProfitLimitChange() {
+		return profitLimitChange;
 	}
 
-	public void setStopChange(double stopChange) {
-		this.stopChange = stopChange;
+	public void setProfitLimitChange(double profitLimitChange) {
+		this.profitLimitChange = profitLimitChange;
 	}
+
 	
 
 }
