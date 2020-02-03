@@ -4,7 +4,7 @@ public class SystemConfig {
 	public static String DOC_PATH = "c://futuretrader";
 	
 	public static String PRICE_IMG_NAME = "swim_price.png";
-	public static String DB_NAME = "lttrade.db";
+	public static String DB_NAME = "futuretrade.db";
 	public static String IB_CONFIG_NAME = "ibtradeconfig.xml";
 	
 

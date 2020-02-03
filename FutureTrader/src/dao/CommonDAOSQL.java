@@ -45,7 +45,7 @@ public class CommonDAOSQL implements CommonDAO {
 	        	dateStr.append(rs.getString(2));
 	        	OrderSign sign = new OrderSign();
 	        	sign.setTime(Util.getDateByStringAndFormatter(dateStr.toString(), "yyyy/MM/dd HH:mm:ss"));
-	        	sign.setOrderIdInIB(rs.getInt(3));
+	        	sign.setParentOrderIdInIB(rs.getInt(3));
 	        	sign.setSetting(rs.getString(4));
 	        	sign.setActionText(rs.getString(5));
 	        	sign.setOrderAction(Util.getOrderActionEnumByText(sign.getActionText()));
@@ -68,7 +68,7 @@ public class CommonDAOSQL implements CommonDAO {
 
 	@Override
 	public void insertNewOrderSign(OrderSign sign) {
-		final String sqlString = "insert into order_sign (date,time,orderidinib,setting,action,limit_price,tick,stop_price,tick_profit) values (?,?,?,?,?,?,?,?,?)";
+		final String sqlString = "insert into order_sign (date,time,orderidinib,setting,action,limit_price,tick,profit_limit_price,tick_profit) values (?,?,?,?,?,?,?,?,?)";
 
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -79,7 +79,7 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt = conn.prepareStatement(sqlString);
 			stmt.setString(1, Util.getDateStringByDateAndFormatter(sign.getTime(),"yyyy/MM/dd"));
 			stmt.setString(2, Util.getDateStringByDateAndFormatter(sign.getTime(),"HH:mm:ss"));
-			stmt.setInt(3, sign.getOrderIdInIB());
+			stmt.setInt(3, sign.getParentOrderIdInIB());
 			stmt.setString(4, sign.getSetting());
 			stmt.setString(5, sign.getActionText());
 			stmt.setDouble(6, sign.getLimitPrice());
@@ -99,7 +99,73 @@ public class CommonDAOSQL implements CommonDAO {
 		}
 	}
 	
-
+	@Override
+	public void updateOrderProfitLimitPrice(Integer orderId, double newProfitLimitPrice) {
+		final String sqlString = "update order_sign set profit_limit_price = ? where orderidinib = ?";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setDouble(1,newProfitLimitPrice);
+			stmt.setInt(2, orderId.intValue());
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+		
+	}
+	
+	@Override
+	public void updateOrderLimitFilledInfo(Integer orderId, String orderState, double limitFilledPrice) {
+		final String sqlString = "update order_sign set limit_price = ? where orderidinib = ?";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setDouble(1,limitFilledPrice);
+			stmt.setInt(2, orderId.intValue());
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+		
+	}
+	
+	@Override
+	public void updateOrderProfitLimitFilledInfo(Integer orderId, String orderState, double profitLimitFilledPrice, double tickProfit) {
+		final String sqlString = "update order_sign set profit_limit_price = ?, tick_profit = ? where orderidinib = ?";
+		
+		Connection conn = null;
+        PreparedStatement stmt = null;
+		try {
+			
+			conn = ConnectionUtils.getConnection();
+			stmt = conn.prepareStatement(sqlString);
+			stmt.setDouble(1,profitLimitFilledPrice);
+			stmt.setDouble(2,tickProfit);
+			stmt.setInt(3, orderId.intValue());
+			stmt.executeUpdate();
+			
+		} catch (SQLException e) {
+			e.printStackTrace(); 
+		} finally {
+	        ConnectionUtils.closeAll(stmt,null);
+		}
+		
+	}
+/*
 	@Override
 	public void updateOrderInfo(Integer orderId, String setting, Date time, double limitPrice, double stopPrice, double tickProfit) {
 		final String sqlString = "update order_sign set limit_price = ?, stop_price = ?, tick_profit = ? where orderidinib = ? and setting = ? and time = ? and date = ?";
@@ -126,7 +192,7 @@ public class CommonDAOSQL implements CommonDAO {
 		}
 		
 	}
-	
+	*/
 	@Override
 	public ArrayList<String>getAllActiveSettingName()  {
 		
@@ -185,7 +251,7 @@ public class CommonDAOSQL implements CommonDAO {
 	@Override
 	public ArrayList<Setting> getAllWorkingSettingAtTime(Date time) {
 		
-		final String sqlString = "select (setting,limit_change,tick,stop_change) from setting where start_time <= ? and end_time > ?";
+		final String sqlString = "select (setting,limit_change,tick,profit_limit_change) from setting where start_time <= ? and end_time > ?";
 		ArrayList<Setting> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -212,7 +278,7 @@ public class CommonDAOSQL implements CommonDAO {
 	        	SingleOrderSetting sos = new SingleOrderSetting();
 	        	sos.setLimitChange(rs.getDouble(2));
 	        	sos.setTick(rs.getDouble(3));
-	        	sos.setStopChange(rs.getDouble(4));
+	        	sos.setProfitLimitChange(rs.getDouble(4));
 	        }
 			return list;
 			
@@ -389,571 +455,4 @@ public class CommonDAOSQL implements CommonDAO {
 	}
 	
 	
-	/*
-	
-	
-	@Override
-	public ArrayList<String> getAllDistinctVolumeStartTimeAndEndTime() {
-		final String sqlString = "SELECT start_time FROM volume UNION SELECT end_time FROM volume";
-		ArrayList<String> list = new ArrayList<>();
-
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			rs = stmt.executeQuery();
-	        while(rs.next()){
-	        	list.add(rs.getString(1));
-	        }
-			return list;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return list;
-	}
-	
-	
-	
-	@Override
-	public ArrayList<Area> getAreaListWithoutZoneByScenario(String scenario,Date time) {
-		final String sqlString = "select start_time,end_time,area,percent,white_min from scenario where scenario = ? and start_time <= ? and end_time > ?";
-		ArrayList<Area> list = new ArrayList<>();
-
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			String timeStr = tool.Util.getDateStringByDateAndFormatter(time, "HH:mm:ss");
-			stmt.setString(1, scenario);
-			stmt.setString(2, timeStr);
-			stmt.setString(3, timeStr);
-			rs = stmt.executeQuery();
-	        while(rs.next()){
-	        	
-	        	Area area = new Area();
-	        	area.setStartTime(rs.getString(1));
-	        	area.setEndTime(rs.getString(2));
-	        	area.setArea(rs.getString(3));
-	        	area.setPercent(rs.getInt(4));
-	        	area.setWhiteMin(rs.getInt(5));
-	        	area.setScenario(scenario);
-	        	list.add(area);
-	        }
-			return list;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return list;
-	}
-	
-	@Override
-	public ArrayList<String> getOnlyActiveZoneListByScenarioArea(String scenario, String startTime, String area) {
-		final String sqlString = "select zone from area_zone where scenario = ? and start_time = ? and area = ? and active = 1";
-		ArrayList<String> list = new ArrayList<>();
-
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1, scenario);
-			stmt.setString(2, startTime);
-			stmt.setString(3, area);
-			rs = stmt.executeQuery();
-	        while(rs.next()){
-	        	
-	        	list.add(rs.getString(1));
-	        }
-			return list;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return list;
-	}
-	
-	@Override
-	public ArrayList<Zone> getRelatedZoneListByScenarioList(ArrayList<Scenario> scenarioList) {
-		
-		StringBuilder sBuilder = new StringBuilder();
-		sBuilder.append("SELECT distinct(zone) FROM area_zone where ");
-		for (int i = 0; i < scenarioList.size(); i++) {
-			
-			Scenario s = scenarioList.get(i);
-			
-			for (int j = 0; j < s.getAreaList().size(); j++) {
-				
-				Area a = s.getAreaList().get(j);
-				
-				sBuilder.append("(scenario = '" + a.getScenario() + "' and start_time = '" + a.getStartTime() + "' and area = '" + a.getArea() + "' and active = 1)");
-				if(j + 1 < s.getAreaList().size()) {
-					sBuilder.append(" or ");
-				}
-			}
-			if(i + 1 < scenarioList.size()) {
-				sBuilder.append(" or ");
-			}
-		}
-		
-		ArrayList<Zone> list = new ArrayList<>();
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sBuilder.toString());
-			rs = stmt.executeQuery();
-	        while(rs.next()){
-	        	
-	        	Zone zone =  new Zone();
-	        	zone.setZone(rs.getString(1));
-	        	Util.setZoneXYByZone(zone);
-	        	list.add(zone);
-	        }
-			return list;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return list;
-	}
-
-	@Override
-	public ArrayList<Zone> getVolumeZoneList(String time) {
-
-		final String sqlString = "select zone from volume_zone where time = ?";
-
-		ArrayList<Zone> list = new ArrayList<>();
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,time);
-			rs = stmt.executeQuery();
-	        while(rs.next()){
-	        	
-	        	Zone zone =  new Zone();
-	        	zone.setZone(rs.getString(1));
-	        	Util.setZoneXYByZone(zone);
-	        	list.add(zone);
-	        }
-			return list;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return list;
-	}
-
-	@Override
-	public ArrayList<Volume> getAllWorkingVolumeAtTime(Date time) {
-		final String sqlString = "select scenario,column,percent,white_max,rows from volume where start_time <= ? and end_time > ?";
-		ArrayList<Volume> list = new ArrayList<>();
-
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-	    	String timeStr = tool.Util.getDateStringByDateAndFormatter(time, "HH:mm:ss");
-	    	
-			stmt.setString(1, timeStr);
-			stmt.setString(2, timeStr);
-			rs = stmt.executeQuery();
-	        while(rs.next()){
-	        	
-	        	Volume volume = new Volume();
-	        	volume.setScenario(rs.getString(1));
-	        	volume.setColumn(rs.getInt(2));
-	        	volume.setPercent(rs.getInt(3));
-	        	volume.setWhiteMax(rs.getInt(4));
-	        	String rows = rs.getString(5);
-	        	String[] rowList = rows.split("_");
-	        	for (String row : rowList) { 
-	        		volume.getRows().add(row);
-	        	}
-	        	
-	        	list.add(volume);
-	        }
-			return list;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return list;
-	}
-
-	@Override
-	public Rectangle getRectByName(String name) {
-		final String sqlString = "select origin_x,origin_y,width,height from my_frame where name = ?";
-		Rectangle rect = new Rectangle();
-
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1, name);
-			rs = stmt.executeQuery();
-	        if(rs.next()){
-	        	
-	        	rect.setBounds(rs.getInt(1), rs.getInt(2), rs.getInt(3), rs.getInt(4));
-	        }
-			return rect;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return rect;
-	}
-
-	
-	@Override
-	public void cleanScenarioActiveData() {
-		final String sqlString = "delete from scenario_active";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-
-	@Override
-	public void cleanScenarioData() {
-		final String sqlString = "delete from scenario";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}	
-	}
-	
-	@Override
-	public void cleanAreaZone() {
-		final String sqlString = "delete from area_zone";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-
-	@Override
-	public void cleanMyFrame() {
-		final String sqlString = "delete from my_frame";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-		
-	}
-
-	@Override
-	public void cleanVolumeZone() {
-		final String sqlString = "delete from volume_zone";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-
-	@Override
-	public void cleanVolume() {
-		final String sqlString = "delete from volume";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-	
-	@Override
-	public void insertScenarioActive(String scenario, int active) {
-		final String sqlString = "insert into scenario_active values (?,?)";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,scenario);
-			stmt.setInt(2, active);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-		
-	}
-
-	@Override
-	public void insertScenario(String scenario, String starttime, String endtime, String area, int percent, int whiteMin) {
-		final String sqlString = "insert into scenario values (?,?,?,?,?,?)";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,scenario);
-			stmt.setString(2,starttime);
-			stmt.setString(3,endtime);
-			stmt.setString(4,area);
-			stmt.setInt(5, percent);
-			stmt.setInt(6, whiteMin);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-
-	@Override
-	public void insertMyFrame(String name, int x, int y, int width, int height) {
-		final String sqlString = "insert into my_frame values (?,?,?,?,?)";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,name);
-			stmt.setInt(2,x);
-			stmt.setInt(3,y);
-			stmt.setInt(4,width);
-			stmt.setInt(5,height);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-	
-	@Override
-	public void insertAreaZone(String scenario, String starttime, String area, String zone, int active) {
-		final String sqlString = "insert into area_zone values (?,?,?,?,?)";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,scenario);
-			stmt.setString(2,starttime);
-			stmt.setString(3,area);
-			stmt.setString(4,zone);
-			stmt.setInt(5,active);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-
-	@Override
-	public void insertVolumeZone(String time, String zone) {
-		final String sqlString = "insert into volume_zone values (?,?)";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,time);
-			stmt.setString(2,zone);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-
-	@Override
-	public void insertVolume(String scenario, String starttime, String endtime, int column, int percent, int whiteMax,
-			String rows) {
-		final String sqlString = "insert into volume values (?,?,?,?,?,?,?)";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1,scenario);
-			stmt.setString(2,starttime);
-			stmt.setString(3,endtime);
-			stmt.setInt(4,column);
-			stmt.setInt(5,percent);
-			stmt.setInt(6, whiteMax);
-			stmt.setString(7,rows);
-			stmt.executeUpdate();
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt,null);
-		}
-	}
-
-
-	@Override
-	public ArrayList<String> getAllDistinctVolumeZoneStartTime() {
-		final String sqlString = "select distinct(time) from volume_zone";
-		ArrayList<String> list = new ArrayList<>();
-
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			rs = stmt.executeQuery();
-	        while(rs.next()){
-	        	
-	        	list.add(rs.getString(1));
-	        }
-			return list;
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		return list;
-	}
-	
-	
-	@Override
-	public Enum<SystemEnum.OrderAction> getLastActionBySetting(Date date, String setting) {
-		final String sqlString = "select action from order_sign where date = ? and setting = ? order by time desc";
-		
-		Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-		try {
-			
-			conn = ConnectionUtils.getConnection();
-			stmt = conn.prepareStatement(sqlString);
-			stmt.setString(1, Util.getDateStringByDateAndFormatter(date, "yyyy/MM/dd"));
-			stmt.setString(2, setting);
-			rs = stmt.executeQuery();
-	        if(rs.next()){
-
-	        	String actionTextString = rs.getString(1);
-	        	return Util.getOrderActionEnumByText(actionTextString);
-	        }
-			
-		} catch (SQLException e) {
-			e.printStackTrace(); 
-		} finally {
-	        ConnectionUtils.closeAll(stmt, rs);
-		}
-		
-		return SystemEnum.OrderAction.Default;
-	}
-	*/
 }

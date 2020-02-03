@@ -11,7 +11,7 @@ public class CommonDAOFactory {
 
 	//order_sign
 	---------------------------------------------------------------------------------------------------
-	date   | time   | orderidinib | setting | action | limit_price | tick   | stop_price | tick_profit
+	date   | time   | orderidinib | setting | action | limit_price | tick   | profit_limit_price | tick_profit
 	String | String | int         | String  | String | double      | double | double      | double
 	---------------------------------------------------------------------------------------------------
 	yyyy/MM/dd, HH:mm:ss, 10, s1, BUY, 100.00, 2.0, 102.00, 4.00
@@ -30,7 +30,7 @@ public class CommonDAOFactory {
 
 	//setting
 	---------------------------------------------------------------------------------------------------
-	setting | start_time| end_time | order_index | limit_change | tick   | stop_change
+	setting | start_time| end_time | order_index | limit_change | tick   | profit_limit_change
 	String  | String    | String   | int         | double       | double | double
 	---------------------------------------------------------------------------------------------------
 

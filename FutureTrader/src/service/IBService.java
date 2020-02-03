@@ -45,6 +45,8 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private SettingService settingServiceObj;
 	private int currentOrderId;
 	
+	private boolean requestPrice = false;
+	
 	private IBService ()  {
 		
 		ibApiConfig = new IBApiConfig();
@@ -167,6 +169,12 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		return m_client.isConnected();
 	}
 	
+	public void getCurrentPrice() {
+		
+		requestPrice = true;
+		m_client.reqMktData(arg0, arg1, arg2, arg3, arg4, arg5);
+	};
+	
 	public void createBracketOrder(CreatedOrder order) {
 		
 		placeBracketOrder(order.getOrderAction(),order.getLimitPrice(),order.getProfitLimitPrice(),order.getTick());
@@ -210,7 +218,6 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 				tick, 
 				limitPrice,profitLimitPrice, 0);
 //		order.account(ibServerConfig.getAccount());
-		//AvailableAlgoParams.FillAdaptiveParams(order, "Normal");
 		bracket.remove(2);
 		for(Order o : bracket) {
 			 //AvailableAlgoParams.FillAdaptiveParams(o, "Normal");
@@ -242,9 +249,18 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	}
 
 	@Override
-	public void updateTradePrice(double price) {
+	public void responseCurrentPrice(double price) {
 		
+		if (requestPrice) {
+			
+			requestPrice = false;
+			if (settingServiceObj != null) {
+				settingServiceObj.responseCurrentPrice(price);
+			}
+		}
+		m_client.cancelMktData(arg0);
 	}
+	
 	
 	public int getCurrentOrderId() {
 		return currentOrderId;

@@ -61,7 +61,10 @@ public class SettingService implements IBServiceCallbackInterface {
 
 	private int wantCloseOrderCount;
 	
-	private String LOGIC_MODE = "1"; //1: create order a lot  2:stop all pre-orders, when order count cover the max  3:stop first pre-orders, when order count cover the max(keep max)
+	private String LOGIC_MODE = "1"; 
+	//1: create order a lot  
+	//2:stop all pre-orders, when order count cover the max  
+	//3:stop first pre-orders, when order count cover the max(keep max)
 	
 	private SettingService ()  {
     	
@@ -284,8 +287,6 @@ public class SettingService implements IBServiceCallbackInterface {
     	
     	
     	//sell order
-    	
-    	
     	createNewBracketOrder(setting, 
     			SystemEnum.OrderAction.Sell, 
     			currentPrice + firstSetting.getLimitChange(), 
@@ -629,6 +630,11 @@ public class SettingService implements IBServiceCallbackInterface {
 			
 			createNewBracketOrder(thisSetting, newAction, newLimitPrice, newStopPrice, orderSettingList.get(0).getTick());
 		}
+	}
+	
+	@Override
+	public void responseCurrentPrice(double price) {
+		
 	}
 	
 	public boolean isNeedCloseApp() {
