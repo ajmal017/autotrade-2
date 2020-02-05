@@ -11,10 +11,14 @@ public class SignTableItem {
     private SimpleStringProperty action;
     private SimpleStringProperty limitPrice;
     private SimpleStringProperty tick;
-    private SimpleStringProperty stopPrice;
+    private SimpleStringProperty profitLimitPrice;
     private SimpleStringProperty tickProfit;
+    private SimpleStringProperty limitFilledPrice;
+	private SimpleStringProperty profitLimitFilledPrice;
 
-    public SignTableItem(String time, String ibOrderId, String orderState, String setting, String action,  String limitPrice, String tick, String stopPrice, String tickProfit) {
+    public SignTableItem(String time, String ibOrderId, String orderState, String setting, 
+    		String action, String limitPrice, String tick, String profitLimitPrice, 
+    		String tickProfit, String limitFilledPrice, String profitLimitFilledPrice) {
         this.time = new SimpleStringProperty(time);
         this.ibOrderId = new SimpleStringProperty(ibOrderId);
         this.orderState = new SimpleStringProperty(orderState);
@@ -22,8 +26,10 @@ public class SignTableItem {
         this.action = new SimpleStringProperty(action);
         this.limitPrice = new SimpleStringProperty(limitPrice);
         this.tick = new SimpleStringProperty(tick);
-        this.stopPrice = new SimpleStringProperty(stopPrice);
+        this.profitLimitPrice = new SimpleStringProperty(profitLimitPrice);
         this.tickProfit = new SimpleStringProperty(tickProfit);
+        this.limitFilledPrice = new SimpleStringProperty(limitFilledPrice);
+        this.profitLimitFilledPrice = new SimpleStringProperty(profitLimitFilledPrice);
     }
     
     public String getTime() {
@@ -83,12 +89,12 @@ public class SignTableItem {
 	}
 
 
-	public String getStopPrice() {
-		return stopPrice.get();
+	public String getProfitLimitPrice() {
+		return profitLimitPrice.get();
 	}
 
-	public void setStopPrice(String c) {
-		stopPrice.set(c);
+	public void setProfitLimitPrice(String c) {
+		profitLimitPrice.set(c);
 	}
 
 	public String getTickProfit() {
@@ -99,4 +105,19 @@ public class SignTableItem {
 		tickProfit.set(t);
 	}
    
+	public String getLimitFilledPrice() {
+		return limitFilledPrice.get();
+	}
+
+	public void setLimitFilledPrice(String t) {
+		limitFilledPrice.set(t);
+	}
+	
+	public String getProfitLimitFilledPrice() {
+		return profitLimitFilledPrice.get();
+	}
+
+	public void setProfitLimitFilledPrice(String t) {
+		profitLimitFilledPrice.set(t);
+	}
 }

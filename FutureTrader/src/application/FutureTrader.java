@@ -14,13 +14,10 @@ import com.java4less.ocr.utils.a;
 import config.SystemConfig;
 import entity.ColorCount;
 import entity.CreatedOrder;
-import entity.DailyScenarioRefresh;
 import entity.DailySettingRefresh;
 import entity.OrderSign;
-import entity.ScenarioTrend;
 import entity.Setting;
 import entity.SignTableItem;
-import entity.TrendTableItem;
 //import entity.ScenarioTrend;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -30,6 +27,7 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import samples.testbed.orders.OrderSamples;
 import service.IBService;
 import service.MainService;
@@ -66,6 +64,8 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 //	  private final Label endTimeLbl = new Label();
 
 	private Hashtable<String,Object> tableDataHash;
+	
+	private boolean todayTradeIsOver = false; //todo usered with green red statement
 	
 	private boolean isSettingRefreshTime() {
 
@@ -140,41 +140,62 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			ColorCount cc = colorInfoService.getColorCountByCloseZoneList();
 			if (cc.getGreen() > 0 || cc.getRed() > 0) {
 				//close all order
-				settingService.closeAllOrder();
+				if (settingService.getDailyOrderCount() > 0) {
+					todayTradeIsOver = true;
+					settingService.closeAllOrder();
+				}
 				//todo
 				//stop timer and app if law need
 			} else {
-				settingService.closeOrOpenOrderBySettingRefreshed();
+				//if market is open and every working setting need open first order 
+				if (settingService.getDailyOrderCount() == 0) {
+					
+					if(settingService.getDailyFirstPrice() == 0) {
+						
+						settingService.getCurrentPrice();
+						
+						
+					}
+				} else {
+					settingService.closeUnWorkingSettingOrder();
+				}
 			}
 			
+			
+			//todo
+			//per 5 sec update table(today's order)
 			for (int i = 0; i < settingService.getActiveSettingList().size(); i++) {
 
 				String setting = settingService.getActiveSettingList().get(i);
 
 				@SuppressWarnings("unchecked")
 				ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tableDataHash.get(setting);
-				ArrayList<OrderSign> newestList = settingService.getDailySignMap().get(setting);
-				if(signData.size() != newestList.size()) {
-					int shownCount = signData.size();
-					for(int j = 0; j < newestList.size() - shownCount; j++) {
-
-						OrderSign newSign = newestList.get(shownCount+j);
-						//insert into table
-						SignTableItem signItem = new SignTableItem(
-								Util.getDateStringByDateAndFormatter(newSign.getTime(), "HH:mm:ss"),
-								""+newSign.getParentOrderIdInIB(),
-								"", //todo orderstate
-								setting,
-								Util.getActionTextByEnum(newSign.getOrderAction()),
-								""+newSign.getLimitPrice(),
-								""+newSign.getTick(),
-								""+newSign.getProfitLimitPrice(),
-								""+newSign.getTickProfit());
-						signData.add(signItem);
-						playSignAlertMusic();
-					}
-
-				}
+				
+				//todo
+				//get data from db
+				
+//				ArrayList<OrderSign> newestList = settingService.getDailySignMap().get(setting);
+//				if(signData.size() != newestList.size()) {
+//					int shownCount = signData.size();
+//					for(int j = 0; j < newestList.size() - shownCount; j++) {
+//
+//						OrderSign newSign = newestList.get(shownCount+j);
+//						//insert into table
+//						SignTableItem signItem = new SignTableItem(
+//								Util.getDateStringByDateAndFormatter(newSign.getTime(), "HH:mm:ss"),
+//								""+newSign.getParentOrderIdInIB(),
+//								"", //todo orderstate
+//								setting,
+//								Util.getActionTextByEnum(newSign.getOrderAction()),
+//								""+newSign.getLimitPrice(),
+//								""+newSign.getTick(),
+//								""+newSign.getProfitLimitPrice(),
+//								""+newSign.getTickProfit());
+//						signData.add(signItem);
+//						
+//					}
+//
+//				}
 			}
 		}
 		
@@ -236,7 +257,6 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			return;
 		}
 		
-		//todo
 		//UI
 		try {
 			final HBox hb1 = new HBox();
@@ -268,79 +288,54 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			
 	        for (String setting : settingService.getActiveSettingList()) {
 	        	
-	        	TableView<TrendTableItem> trendTable = new TableView<>();
-	        	ObservableList<TrendTableItem> trendData =
-	                FXCollections.observableArrayList();
-	        	
+	        	TableView<SignTableItem> trendTable = new TableView<>();
 	        	trendTable.setEditable(false);
 	        	trendTable.setMaxHeight(250);
 	        	trendTable.setFixedCellSize(22);
-	        
-	        	TableColumn timeCol = new TableColumn("Time");
-	        	timeCol.setPrefWidth(65);
-	        	timeCol.setCellValueFactory(
-	                new PropertyValueFactory<>("time"));
-
-	        	TableColumn scenarioCol = new TableColumn("T");
-	        	scenarioCol.setPrefWidth(40);
-	        	scenarioCol.setCellValueFactory(
-	                new PropertyValueFactory<>("scenario"));
-
-	        	TableColumn trendCol = new TableColumn("Trend");
-	        	trendCol.setPrefWidth(50);
-	        	trendCol.setCellValueFactory(
-	                new PropertyValueFactory<>("trend"));
-
-	        	TableColumn greenCol = new TableColumn("Green");
-	        	greenCol.setPrefWidth(50);
-	        	greenCol.setCellValueFactory(
-	                new PropertyValueFactory<>("greenCount"));
-	        
-	        	TableColumn redCol = new TableColumn("Red");
-	        	redCol.setPrefWidth(50);
-	        	redCol.setCellValueFactory(
-	                new PropertyValueFactory<>("redCount"));
-	        
-	        	TableColumn whiteCol = new TableColumn("White");
-	        	whiteCol.setPrefWidth(50);
-	        	whiteCol.setCellValueFactory(
-	                new PropertyValueFactory<>("whiteCount"));
-	        
-	        	TableColumn swimCol = new TableColumn("SwPr");
-	        	swimCol.setPrefWidth(60);
-	        	swimCol.setCellValueFactory(
-	                new PropertyValueFactory<>("swimPrice"));
-	        
-	        	TableColumn ibCol = new TableColumn("IBPr");
-	        	ibCol.setPrefWidth(60);
-	        	ibCol.setCellValueFactory(
-	                new PropertyValueFactory<>("ibPrice"));
-	        
+	        	ObservableList<SignTableItem> trendData =
+		                FXCollections.observableArrayList();
 	        	trendTable.setItems(trendData);
-	        	trendTable.getColumns().addAll(timeCol, scenarioCol, trendCol,greenCol,redCol,whiteCol,swimCol,ibCol);
-	        	vbox.getChildren().addAll(trendTable);
 	        	
-	        	tbDataHash.put(scenario.getScenario(), trendData);
+	        	String[] columTitle = {"Time","IBOrderId","OrderState","Setting","Action","LimitPrice","Tick","ProfitLimitPrice","TickProfit","OpenFilledPrice","CloseFilledPrice"};
+	        	String[] valueName = {"time","ibOrderId","orderState","setting","action","limitPrice","tick","profitLimitPrice","tickProfit","openFilledPrice","closeFilledPrice"};
+	        	
+	        	for (int i = 0; i < columTitle.length; i++) {
+	        		TableColumn tc = new TableColumn(columTitle[i]);
+	        		tc.setPrefWidth(65);
+	        		tc.setCellValueFactory(
+		                new PropertyValueFactory<>(valueName[i]));
+		        	trendTable.getColumns().add(tc);
+	        	}
+	        	
+	        	vbox.getChildren().addAll(trendTable);
+	        	tableDataHash.put(setting, trendData);
 	        }
 	        
-	        
-	        
-	        
-	        
-	        
-	        
-	        
-	        
-			BorderPane root = new BorderPane();
-			Scene scene = new Scene(root,400,400);
+	        BorderPane root = new BorderPane();
+			root.setMinSize(450, 400);
+			root.setTop(vbox);
+			
+			Scene scene = new Scene(root);
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
+			primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+			    @Override
+			    public void handle(WindowEvent t) {
+			    	
+			    	t.consume();
+			    	Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Close?");
+	                Optional<ButtonType> result = confirmation.showAndWait();
+	                if (result.isPresent() && result.get() == ButtonType.OK) {
+	                	Platform.exit();
+				        System.exit(0);
+	                }
+			    }
+			});
 			primaryStage.show();
 			
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
-		
 		
 		//create daily path
 		String dataStr = Util.getDateStringByDateAndFormatter(new Date(), "yyyyMMdd");
@@ -424,7 +419,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 //			}
 			
 			//todo
-			//load history data?
+			//load history order/setting and start trading?
 			
 //			secTimer = new Timer ();
 //			secTimer.scheduleAtFixedRate(new TimerTask() {
@@ -477,6 +472,14 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	
 	public static void main(String[] args) {
 		launch(args);
+	}
+	
+	public void noticeGotDailyPrice() {
+		
+		SettingService settingService = SettingService.getInstance();
+		for(Setting setting : settingService.getWorkingSettingList()) {
+			settingService.openDailyFirstOrder(setting.getSetting(), setting.getOrderSettingList().get(0));
+		}
 	}
 	
 	@Override

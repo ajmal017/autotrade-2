@@ -66,6 +66,8 @@ public class SettingService implements IBServiceCallbackInterface {
 	//2:stop all pre-orders, when order count cover the max  
 	//3:stop first pre-orders, when order count cover the max(keep max)
 	
+	private double dailyFirstPrice = 0;
+
 	private SettingService ()  {
     	
 		this.activeSettingList = new ArrayList<String>();
@@ -196,6 +198,11 @@ public class SettingService implements IBServiceCallbackInterface {
         return strArray;
     }
 	
+	public void getCurrentPrice() {
+		
+		IBService.getInstance().getCurrentPrice();
+	}
+	
 	//update when timer called
     public void updateSettingListByRefreshPlan() {
     	
@@ -241,18 +248,6 @@ public class SettingService implements IBServiceCallbackInterface {
 		newSettingPlanRefreshed();
     }
     
-    public void closeOrOpenOrderBySettingRefreshed() {
-		
-		//if market is open and every working setting need open first order 
-		if (getDailyOrderCount() == 0) {
-			
-			for(Setting setting : workingSettingList) {
-				openDailyFirstOrder(setting.getSetting(), setting.getOrderSettingList().get(0));
-			}
-		} else {
-			closeUnWorkingSettingOrder();
-		}
-	}
     
 	public void closeAllOrder() {
 		
@@ -273,28 +268,25 @@ public class SettingService implements IBServiceCallbackInterface {
 		}
 	}
     
-    private void openDailyFirstOrder(String setting, SingleOrderSetting firstSetting) {
+    public void openDailyFirstOrder(String setting, SingleOrderSetting firstSetting) {
     	
-    	//todo
-    	//get IB,s corrent price
-    	double currentPrice = 0;
     	//buy order
     	createNewBracketOrder(setting, 
     			SystemEnum.OrderAction.Buy, 
-    			currentPrice - firstSetting.getLimitChange(), 
-    			currentPrice - firstSetting.getLimitChange() + firstSetting.getProfitLimitChange(), 
+    			dailyFirstPrice - firstSetting.getLimitChange(), 
+    			dailyFirstPrice - firstSetting.getLimitChange() + firstSetting.getProfitLimitChange(), 
     			firstSetting.getTick());
     	
     	
     	//sell order
     	createNewBracketOrder(setting, 
     			SystemEnum.OrderAction.Sell, 
-    			currentPrice + firstSetting.getLimitChange(), 
-    			currentPrice + firstSetting.getLimitChange() - firstSetting.getProfitLimitChange(), 
+    			dailyFirstPrice + firstSetting.getLimitChange(), 
+    			dailyFirstPrice + firstSetting.getLimitChange() - firstSetting.getProfitLimitChange(), 
     			firstSetting.getTick());
     }
     
-    private void closeUnWorkingSettingOrder() {
+    public void closeUnWorkingSettingOrder() {
     	
     	for (String setting : getActiveSettingList()) {
 			
@@ -309,10 +301,10 @@ public class SettingService implements IBServiceCallbackInterface {
 				
 				for (CreatedOrder parentOrder : currentOrderMap.get(setting)) {
 					
-					if (parentOrder.getOrderState().equals("Submitted")) { //todo unfilled
+					if (!parentOrder.getOrderState().equals(SystemConfig.IB_ORDER_STATE_Filled)) {
 						 //when cancel unfilled parent order, profit-limit order will be anti-canceled
 						IBService.getInstance().cancelOrder(parentOrder.getOrderIdInIB());
-					} else if (parentOrder.getOrderState().equals("Filled")) {
+					} else if (parentOrder.getOrderState().equals(SystemConfig.IB_ORDER_STATE_Filled)) {
 						//when stop filled parent order, must hand-cancel profit-limit order first. then create a ANTI-action MKT order.  maybe WRONG
 						//IBService.getInstance().cancelOrder(parentOrder.getProfitLimitOrderIdInIB());
 						
@@ -463,12 +455,11 @@ public class SettingService implements IBServiceCallbackInterface {
 			}
 		}
 		
+		//if market first order, cancel another action order
 		if(currentOrderMap.get(thisSetting).size() == 2 && 
 				currentOrderMap.get(thisSetting).get(0).getOrderAction() != 
 				currentOrderMap.get(thisSetting).get(1).getOrderAction()) {
 
-			//if market first order, cancel another action order
-			
 			int shouldCancelOrderId;
 			if (currentOrderMap.get(thisSetting).get(0).getOrderIdInIB() == orderId) {
 				//cancel another
@@ -477,7 +468,6 @@ public class SettingService implements IBServiceCallbackInterface {
 				//cancel another
 				shouldCancelOrderId = currentOrderMap.get(thisSetting).get(0).getOrderIdInIB();
 			}
-			
 			for(OrderSign os : dailySignMap.get(thisSetting)) {
 				if(os.getParentOrderIdInIB() == shouldCancelOrderId) {
 					dailySignMap.get(thisSetting).remove(os);
@@ -490,13 +480,13 @@ public class SettingService implements IBServiceCallbackInterface {
 					break;
 				}
 			}
-			
 			IBService.getInstance().cancelOrder(shouldCancelOrderId);
 		}
 		
+
+		//change all pre-order's profit limit price
 		if (currentOrderMap.get(thisSetting).size() > 1) {
 		
-			//change all pre-order's profit limit price
 			CreatedOrder last = currentOrderMap.get(thisSetting).get(currentOrderMap.get(thisSetting).size()-1);
 			for(int i = 0; i < currentOrderMap.get(thisSetting).size()-1;i++) {
 				CreatedOrder preOrder = currentOrderMap.get(thisSetting).get(i);
@@ -634,7 +624,10 @@ public class SettingService implements IBServiceCallbackInterface {
 	
 	@Override
 	public void responseCurrentPrice(double price) {
-		
+		setDailyFirstPrice(price);
+		if (tradeObj != null) {
+			tradeObj.noticeGotDailyPrice();
+		}
 	}
 	
 	public boolean isNeedCloseApp() {
@@ -733,6 +726,13 @@ public class SettingService implements IBServiceCallbackInterface {
 		this.parentOrderIdSettingMap = parentOrderIdSettingMap;
 	}
 
+	public double getDailyFirstPrice() {
+		return dailyFirstPrice;
+	}
+
+	public void setDailyFirstPrice(double dailyFirstPrice) {
+		this.dailyFirstPrice = dailyFirstPrice;
+	}
 	
 	
 }

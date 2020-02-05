@@ -3,6 +3,7 @@ package service;
 
 
 import java.io.File;
+import java.util.Collections;
 import java.util.IntSummaryStatistics;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.input.SAXBuilder;
 
+import com.github.jaiimageio.impl.common.InvertedCMYKColorSpace;
 import com.ib.client.Contract;
 import com.ib.client.EClientSocket;
 import com.ib.client.EReader;
@@ -46,6 +48,8 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private int currentOrderId;
 	
 	private boolean requestPrice = false;
+	
+	private int reqId = 1001;
 	
 	private IBService ()  {
 		
@@ -101,7 +105,17 @@ public class IBService implements MyEWrapperImplCallbackInterface {
         }
 	}
 	
-	
+	private Contract myContract() {
+		
+		Contract contract = new Contract();
+		contract.symbol("ES");
+		contract.secType("FUT");
+		contract.exchange("GLOBEX");
+		contract.currency("USD");
+		contract.lastTradeDateOrContractMonth("202003");	
+		
+		return contract;
+	}
 	
 	public void ibConnect() {
 		
@@ -172,7 +186,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	public void getCurrentPrice() {
 		
 		requestPrice = true;
-		m_client.reqMktData(arg0, arg1, arg2, arg3, arg4, arg5);
+		m_client.reqMktData(reqId, myContract(), "", false, false, null);
 	};
 	
 	public void createBracketOrder(CreatedOrder order) {
@@ -192,7 +206,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	
 	public void stopOrderWithMarketPrice(CreatedOrder order) {
 		
-		
+		//todo
 	}
 	
 	private void placeBracketOrder(Enum<SystemEnum.OrderAction> orderAction, double limitPrice, double profitLimitPrice, double tick) {
@@ -206,13 +220,6 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			actionStr = "SELL";
 		}
 		
-		Contract contract = new Contract();
-		contract.symbol("ES");
-		contract.secType("FUT");
-		contract.exchange("GLOBEX");
-		contract.currency("USD");
-		contract.lastTradeDateOrContractMonth("202003");		
-		
 		List<Order> bracket = OrderSamples.BracketOrder(getCurrentOrderId(), 
 				actionStr,
 				tick, 
@@ -222,7 +229,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		for(Order o : bracket) {
 			 //AvailableAlgoParams.FillAdaptiveParams(o, "Normal");
 			 o.transmit(true);
-			 m_client.placeOrder(o.orderId(), contract, o);
+			 m_client.placeOrder(o.orderId(), myContract(), o);
 		}
 
 		setCurrentOrderId(getCurrentOrderId()+2);
@@ -258,8 +265,10 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 				settingServiceObj.responseCurrentPrice(price);
 			}
 		}
-		m_client.cancelMktData(arg0);
+		m_client.cancelMktData(reqId);
 	}
+	
+	//todo order filled callback method
 	
 	
 	public int getCurrentOrderId() {

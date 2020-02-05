@@ -45,14 +45,18 @@ public class CommonDAOSQL implements CommonDAO {
 	        	dateStr.append(rs.getString(2));
 	        	OrderSign sign = new OrderSign();
 	        	sign.setTime(Util.getDateByStringAndFormatter(dateStr.toString(), "yyyy/MM/dd HH:mm:ss"));
-	        	sign.setParentOrderIdInIB(rs.getInt(3));
-	        	sign.setSetting(rs.getString(4));
-	        	sign.setActionText(rs.getString(5));
+	        	sign.setSetting(rs.getString(3));
+	        	sign.setParentOrderIdInIB(rs.getInt(4));
+	        	sign.setProfitLimitOrderIdInIB(sign.getParentOrderIdInIB()+1);
+	        	sign.setOrderState(rs.getString(5));
+	        	sign.setActionText(rs.getString(6));
 	        	sign.setOrderAction(Util.getOrderActionEnumByText(sign.getActionText()));
-	        	sign.setLimitPrice(rs.getDouble(6));
-	        	sign.setTick(rs.getDouble(7));
-	        	sign.setProfitLimitPrice(rs.getDouble(8));
-	        	sign.setTickProfit(rs.getDouble(9));
+	        	sign.setLimitPrice(rs.getDouble(7));
+	        	sign.setTick(rs.getDouble(8));
+	        	sign.setProfitLimitPrice(rs.getDouble(9));
+	        	sign.setTickProfit(rs.getDouble(10));
+	        	sign.setLimitFilledPrice(rs.getDouble(11));
+	        	sign.setProfitLimitFilledPrice(rs.getDouble(12));
 	        	
 	        	list.add(sign);
 	        }
@@ -68,7 +72,7 @@ public class CommonDAOSQL implements CommonDAO {
 
 	@Override
 	public void insertNewOrderSign(OrderSign sign) {
-		final String sqlString = "insert into order_sign (date,time,orderidinib,setting,action,limit_price,tick,profit_limit_price,tick_profit) values (?,?,?,?,?,?,?,?,?)";
+		final String sqlString = "insert into order_sign (date,time,setting,orderidinib,order_state,action,limit_price,tick,profit_limit_price,tick_profit) values (?,?,?,?,?,?,?,?,?,?)";
 
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -79,13 +83,14 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt = conn.prepareStatement(sqlString);
 			stmt.setString(1, Util.getDateStringByDateAndFormatter(sign.getTime(),"yyyy/MM/dd"));
 			stmt.setString(2, Util.getDateStringByDateAndFormatter(sign.getTime(),"HH:mm:ss"));
-			stmt.setInt(3, sign.getParentOrderIdInIB());
-			stmt.setString(4, sign.getSetting());
-			stmt.setString(5, sign.getActionText());
-			stmt.setDouble(6, sign.getLimitPrice());
-			stmt.setDouble(7, sign.getTick());
-			stmt.setDouble(8, sign.getProfitLimitPrice());
-			stmt.setDouble(9, sign.getTickProfit());
+			stmt.setString(3, sign.getSetting());
+			stmt.setInt(4, sign.getParentOrderIdInIB());
+			stmt.setString(5, sign.getOrderState());
+			stmt.setString(6, sign.getActionText());
+			stmt.setDouble(7, sign.getLimitPrice());
+			stmt.setDouble(8, sign.getTick());
+			stmt.setDouble(9, sign.getProfitLimitPrice());
+			stmt.setDouble(10, sign.getTickProfit());
 			int i = stmt.executeUpdate();
 	        if (i == 0) {
 				//False
@@ -123,7 +128,7 @@ public class CommonDAOSQL implements CommonDAO {
 	
 	@Override
 	public void updateOrderLimitFilledInfo(Integer orderId, String orderState, double limitFilledPrice) {
-		final String sqlString = "update order_sign set limit_price = ? where orderidinib = ?";
+		final String sqlString = "update order_sign set order_state = ?, limit_filled_price = ? where orderidinib = ?";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -131,8 +136,9 @@ public class CommonDAOSQL implements CommonDAO {
 			
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
-			stmt.setDouble(1,limitFilledPrice);
-			stmt.setInt(2, orderId.intValue());
+			stmt.setString(1, orderState);
+			stmt.setDouble(2,limitFilledPrice);
+			stmt.setInt(3, orderId.intValue());
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {
@@ -145,7 +151,7 @@ public class CommonDAOSQL implements CommonDAO {
 	
 	@Override
 	public void updateOrderProfitLimitFilledInfo(Integer orderId, String orderState, double profitLimitFilledPrice, double tickProfit) {
-		final String sqlString = "update order_sign set profit_limit_price = ?, tick_profit = ? where orderidinib = ?";
+		final String sqlString = "update order_sign set order_state = ?, profit_limit_filled_price = ?, tick_profit = ? where orderidinib = ?";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -153,9 +159,10 @@ public class CommonDAOSQL implements CommonDAO {
 			
 			conn = ConnectionUtils.getConnection();
 			stmt = conn.prepareStatement(sqlString);
-			stmt.setDouble(1,profitLimitFilledPrice);
-			stmt.setDouble(2,tickProfit);
-			stmt.setInt(3, orderId.intValue());
+			stmt.setString(1, orderState);
+			stmt.setDouble(2,profitLimitFilledPrice);
+			stmt.setDouble(3,tickProfit);
+			stmt.setInt(4, orderId.intValue());
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {

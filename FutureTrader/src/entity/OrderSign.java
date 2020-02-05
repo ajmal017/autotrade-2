@@ -11,7 +11,7 @@ public class OrderSign {
 	
 	private Integer parentOrderIdInIB;
 	private Integer profitLimitOrderIdInIB;
-	private String orderState; //todo update in db
+	private String orderState;
 	private Date time;
 	private Enum<SystemEnum.OrderAction> orderAction;
 	private String actionText;
