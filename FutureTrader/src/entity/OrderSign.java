@@ -11,7 +11,7 @@ public class OrderSign {
 	
 	private Integer parentOrderIdInIB;
 	private Integer profitLimitOrderIdInIB;
-	private String orderState;
+	private String orderStatus;
 	private Date time;
 	private Enum<SystemEnum.OrderAction> orderAction;
 	private String actionText;
@@ -27,7 +27,7 @@ public class OrderSign {
 	public OrderSign(
 			Integer parentOrderIdInIB, 
 			Integer profitLimitOrderIdInIB,
-			String orderState,
+			String orderStatus,
 			Date time, 
 			String setting, 
 			Enum<SystemEnum.OrderAction> orderAction, 
@@ -39,7 +39,7 @@ public class OrderSign {
 			double tickProfit) {
 		setParentOrderIdInIB(parentOrderIdInIB);
 		setProfitLimitOrderIdInIB(profitLimitOrderIdInIB);
-		setOrderState(orderState);
+		setOrderStatus(orderStatus);
         setTime(time);
         setSetting(setting);
         setOrderAction(orderAction);
@@ -140,12 +140,12 @@ public class OrderSign {
 		this.tickProfit = tickProfit;
 	}
 
-	public String getOrderState() {
-		return orderState;
+	public String getOrderStatus() {
+		return orderStatus;
 	}
 
-	public void setOrderState(String orderState) {
-		this.orderState = orderState;
+	public void setOrderStatus(String orderStatus) {
+		this.orderStatus = orderStatus;
 	}
 	
 	public double getLimitFilledPrice() {
@@ -167,7 +167,7 @@ public class OrderSign {
 	@Override
 	public String toString() {
 		return "OrderSign [setting=" + setting + ", parentOrderIdInIB=" + parentOrderIdInIB
-				+ ", profitLimitOrderIdInIB=" + profitLimitOrderIdInIB + ", orderState=" + orderState + ", time=" + time
+				+ ", profitLimitOrderIdInIB=" + profitLimitOrderIdInIB + ", orderStatus=" + orderStatus + ", time=" + time
 				+ ", orderAction=" + orderAction + ", actionText=" + actionText + ", limitPrice=" + limitPrice
 				+ ", tick=" + tick + ", profitLimitPrice=" + profitLimitPrice + ", limitFilledPrice=" + limitFilledPrice
 				+ ", profitLimitFilledPrice=" + profitLimitFilledPrice + ", tickProfit=" + tickProfit + "]";

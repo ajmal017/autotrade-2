@@ -25,6 +25,7 @@ import samples.testbed.orders.AvailableAlgoParams;
 import samples.testbed.orders.OrderSamples;
 import config.SystemConfig;
 import entity.CreatedOrder;
+import entity.FutureConfig;
 import entity.IBApiConfig;
 import entity.IBServerConfig;
 import entity.StockConfig;
@@ -42,7 +43,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	
 	private IBApiConfig ibApiConfig;
 	private IBServerConfig ibServerConfig;
-	private StockConfig stockConfig;
+	private FutureConfig futureConfig;
 	
 	private SettingService settingServiceObj;
 	private int currentOrderId;
@@ -55,7 +56,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		
 		ibApiConfig = new IBApiConfig();
 		ibServerConfig = new IBServerConfig();
-		stockConfig = new StockConfig();
+		futureConfig = new FutureConfig();
 		initConfigs();
     }
 
@@ -68,7 +69,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			Element foo = doc.getRootElement(); //get <IBTradeConfig>
 			Element ibApiConf = foo.getChild("IBApiConfig");  //get <IBApiConfig>
 			Element ibServerConf = foo.getChild("IBServerConfig");  //get <IBServerConfig>
-			Element stockConf = foo.getChild("StockConfig");  //get <StockConfig>
+			Element futureConf = foo.getChild("FutureConfig");  //get <FutureConfig>
 			
 			String actStr = ibApiConf.getChild("active").getText();
 			if (actStr.equals("1")) {
@@ -90,15 +91,11 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 				ibServerConfig.setPort(Integer.valueOf(ibServerConf.getChild("liveport").getText()));
 			}
 			
-//			stockConfig.setStockSymbol(stockConf.getChild("stocksymbol").getText());
-//			stockConfig.setOrderType(stockConf.getChild("ordertype").getText());
-//			stockConfig.setSecurityType(stockConf.getChild("securitytype").getText());
-//			stockConfig.setStockExchange(stockConf.getChild("stockexchange").getText());
-//			stockConfig.setPrimaryExchange(stockConf.getChild("primaryexchange").getText());
-//			stockConfig.setStockCurrency(stockConf.getChild("stockcurrency").getText());
-//			stockConfig.setStockExpiry(Double.valueOf(stockConf.getChild("stockexpiry").getText()));
-//			stockConfig.setOrderQuantity(Integer.valueOf(stockConf.getChild("orderquantity").getText()));
-//			stockConfig.setFirstOrderQuantityPercent(Double.valueOf(stockConf.getChild("firstorderquantitypercent").getText())); 
+			futureConfig.setSymbol(futureConf.getChild("symbol").getText());
+			futureConfig.setSecurityType(futureConf.getChild("securitytype").getText());
+			futureConfig.setExchange(futureConf.getChild("exchange").getText());
+			futureConfig.setCurrency(futureConf.getChild("currency").getText());
+			futureConfig.setContractMonth(futureConf.getChild("contractmonth").getText());
 			
 		} catch (Exception e) {
         	e.printStackTrace();
@@ -108,11 +105,11 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	private Contract myContract() {
 		
 		Contract contract = new Contract();
-		contract.symbol("ES");
-		contract.secType("FUT");
-		contract.exchange("GLOBEX");
-		contract.currency("USD");
-		contract.lastTradeDateOrContractMonth("202003");	
+		contract.symbol(futureConfig.getSymbol());
+		contract.secType(futureConfig.getSecurityType());
+		contract.exchange(futureConfig.getExchange());
+		contract.currency(futureConfig.getCurrency());
+		contract.lastTradeDateOrContractMonth(futureConfig.getContractMonth());	
 		
 		return contract;
 	}
@@ -160,24 +157,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		reader = null;
 		wrapper = null;
 	}
-	/*
-	public void searchContractByDetail() {
-		
-		Contract contract = new Contract();
-		contract.symbol(stockConfig.getStockSymbol());
-		contract.secType(stockConfig.getSecurityType());
-		contract.currency(stockConfig.getStockCurrency());
-		contract.exchange(stockConfig.getStockExchange());
-		contract.primaryExch(stockConfig.getPrimaryExchange());
-
-		m_client.reqContractDetails(222,contract);
-	}
 	
-	public void searchAllContractBySymbol() {
-		
-		m_client.reqMatchingSymbols(211, stockConfig.getStockSymbol());
-	}
-	*/
 	public boolean isIBConnecting() {
 		
 		return m_client.isConnected();
@@ -189,29 +169,63 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		m_client.reqMktData(reqId, myContract(), "", false, false, null);
 	};
 	
-	public void createBracketOrder(CreatedOrder order) {
+	public void placeNewBracketOrder(CreatedOrder order) {
 		
-		placeBracketOrder(order.getOrderAction(),order.getLimitPrice(),order.getProfitLimitPrice(),order.getTick());
+		if(order.getOrderAction() == SystemEnum.OrderAction.Default) return;
+		
+
+		List<Order> bracket = createBracket(getCurrentOrderId(), 
+				order.getOrderAction(),
+				order.getLimitPrice(),
+				order.getProfitLimitPrice(),
+				order.getTick());
+		
+		for(Order o : bracket) {
+			 o.transmit(true);
+			 m_client.placeOrder(o.orderId(), myContract(), o);
+		}
+
+		setCurrentOrderId(getCurrentOrderId()+2);
+		
+
+		//order excample
+		//open order: orderId=510 action=BUY quantity=1.0 cashQty= conid=346577697 symbol=ES secType=FUT lastTradeDate=20200320 strike=0.0 right=? multiplier=50 exchange=GLOBEX primaryExch=null currency=USD localSymbol=ESH0 tradingClass=ES type=LMT lmtPrice=3240.0 auxPrice=0.0 TIF=DAY localSymbol=ESH0 client Id=0 parent Id=0 permId=410647624 outsideRth=false hidden=false discretionaryAmt=0.0 displaySize=0 triggerMethod=0 goodAfterTime=null goodTillDate=null faGroup=null faMethod=null faPercentage=null faProfile=null shortSaleSlot=0 designatedLocation=null exemptCode=-1 ocaGroup=null ocaType=3 rule80A=null allOrNone=false minQty= percentOffset= eTradeOnly=false firmQuoteOnly=false nbboPriceCap= optOutSmartRouting=false auctionStrategy=0 startingPrice= stockRefPrice= delta= stockRangeLower= stockRangeUpper= volatility= volatilityType=0 deltaNeutralOrderType=None deltaNeutralAuxPrice= deltaNeutralConId=0 deltaNeutralSettlingFirm=null deltaNeutralClearingAccount=null deltaNeutralClearingIntent=null deltaNeutralOpenClose=? deltaNeutralShortSale=false deltaNeutralShortSaleSlot=0 deltaNeutralDesignatedLocation=null continuousUpdate=0 referencePriceType=0 trailStopPrice=3241.0 trailingPercent= scaleInitLevelSize= scaleSubsLevelSize= scalePriceIncrement= scalePriceAdjustValue= scalePriceAdjustInterval= scaleProfitOffset= scaleAutoReset=false scaleInitPosition= scaleInitFillQty= scaleRandomPercent=false hedgeType=null hedgeParam=null account=DU1300317 modelCode=null settlingFirm=null clearingAccount=null clearingIntent=IB notHeld=false whatIf=false solicited=false randomize size=false randomize price=false dontUseAutoPriceForHedge=true isOmsContainer=false discretionaryUpToLimitPrice=false status=Submitted initMarginBefore=null maintMarginBefore=null equityWithLoanBefore=null initMarginChange=null maintMarginChange=null equityWithLoanChange=null initMarginAfter=null maintMarginAfter=null equityWithLoanAfter=null commission= minCommission= maxCommission= commissionCurrency=null warningText=null
+		// OrderStatus. Id: 510, Status: Submitted, Filled0.0, Remaining: 1.0, AvgFillPrice: 0.0, PermId: 410647624, ParentId: 0, LastFillPrice: 0.0, ClientId: 0, WhyHeld: null, MktCapPrice: 0.0
+		//open order: orderId=511 action=SELL quantity=1.0 cashQty= conid=346577697 symbol=ES secType=FUT lastTradeDate=20200320 strike=0.0 right=? multiplier=50 exchange=GLOBEX primaryExch=null currency=USD localSymbol=ESH0 tradingClass=ES type=LMT lmtPrice=3241.25 auxPrice=0.0 TIF=DAY localSymbol=ESH0 client Id=0 parent Id=510 permId=410647625 outsideRth=false hidden=false discretionaryAmt=0.0 displaySize=0 triggerMethod=0 goodAfterTime=null goodTillDate=null faGroup=null faMethod=null faPercentage=null faProfile=null shortSaleSlot=0 designatedLocation=null exemptCode=-1 ocaGroup=410647624 ocaType=3 rule80A=null allOrNone=false minQty= percentOffset= eTradeOnly=false firmQuoteOnly=false nbboPriceCap= optOutSmartRouting=false auctionStrategy=0 startingPrice= stockRefPrice= delta= stockRangeLower= stockRangeUpper= volatility= volatilityType=0 deltaNeutralOrderType=None deltaNeutralAuxPrice= deltaNeutralConId=0 deltaNeutralSettlingFirm=null deltaNeutralClearingAccount=null deltaNeutralClearingIntent=null deltaNeutralOpenClose=? deltaNeutralShortSale=false deltaNeutralShortSaleSlot=0 deltaNeutralDesignatedLocation=null continuousUpdate=0 referencePriceType=0 trailStopPrice=3240.25 trailingPercent= scaleInitLevelSize= scaleSubsLevelSize= scalePriceIncrement= scalePriceAdjustValue= scalePriceAdjustInterval= scaleProfitOffset= scaleAutoReset=false scaleInitPosition= scaleInitFillQty= scaleRandomPercent=false hedgeType=null hedgeParam=null account=DU1300317 modelCode=null settlingFirm=null clearingAccount=null clearingIntent=IB notHeld=false whatIf=false solicited=false randomize size=false randomize price=false dontUseAutoPriceForHedge=true isOmsContainer=false discretionaryUpToLimitPrice=false status=PreSubmitted initMarginBefore=null maintMarginBefore=null equityWithLoanBefore=null initMarginChange=null maintMarginChange=null equityWithLoanChange=null initMarginAfter=null maintMarginAfter=null equityWithLoanAfter=null commission= minCommission= maxCommission= commissionCurrency=null warningText=null
+		// OrderStatus. Id: 511, Status: PreSubmitted, Filled0.0, Remaining: 1.0, AvgFillPrice: 0.0, PermId: 410647625, ParentId: 510, LastFillPrice: 0.0, ClientId: 0, WhyHeld: child,locate, MktCapPrice: 0.0
+
 	}
 	
-	public void modifyOrderProfitLimitPrice(CreatedOrder order, double newProfitLimitPrice) {
+	public void modifyOrderProfitLimitPrice(CreatedOrder order) {
 		
-		//todo
+		List<Order> bracket = createBracket(order.getOrderIdInIB(), 
+				order.getOrderAction(),
+				order.getLimitPrice(),
+				order.getProfitLimitPrice(),
+				order.getTick());
+		
+		m_client.placeOrder(bracket.get(1).orderId(), myContract(), bracket.get(1));
+		
 	}
 	
 	public void cancelOrder(int orderId) {
 		
-		//todo
+		m_client.cancelOrder(orderId);
 	}
 	
-	public void stopOrderWithMarketPrice(CreatedOrder order) {
+	public void changeChildOrderTypeWithMarketType(CreatedOrder order) {
 		
-		//todo
+		List<Order> bracket = createBracket(order.getOrderIdInIB(), 
+				order.getOrderAction(),
+				order.getLimitPrice(),
+				order.getProfitLimitPrice(),
+				order.getTick());
+		bracket.get(1).orderType("MKT");
+		m_client.placeOrder(bracket.get(1).orderId(), myContract(), bracket.get(1));
 	}
 	
-	private void placeBracketOrder(Enum<SystemEnum.OrderAction> orderAction, double limitPrice, double profitLimitPrice, double tick) {
-		
-		if(orderAction == SystemEnum.OrderAction.Default) return;
+	
+	private List<Order> createBracket(int orderId, Enum<SystemEnum.OrderAction> orderAction, double limitPrice, double profitLimitPrice, double tick) {
 		
 		String actionStr = null;
 		if(orderAction == SystemEnum.OrderAction.Buy) {
@@ -220,27 +234,13 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			actionStr = "SELL";
 		}
 		
-		List<Order> bracket = OrderSamples.BracketOrder(getCurrentOrderId(), 
+		List<Order> bracket = OrderSamples.BracketOrder(orderId, 
 				actionStr,
 				tick, 
 				limitPrice,profitLimitPrice, 0);
-//		order.account(ibServerConfig.getAccount());
 		bracket.remove(2);
-		for(Order o : bracket) {
-			 //AvailableAlgoParams.FillAdaptiveParams(o, "Normal");
-			 o.transmit(true);
-			 m_client.placeOrder(o.orderId(), myContract(), o);
-		}
-
-		setCurrentOrderId(getCurrentOrderId()+2);
 		
-		
-		//order excample
-		//open order: orderId=510 action=BUY quantity=1.0 cashQty= conid=346577697 symbol=ES secType=FUT lastTradeDate=20200320 strike=0.0 right=? multiplier=50 exchange=GLOBEX primaryExch=null currency=USD localSymbol=ESH0 tradingClass=ES type=LMT lmtPrice=3240.0 auxPrice=0.0 TIF=DAY localSymbol=ESH0 client Id=0 parent Id=0 permId=410647624 outsideRth=false hidden=false discretionaryAmt=0.0 displaySize=0 triggerMethod=0 goodAfterTime=null goodTillDate=null faGroup=null faMethod=null faPercentage=null faProfile=null shortSaleSlot=0 designatedLocation=null exemptCode=-1 ocaGroup=null ocaType=3 rule80A=null allOrNone=false minQty= percentOffset= eTradeOnly=false firmQuoteOnly=false nbboPriceCap= optOutSmartRouting=false auctionStrategy=0 startingPrice= stockRefPrice= delta= stockRangeLower= stockRangeUpper= volatility= volatilityType=0 deltaNeutralOrderType=None deltaNeutralAuxPrice= deltaNeutralConId=0 deltaNeutralSettlingFirm=null deltaNeutralClearingAccount=null deltaNeutralClearingIntent=null deltaNeutralOpenClose=? deltaNeutralShortSale=false deltaNeutralShortSaleSlot=0 deltaNeutralDesignatedLocation=null continuousUpdate=0 referencePriceType=0 trailStopPrice=3241.0 trailingPercent= scaleInitLevelSize= scaleSubsLevelSize= scalePriceIncrement= scalePriceAdjustValue= scalePriceAdjustInterval= scaleProfitOffset= scaleAutoReset=false scaleInitPosition= scaleInitFillQty= scaleRandomPercent=false hedgeType=null hedgeParam=null account=DU1300317 modelCode=null settlingFirm=null clearingAccount=null clearingIntent=IB notHeld=false whatIf=false solicited=false randomize size=false randomize price=false dontUseAutoPriceForHedge=true isOmsContainer=false discretionaryUpToLimitPrice=false status=Submitted initMarginBefore=null maintMarginBefore=null equityWithLoanBefore=null initMarginChange=null maintMarginChange=null equityWithLoanChange=null initMarginAfter=null maintMarginAfter=null equityWithLoanAfter=null commission= minCommission= maxCommission= commissionCurrency=null warningText=null
-		// OrderStatus. Id: 510, Status: Submitted, Filled0.0, Remaining: 1.0, AvgFillPrice: 0.0, PermId: 410647624, ParentId: 0, LastFillPrice: 0.0, ClientId: 0, WhyHeld: null, MktCapPrice: 0.0
-		//open order: orderId=511 action=SELL quantity=1.0 cashQty= conid=346577697 symbol=ES secType=FUT lastTradeDate=20200320 strike=0.0 right=? multiplier=50 exchange=GLOBEX primaryExch=null currency=USD localSymbol=ESH0 tradingClass=ES type=LMT lmtPrice=3241.25 auxPrice=0.0 TIF=DAY localSymbol=ESH0 client Id=0 parent Id=510 permId=410647625 outsideRth=false hidden=false discretionaryAmt=0.0 displaySize=0 triggerMethod=0 goodAfterTime=null goodTillDate=null faGroup=null faMethod=null faPercentage=null faProfile=null shortSaleSlot=0 designatedLocation=null exemptCode=-1 ocaGroup=410647624 ocaType=3 rule80A=null allOrNone=false minQty= percentOffset= eTradeOnly=false firmQuoteOnly=false nbboPriceCap= optOutSmartRouting=false auctionStrategy=0 startingPrice= stockRefPrice= delta= stockRangeLower= stockRangeUpper= volatility= volatilityType=0 deltaNeutralOrderType=None deltaNeutralAuxPrice= deltaNeutralConId=0 deltaNeutralSettlingFirm=null deltaNeutralClearingAccount=null deltaNeutralClearingIntent=null deltaNeutralOpenClose=? deltaNeutralShortSale=false deltaNeutralShortSaleSlot=0 deltaNeutralDesignatedLocation=null continuousUpdate=0 referencePriceType=0 trailStopPrice=3240.25 trailingPercent= scaleInitLevelSize= scaleSubsLevelSize= scalePriceIncrement= scalePriceAdjustValue= scalePriceAdjustInterval= scaleProfitOffset= scaleAutoReset=false scaleInitPosition= scaleInitFillQty= scaleRandomPercent=false hedgeType=null hedgeParam=null account=DU1300317 modelCode=null settlingFirm=null clearingAccount=null clearingIntent=IB notHeld=false whatIf=false solicited=false randomize size=false randomize price=false dontUseAutoPriceForHedge=true isOmsContainer=false discretionaryUpToLimitPrice=false status=PreSubmitted initMarginBefore=null maintMarginBefore=null equityWithLoanBefore=null initMarginChange=null maintMarginChange=null equityWithLoanChange=null initMarginAfter=null maintMarginAfter=null equityWithLoanAfter=null commission= minCommission= maxCommission= commissionCurrency=null warningText=null
-		// OrderStatus. Id: 511, Status: PreSubmitted, Filled0.0, Remaining: 1.0, AvgFillPrice: 0.0, PermId: 410647625, ParentId: 510, LastFillPrice: 0.0, ClientId: 0, WhyHeld: child,locate, MktCapPrice: 0.0
-
+		return bracket;
 	}
 	
 	
@@ -268,7 +268,28 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		m_client.cancelMktData(reqId);
 	}
 	
-	//todo order filled callback method
+	public void responseOrderStatusUpdate(int parentOrderId, int orderId, String orderStatus, double filledQuantity, double remainingQuantity, double filledPrice) {
+		
+		if (settingServiceObj == null) {
+			return;
+		}
+		if (parentOrderId == 0) {
+			//parent order
+			if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Cancelled)) {
+				settingServiceObj.responseWhenParentOrderCancelled(orderId,orderStatus);
+			} else if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Submitted)) {
+				settingServiceObj.responseWhenParentOrderSubmitted(parentOrderId, orderStatus);
+			} else if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Filled) && remainingQuantity == 0) {
+				settingServiceObj.responseWhenParentOrderFilled(orderId, orderStatus, filledPrice);
+			}
+		} else {
+			//profit limit order
+			if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Filled) && remainingQuantity == 0) {
+				settingServiceObj.responseWhenProfitLimitOrderFilled(parentOrderId, orderStatus, filledPrice);
+			}
+		}
+	}
+	
 	
 	
 	public int getCurrentOrderId() {

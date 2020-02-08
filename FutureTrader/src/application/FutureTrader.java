@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import com.java4less.ocr.utils.a;
 
 import config.SystemConfig;
+import dao.CommonDAOFactory;
 import entity.ColorCount;
 import entity.CreatedOrder;
 import entity.DailySettingRefresh;
@@ -60,12 +61,15 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
     private int ibDisConnectAlertTimerCount = 0;
     private int ibDisConnectAlertTimerCountMax = 5;
     
+    private int refreshTbTimerCount = 0;
+    private int refreshTbTimerCountMax = 5;
+    
 //    private final Label startTimeLbl = new Label();
 //	  private final Label endTimeLbl = new Label();
 
 	private Hashtable<String,Object> tableDataHash;
 	
-	private boolean todayTradeIsOver = false; //todo usered with green red statement
+	private boolean wantCloseApp = false;
 	
 	private boolean isSettingRefreshTime() {
 
@@ -125,6 +129,15 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			
 		} else {
 			
+			boolean orderCountMoreThanOne = false;
+			for(String setting : settingService.getActiveSettingList()) {
+				ArrayList<CreatedOrder> orders = settingService.getCurrentOrderMap().get(setting);
+				if (orders.size() > 0) {
+					orderCountMoreThanOne = true;
+					break;
+				}
+			}
+			
 			//now is a refresh time
 			if(isSettingRefreshTime()) {
 				settingService.updateSettingListByRefreshPlan();
@@ -140,63 +153,54 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			ColorCount cc = colorInfoService.getColorCountByCloseZoneList();
 			if (cc.getGreen() > 0 || cc.getRed() > 0) {
 				//close all order
-				if (settingService.getDailyOrderCount() > 0) {
-					todayTradeIsOver = true;
-					settingService.closeAllOrder();
+				if (orderCountMoreThanOne) {
+					settingService.closeAllSetting();
 				}
 				//todo
 				//stop timer and app if law need
 			} else {
 				//if market is open and every working setting need open first order 
-				if (settingService.getDailyOrderCount() == 0) {
-					
-					if(settingService.getDailyFirstPrice() == 0) {
-						
-						settingService.getCurrentPrice();
-						
-						
-					}
-				} else {
+				if (orderCountMoreThanOne) {
 					settingService.closeUnWorkingSettingOrder();
+				} else {
+					if(settingService.getDailyFirstPrice() == 0) {
+						settingService.getCurrentPrice();
+					}
 				}
 			}
 			
-			
-			//todo
-			//per 5 sec update table(today's order)
-			for (int i = 0; i < settingService.getActiveSettingList().size(); i++) {
+			refreshTbTimerCount ++;
+			if (refreshTbTimerCount == refreshTbTimerCountMax) {
+				refreshTbTimerCount = 0;
+				for (int i = 0; i < settingService.getActiveSettingList().size(); i++) {
 
-				String setting = settingService.getActiveSettingList().get(i);
+					String setting = settingService.getActiveSettingList().get(i);
 
-				@SuppressWarnings("unchecked")
-				ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tableDataHash.get(setting);
-				
-				//todo
-				//get data from db
-				
-//				ArrayList<OrderSign> newestList = settingService.getDailySignMap().get(setting);
-//				if(signData.size() != newestList.size()) {
-//					int shownCount = signData.size();
-//					for(int j = 0; j < newestList.size() - shownCount; j++) {
-//
-//						OrderSign newSign = newestList.get(shownCount+j);
-//						//insert into table
-//						SignTableItem signItem = new SignTableItem(
-//								Util.getDateStringByDateAndFormatter(newSign.getTime(), "HH:mm:ss"),
-//								""+newSign.getParentOrderIdInIB(),
-//								"", //todo orderstate
-//								setting,
-//								Util.getActionTextByEnum(newSign.getOrderAction()),
-//								""+newSign.getLimitPrice(),
-//								""+newSign.getTick(),
-//								""+newSign.getProfitLimitPrice(),
-//								""+newSign.getTickProfit());
-//						signData.add(signItem);
-//						
-//					}
-//
-//				}
+					@SuppressWarnings("unchecked")
+					ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tableDataHash.get(setting);
+					
+					//get new data from db
+					ArrayList<OrderSign> newestList = CommonDAOFactory.getCommonDAO().getNewestSignListByDate(new Date(),setting,signData.size());
+					
+					for(OrderSign os : newestList) {
+						//insert into table
+						SignTableItem signItem = new SignTableItem(
+								Util.getDateStringByDateAndFormatter(os.getTime(), "HH:mm:ss"),
+								""+os.getParentOrderIdInIB(),
+								""+os.getOrderStatus(), 
+								setting,Util.getActionTextByEnum(os.getOrderAction()), 
+								""+os.getLimitPrice(), 
+								""+os.getTick(), 
+								""+os.getProfitLimitPrice(), 
+								""+os.getTickProfit(), 
+								""+os.getLimitFilledPrice(), 
+								""+os.getProfitLimitFilledPrice());
+
+						signData.add(signItem);
+					}
+				}
 			}
+			
 		}
 		
 	}
@@ -262,10 +266,25 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			final HBox hb1 = new HBox();
 	        hb1.setPrefSize(300, 15);
 	        
-	        Button btn = new Button();
-	        btn.setText("Close");
-	        btn.setPrefSize(50, 15);
-	        btn.setOnAction(new EventHandler<ActionEvent>() {
+	        Button btn1 = new Button();
+	        btn1.setText("Only Close Order");
+	        btn1.setPrefSize(50, 15);
+	        btn1.setOnAction(new EventHandler<ActionEvent>() {
+	            @Override
+	            public void handle(ActionEvent event) {
+	                
+	                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Close?");
+	                Optional<ButtonType> result = confirmation.showAndWait();
+	                if (result.isPresent() && result.get() == ButtonType.OK) {
+	                	closeAllOrder(); 
+	                }
+	            }
+	        });
+	        
+	        Button btn2 = new Button();
+	        btn2.setText("Close Order And App");
+	        btn2.setPrefSize(50, 15);
+	        btn2.setOnAction(new EventHandler<ActionEvent>() {
 	            @Override
 	            public void handle(ActionEvent event) {
 	                
@@ -277,7 +296,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	            }
 	        });
 	        
-	        hb1.getChildren().addAll(btn);
+	        hb1.getChildren().addAll(btn1,btn2);
 	        hb1.setSpacing(3);
 	        
 	        final VBox vbox = new VBox();
@@ -296,8 +315,9 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 		                FXCollections.observableArrayList();
 	        	trendTable.setItems(trendData);
 	        	
-	        	String[] columTitle = {"Time","IBOrderId","OrderState","Setting","Action","LimitPrice","Tick","ProfitLimitPrice","TickProfit","OpenFilledPrice","CloseFilledPrice"};
-	        	String[] valueName = {"time","ibOrderId","orderState","setting","action","limitPrice","tick","profitLimitPrice","tickProfit","openFilledPrice","closeFilledPrice"};
+	        	
+	        	String[] columTitle = {"Time","IBOrderId","OrderStatus","Setting","Action","LimitPrice","Tick","ProfitLimitPrice","TickProfit","OpenFilledPrice","CloseFilledPrice"};
+	        	String[] valueName = {"time","ibOrderId","orderStatus","setting","action","limitPrice","tick","profitLimitPrice","tickProfit","openFilledPrice","closeFilledPrice"};
 	        	
 	        	for (int i = 0; i < columTitle.length; i++) {
 	        		TableColumn tc = new TableColumn(columTitle[i]);
@@ -323,7 +343,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			    public void handle(WindowEvent t) {
 			    	
 			    	t.consume();
-			    	Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Close?");
+			    	Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Directly Close App Without Closing Orders?");
 	                Optional<ButtonType> result = confirmation.showAndWait();
 	                if (result.isPresent() && result.get() == ButtonType.OK) {
 	                	Platform.exit();
@@ -394,32 +414,10 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			
 		}  else {
 			
-//			if (didPassedCountSce > 0 && didPassedCountSce != scenarioService.getSceRefreshPlan().size()) {
-//				
-//				DailyScenarioRefresh sceRefresh = scenarioService.getSceRefreshPlan().get(didPassedCountSce-1);
-//				sceRefresh.setPassed(false);
-//				scenarioService.setPassedSceRefreshPlanCount(didPassedCountSce-1);
-//				scenarioService.updateWorkingScenarioListByRefreshPlan();
-//			}
-//			
-//			if (didPassedCountVol > 0 && didPassedCountVol != scenarioService.getVolRefreshPlan().size()) {
-//				
-//				DailyScenarioRefresh volRefresh = scenarioService.getVolRefreshPlan().get(didPassedCountVol-1);
-//				volRefresh.setPassed(false);
-//				scenarioService.setPassedVolRefreshPlanCount(didPassedCountVol-1);
-//				scenarioService.updateWorkingVolumeListByRefreshPlan();
-//			}
-//			
-//			if (didPassedCountVolZone > 0) {
-//				
-//				DailyScenarioRefresh volRefresh = scenarioService.getVolZoneRefreshPlan().get(didPassedCountVolZone-1);
-//				volRefresh.setPassed(false);
-//				scenarioService.setPassedVolZoneRefreshPlanCount(didPassedCountVolZone-1);
-//				scenarioService.updateWorkingVolumeZoneListByRefreshPlan();
-//			}
-			
 			//todo
 			//load history order/setting and start trading?
+			
+			
 			
 //			secTimer = new Timer ();
 //			secTimer.scheduleAtFixedRate(new TimerTask() {
@@ -433,6 +431,20 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 		}
 	}
 	
+	private void closeAllOrder() {
+		boolean orderCountMoreThanOne = false;
+		for(String setting : SettingService.getInstance().getActiveSettingList()) {
+			ArrayList<CreatedOrder> orders = SettingService.getInstance().getCurrentOrderMap().get(setting);
+			if (orders.size() > 0) {
+				orderCountMoreThanOne = true;
+				break;
+			}
+		}
+		if (orderCountMoreThanOne) {
+			SettingService.getInstance().closeAllSetting();
+		}
+	}
+	
 	private void closeApplication() {
 		
 		try {
@@ -442,11 +454,18 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
         }
 		
 		//close order
-		for(ArrayList<CreatedOrder> orders : SettingService.getInstance().getCurrentOrderMap().values()) {
+		boolean orderCountMoreThanOne = false;
+		for(String setting : SettingService.getInstance().getActiveSettingList()) {
+			ArrayList<CreatedOrder> orders = SettingService.getInstance().getCurrentOrderMap().get(setting);
 			if (orders.size() > 0) {
-				SettingService.getInstance().closeAllSettingWhenAppWantClose();
-				return;
+				orderCountMoreThanOne = true;
+				break;
 			}
+		}
+		if (orderCountMoreThanOne) {
+			wantCloseApp = true;
+			SettingService.getInstance().closeAllSetting();
+			return;
 		}
 		
 		if(IBService.getInstance().getIbApiConfig().isActive() && IBService.getInstance().isIBConnecting()) {
@@ -483,38 +502,34 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	}
 	
 	@Override
-	public void closeAppAfterPriceUpdate() {
+	public void allOrderFilled() {
 		
-		try {
-            Thread.sleep(2000);
-        } catch (Exception e) {
-        	e.printStackTrace();
-        }
-		
-		if(IBService.getInstance().getIbApiConfig().isActive() && IBService.getInstance().isIBConnecting()) {
-			IBService.getInstance().ibDisConnect();
-		}
-		
-		try {
-            Thread.sleep(2000);
-        } catch (Exception e) {
-        	e.printStackTrace();
-        }
 		//export xls
 		SettingService.getInstance().exportTodayOrderProfit();
 		try {
-            Thread.sleep(2000);
-        } catch (Exception e) {
-        	e.printStackTrace();
-        }
-		//shutdown
-		Platform.exit();
-        System.exit(0);
+			Thread.sleep(2000);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		if(wantCloseApp) {
+		
+			wantCloseApp = false;
+			
+			if(IBService.getInstance().getIbApiConfig().isActive() && IBService.getInstance().isIBConnecting()) {
+				IBService.getInstance().ibDisConnect();
+			}
+			
+			try {
+				Thread.sleep(2000);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
+			//shutdown
+			Platform.exit();
+			System.exit(0);
+		}
 	}
 	
-	@Override
-	public void updateOrderInfoInTable(String setting, Integer orderId, double limitPrice, double stopPrice, String orderState) {
-		
-		//todo
-	}
 }

@@ -33,6 +33,7 @@ import entity.Setting;
 import entity.SingleOrderSetting;
 import entity.OrderSign;
 import entity.Zone;
+import net.sourceforge.tess4j.ITessAPI.CANCEL_FUNC;
 import systemenum.SystemEnum;
 import tool.Util;
 
@@ -53,13 +54,12 @@ public class SettingService implements IBServiceCallbackInterface {
 //	private Map<Integer,CreatedOrder> currentProfitLimitOrderMap; //parentOrderId,childProfitOrder
 	
 	private Map<Integer,String> parentOrderIdSettingMap; //<parentOrderId,setting>
-
-	private int dailyOrderCount = 0;
-
-	private boolean needCloseApp;
-	private FutureTrader tradeObj;
-
+	
+	private boolean needCreateDiffActionOrderAfterCancelOrder = false;
+	private boolean needCloseAllOrder = false;
 	private int wantCloseOrderCount;
+
+	private FutureTrader tradeObj;
 	
 	private String LOGIC_MODE = "1"; 
 	//1: create order a lot  
@@ -174,7 +174,7 @@ public class SettingService implements IBServiceCallbackInterface {
 		    } else {
 		    	params.add("0");
 		    }
-		    //stop price
+		    //profit limit price
 		    if(sign.getProfitLimitPrice() > 0) {
 		    	params.add(sign.getProfitLimitPrice()+"");
 		    } else {
@@ -187,6 +187,18 @@ public class SettingService implements IBServiceCallbackInterface {
 		    	params.add("0");
 		    }
 		    
+		    if(sign.getLimitFilledPrice()!=0) {
+		    	params.add(sign.getLimitFilledPrice()+"");
+		    } else {
+		    	params.add("0");
+		    }
+		    
+		    if(sign.getProfitLimitFilledPrice()!=0) {
+		    	params.add(sign.getProfitLimitFilledPrice()+"");
+		    } else {
+		    	params.add("0");
+		    }
+		    
 		    //map key
 		    map.put((i+1) + "", params);
 		}
@@ -194,7 +206,8 @@ public class SettingService implements IBServiceCallbackInterface {
     }
 	
 	private String[] excelTitle() {
-        String[] strArray = { "time", "setting", "action", "limit price", "tick", "stop price", "profit"};
+        String[] strArray = { "time", "setting", "action", "limit price", "tick", "profit limit price", "profit","limit filled price","profit limit filled price" };
+        
         return strArray;
     }
 	
@@ -210,16 +223,11 @@ public class SettingService implements IBServiceCallbackInterface {
     		
     		return;
     	}
-    	
     	CommonDAO commonDao = CommonDAOFactory.getCommonDAO();
     	
     	//get new working setting
     	ArrayList<Setting> newSettingList = commonDao.getAllWorkingSettingAtTime(new Date());
-    	if (newSettingList.size() == 0) {
-    		
-    		workingSettingList.clear();
-    		
-		} else {
+    	if (newSettingList.size() > 0) {
 			
 			//get active working setting
 	    	ArrayList<Setting> tempSettingList = new ArrayList<>();
@@ -231,17 +239,10 @@ public class SettingService implements IBServiceCallbackInterface {
 					}
 	    		}
 			}
-	    	if (tempSettingList.size() == 0) {
-	    		//none new setting
-	    		workingSettingList.clear();
-	    		
-			} else {
-				
-		    	//update working setting
-		    	workingSettingList.clear();
-		    	for (Setting workingS : tempSettingList) {
-		    		workingSettingList.add(workingS);
-				}
+
+			workingSettingList.clear();
+	    	if (tempSettingList.size() > 0) {
+		    	workingSettingList.addAll(tempSettingList);
 			}
 	    	
 		}
@@ -249,19 +250,23 @@ public class SettingService implements IBServiceCallbackInterface {
     }
     
     
-	public void closeAllOrder() {
+	private void closeAllOrder() {
 		
-		for(String settting : activeSettingList) {
+		for(String setting : activeSettingList) {
 			
-			ArrayList<CreatedOrder> orders = currentOrderMap.get(settting);
+			ArrayList<CreatedOrder> orders = currentOrderMap.get(setting);
 			if (orders.size() == 0) {
 				continue;
 			} else {
-				for(CreatedOrder order:orders) {
-					if (order.getOrderState().equals(SystemConfig.IB_ORDER_STATE_Filled)) {
-						IBService.getInstance().stopOrderWithMarketPrice(order);
-					} else {
-						IBService.getInstance().cancelOrder(order.getOrderIdInIB());
+				for (CreatedOrder parentOrder : currentOrderMap.get(setting)) {
+					
+					if (!parentOrder.getOrderStatus().equals(SystemConfig.IB_ORDER_STATUS_Filled)) {
+						
+						IBService.getInstance().cancelOrder(parentOrder.getOrderIdInIB());
+						
+					} else if (parentOrder.getOrderStatus().equals(SystemConfig.IB_ORDER_STATUS_Filled)) {
+						
+						IBService.getInstance().changeChildOrderTypeWithMarketType(parentOrder);
 					}
 				}
 			}
@@ -301,20 +306,18 @@ public class SettingService implements IBServiceCallbackInterface {
 				
 				for (CreatedOrder parentOrder : currentOrderMap.get(setting)) {
 					
-					if (!parentOrder.getOrderState().equals(SystemConfig.IB_ORDER_STATE_Filled)) {
+					if (!parentOrder.getOrderStatus().equals(SystemConfig.IB_ORDER_STATUS_Filled)) {
 						 //when cancel unfilled parent order, profit-limit order will be anti-canceled
 						IBService.getInstance().cancelOrder(parentOrder.getOrderIdInIB());
-					} else if (parentOrder.getOrderState().equals(SystemConfig.IB_ORDER_STATE_Filled)) {
+					} else if (parentOrder.getOrderStatus().equals(SystemConfig.IB_ORDER_STATUS_Filled)) {
 						//when stop filled parent order, must hand-cancel profit-limit order first. then create a ANTI-action MKT order.  maybe WRONG
 						//IBService.getInstance().cancelOrder(parentOrder.getProfitLimitOrderIdInIB());
 						
 						//when stop filled parent order, only need change profit-limit order¡®s ordertype to MKT.
 						
-						IBService.getInstance().stopOrderWithMarketPrice(parentOrder);
+						IBService.getInstance().changeChildOrderTypeWithMarketType(parentOrder);
 					}
-	//				currentProfitLimitOrderMap.remove(parentOrder.getOrderIdInIB());
 				}
-				currentOrderMap.get(setting).clear();
 			}
 			
 		}
@@ -345,7 +348,7 @@ public class SettingService implements IBServiceCallbackInterface {
         
     }
     
-    public void closeAllSettingWhenAppWantClose() {
+    public void closeAllSetting() {
     	
     	wantCloseOrderCount = 0;
     	for(String setting : getActiveSettingList()) {
@@ -355,18 +358,16 @@ public class SettingService implements IBServiceCallbackInterface {
     	}
     	
     	if(wantCloseOrderCount > 0) {
-    		setNeedCloseApp(true);
+    		needCloseAllOrder = true;
     		closeAllOrder();
     	} else {
     		if(getTradeObj() != null) {
-    			getTradeObj().closeAppAfterPriceUpdate();
+    			getTradeObj().allOrderFilled();
     	    }
     	}
     }
     
     private void createScreenShot(String setting, Enum<SystemEnum.OrderAction> action, double limitPrice) {
-    	
-    	//todo when use this method
     	
     	ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
 	    cachedThreadPool.execute(new Runnable() {
@@ -396,13 +397,13 @@ public class SettingService implements IBServiceCallbackInterface {
     	
     	OrderSign newSign = new OrderSign(IBService.getInstance().getCurrentOrderId(), 
     			IBService.getInstance().getCurrentOrderId()+1, 
-    			SystemConfig.IB_ORDER_STATE_Submitted, 
+    			SystemConfig.IB_ORDER_STATUS_Submitted, 
     			new Date(), 
     			setting, 
     			action, limitPrice, tick, stopPrice, 0, 0, 0);
     	CreatedOrder newOrder = new CreatedOrder(IBService.getInstance().getCurrentOrderId(), 
     			IBService.getInstance().getCurrentOrderId()+1, 
-    			SystemConfig.IB_ORDER_STATE_Submitted, 
+    			SystemConfig.IB_ORDER_STATUS_Submitted, 
     			new Date(), 
     			action, limitPrice, tick, stopPrice);
     	
@@ -410,11 +411,11 @@ public class SettingService implements IBServiceCallbackInterface {
     	getDailySignMap().get(setting).add(newSign);
     	currentOrderMap.get(setting).add(newOrder);
     	CommonDAOFactory.getCommonDAO().insertNewOrderSign(newSign);
+    	createScreenShot(setting, action, limitPrice);
     	
-    	IBService ibService = IBService.getInstance();
-    	if(ibService.getIbApiConfig().isActive() && ibService.isIBConnecting()) {
+    	if(IBService.getInstance().getIbApiConfig().isActive() && IBService.getInstance().isIBConnecting()) {
     		
-    		ibService.createBracketOrder(newOrder);
+    		IBService.getInstance().placeNewBracketOrder(newOrder);
     	}
     }
     
@@ -431,26 +432,40 @@ public class SettingService implements IBServiceCallbackInterface {
 	}
 	
 	@Override
-	public void responseWhenOrderSubmitted(Integer parentOrderId, Integer orderId, String orderState) {
+	public void responseWhenParentOrderSubmitted(Integer parentOrderId, String orderStatus) {
 		
-		//todo
+			//parent order submitted
+			String thisSetting = parentOrderIdSettingMap.get(parentOrderId);
+			for(OrderSign os : dailySignMap.get(thisSetting)) {
+				if(os.getParentOrderIdInIB() == parentOrderId) {
+					os.setOrderStatus(orderStatus);
+					CommonDAOFactory.getCommonDAO().updateOrderSubmittedInfo(parentOrderId,orderStatus);
+					break;
+				}
+			}
+			for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
+				if(os.getOrderIdInIB() == parentOrderId) {
+					os.setOrderStatus(orderStatus);
+					break;
+				}
+			}	
 	}
 	
 	@Override
-	public void responseWhenParentOrderFilled(Integer orderId, String orderState, double filledPrice) {
+	public void responseWhenParentOrderFilled(Integer parentOrderId, String orderStatus, double filledPrice) {
 		
-		String thisSetting = parentOrderIdSettingMap.get(orderId);
+		String thisSetting = parentOrderIdSettingMap.get(parentOrderId);
 		for(OrderSign os : dailySignMap.get(thisSetting)) {
-			if(os.getParentOrderIdInIB() == orderId) {
-				os.setOrderState(orderState);
+			if(os.getParentOrderIdInIB() == parentOrderId) {
+				os.setOrderStatus(orderStatus);
 				os.setLimitFilledPrice(filledPrice);
-				CommonDAOFactory.getCommonDAO().updateOrderLimitFilledInfo(os.getParentOrderIdInIB(), os.getOrderState(), os.getLimitFilledPrice());
+				CommonDAOFactory.getCommonDAO().updateOrderLimitFilledInfo(os.getParentOrderIdInIB(), os.getOrderStatus(), os.getLimitFilledPrice());
 				break;
 			}
 		}
 		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
-			if(os.getOrderIdInIB() == orderId) {
-				os.setOrderState(orderState);
+			if(os.getOrderIdInIB() == parentOrderId) {
+				os.setOrderStatus(orderStatus);
 				break;
 			}
 		}
@@ -461,25 +476,14 @@ public class SettingService implements IBServiceCallbackInterface {
 				currentOrderMap.get(thisSetting).get(1).getOrderAction()) {
 
 			int shouldCancelOrderId;
-			if (currentOrderMap.get(thisSetting).get(0).getOrderIdInIB() == orderId) {
+			if (currentOrderMap.get(thisSetting).get(0).getOrderIdInIB() == parentOrderId) {
 				//cancel another
 				shouldCancelOrderId = currentOrderMap.get(thisSetting).get(1).getOrderIdInIB();
 			} else {
 				//cancel another
 				shouldCancelOrderId = currentOrderMap.get(thisSetting).get(0).getOrderIdInIB();
 			}
-			for(OrderSign os : dailySignMap.get(thisSetting)) {
-				if(os.getParentOrderIdInIB() == shouldCancelOrderId) {
-					dailySignMap.get(thisSetting).remove(os);
-					break;
-				}
-			}
-			for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
-				if(os.getOrderIdInIB() == shouldCancelOrderId) {
-					currentOrderMap.get(thisSetting).remove(os);
-					break;
-				}
-			}
+			
 			IBService.getInstance().cancelOrder(shouldCancelOrderId);
 		}
 		
@@ -493,6 +497,7 @@ public class SettingService implements IBServiceCallbackInterface {
 				if (preOrder.getProfitLimitPrice() != last.getProfitLimitPrice()) {
 					preOrder.setProfitLimitPrice(last.getProfitLimitPrice());
 					
+					//update profit limit price in dailySignMap
 					for(OrderSign os : dailySignMap.get(thisSetting)) {
 						if(os.getParentOrderIdInIB() == preOrder.getOrderIdInIB()) {
 							os.setProfitLimitPrice(last.getProfitLimitPrice());
@@ -500,7 +505,7 @@ public class SettingService implements IBServiceCallbackInterface {
 						}
 					}
 					CommonDAOFactory.getCommonDAO().updateOrderProfitLimitPrice(preOrder.getOrderIdInIB(), preOrder.getProfitLimitPrice());
-					IBService.getInstance().modifyOrderProfitLimitPrice(preOrder, preOrder.getProfitLimitPrice());
+					IBService.getInstance().modifyOrderProfitLimitPrice(preOrder);
 				}
 			}
 		}
@@ -513,12 +518,17 @@ public class SettingService implements IBServiceCallbackInterface {
 				break;
 			}
 		}
+		
+		if (orderSettingList == null) {
+			return;
+		}
+		
 		SingleOrderSetting newOrderSetting;
-		if (currentOrderMap.get(thisSetting).size() == orderSettingList.size()) {
-			//if order count = setting count, user last setting
-			newOrderSetting = orderSettingList.get(orderSettingList.size() - 1);
-		} else {
+		if (currentOrderMap.get(thisSetting).size() < orderSettingList.size()) {
 			newOrderSetting = orderSettingList.get(currentOrderMap.get(thisSetting).size());
+		} else {
+			//if order count >= setting count, user last setting
+			newOrderSetting = orderSettingList.get(orderSettingList.size() - 1);
 		}
 		
 		CreatedOrder sameSettingPreOrder = currentOrderMap.get(thisSetting).get(currentOrderMap.get(thisSetting).size()-1);
@@ -548,78 +558,53 @@ public class SettingService implements IBServiceCallbackInterface {
 	}
 	
 	@Override
-	public void responseWhenProfitLimitOrderFilled(Integer parentOrderId, Integer ordeId, double filledPrice, String orderState, double tick) {
+	public void responseWhenProfitLimitOrderFilled(Integer parentOrderId, String orderStatus, double filledPrice) {
 		
 		String thisSetting = parentOrderIdSettingMap.get(parentOrderId);
-		int index = 0;
-		double profit = 0;
+		
+		Enum<SystemEnum.OrderAction> orderAtion = SystemEnum.OrderAction.Default;
 		
 		for(OrderSign os : dailySignMap.get(thisSetting)) {
-			index++;
 			if(os.getParentOrderIdInIB() == parentOrderId) {
-				os.setOrderState(orderState);
+				orderAtion = os.getOrderAction();
+				os.setOrderStatus(orderStatus);
 				os.setProfitLimitFilledPrice(filledPrice);
-				profit = Util.getProfit(os.getLimitFilledPrice(), filledPrice, os.getOrderAction())*tick;
-				os.setTickProfit(profit);
-				CommonDAOFactory.getCommonDAO().updateOrderProfitLimitFilledInfo(parentOrderId, os.getOrderState(), os.getProfitLimitFilledPrice(), profit);
+				os.setTickProfit(Util.getProfit(os.getLimitFilledPrice(), os.getProfitLimitFilledPrice(), os.getOrderAction())*os.getTick());
+				CommonDAOFactory.getCommonDAO().updateOrderProfitLimitFilledInfo(parentOrderId, os.getOrderStatus(), os.getProfitLimitFilledPrice(), os.getTickProfit());
 				break;
 			}
 		}
 		
 		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
 			if(os.getOrderIdInIB() == parentOrderId) {
-				currentOrderMap.get(thisSetting).remove(os);
+				os.setOrderStatus(orderStatus);
 				break;
 			}
 		}
 		
-		//cancel last same action no-active order and create new different action order (only do once time)
-		if (currentOrderMap.get(thisSetting).size() == 1) { //all active order have stoped
-			
-//			dailySignShownInTable.get(thisSetting).remove(dailySignShownInTable.get(thisSetting).size()-1);
-			dailySignMap.get(thisSetting).remove(dailySignMap.get(thisSetting).size()-1);
-			currentOrderMap.get(thisSetting).remove(0);
+		boolean canDeleteAllCurrentOrder = true;
+		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
+			if(!os.getOrderStatus().equals(SystemConfig.IB_ORDER_STATUS_Filled)) {
+				canDeleteAllCurrentOrder = false;
+				break;
+			}
+		}
+		if (canDeleteAllCurrentOrder) {
+			currentOrderMap.get(thisSetting).clear();
 		}
 		
 		
-		//if need close app
-		if(needCloseApp) {
-			
+		//cancel last same action no-filled order and create new different action order (only do once time)
+		if (currentOrderMap.get(thisSetting).size() == 1 && currentOrderMap.get(thisSetting).get(0).getOrderAction() == orderAtion) { //all profit limit order have filled
+			IBService.getInstance().cancelOrder(currentOrderMap.get(thisSetting).get(0).getOrderIdInIB());
+			needCreateDiffActionOrderAfterCancelOrder = true;
+		}
+		
+		if(needCloseAllOrder) {
 			if(wantCloseOrderCount > 0) {
 				wantCloseOrderCount --;
-			} else {
-				tradeObj.closeAppAfterPriceUpdate();
 			}
-			
-		} else {
-
-			//create new 1st different action order
-			SystemEnum.OrderAction  newAction;
-			OrderSign lastOrder = dailySignMap.get(thisSetting).get(dailySignMap.get(thisSetting).size()-1);
-			if (lastOrder.getOrderAction() == SystemEnum.OrderAction.Buy) {
-				newAction = SystemEnum.OrderAction.Sell;
-			} else {
-				newAction = SystemEnum.OrderAction.Buy;
-			}
-			
-			ArrayList<SingleOrderSetting> orderSettingList = null;
-			for(Setting setting : workingSettingList) {
-				if (setting.getSetting().equals(thisSetting)) {
-					orderSettingList = setting.getOrderSettingList();
-					break;
-				}
-			}
-			
-			double newLimitPrice = lastOrder.getProfitLimitPrice();
-			double newStopPrice;
-			if (newAction == SystemEnum.OrderAction.Sell) {
-				newStopPrice = newLimitPrice - orderSettingList.get(0).getProfitLimitChange();
-			} else {
-				newStopPrice = newLimitPrice + orderSettingList.get(0).getProfitLimitChange();
-			}
-			
-			createNewBracketOrder(thisSetting, newAction, newLimitPrice, newStopPrice, orderSettingList.get(0).getTick());
-		}
+		} 
 	}
 	
 	@Override
@@ -630,14 +615,85 @@ public class SettingService implements IBServiceCallbackInterface {
 		}
 	}
 	
-	public boolean isNeedCloseApp() {
-		return needCloseApp;
-	}
+	@Override
+	public void responseWhenParentOrderCancelled(Integer parentOrderId, String orderStatus) {
+		
+		String thisSetting = parentOrderIdSettingMap.get(parentOrderId);
+		for(OrderSign os : dailySignMap.get(thisSetting)) {
+			if(os.getParentOrderIdInIB() == parentOrderId) {
+				dailySignMap.get(thisSetting).remove(os);
+				CommonDAOFactory.getCommonDAO().deleteOrderSign(parentOrderId);
+				break;
+			}
+		}
 
-	public void setNeedCloseApp(boolean needCloseApp) {
-		this.needCloseApp = needCloseApp;
+		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
+			if(os.getOrderIdInIB() == parentOrderId) {
+				os.setOrderStatus(orderStatus);
+				break;
+			}
+		}
+		
+		boolean canDeleteAllCurrentOrder = true;
+		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
+			if(!os.getOrderStatus().equals(SystemConfig.IB_ORDER_STATUS_Filled)) {
+				canDeleteAllCurrentOrder = false;
+				break;
+			}
+		}
+		if (canDeleteAllCurrentOrder) {
+			currentOrderMap.get(thisSetting).clear();
+		}
+		
+		if(needCloseAllOrder) {
+			
+			if(wantCloseOrderCount > 0) {
+				wantCloseOrderCount --;
+			} 
+				
+			if (wantCloseOrderCount == 0) {
+				needCloseAllOrder = false;
+				tradeObj.allOrderFilled();
+			}
+			
+		} else {
+			
+			if (needCreateDiffActionOrderAfterCancelOrder) {
+				needCreateDiffActionOrderAfterCancelOrder = false;
+				//create new 1st different action order
+				SystemEnum.OrderAction  newAction;
+				OrderSign lastOrder = dailySignMap.get(thisSetting).get(dailySignMap.get(thisSetting).size()-1);
+				if (lastOrder.getOrderAction() == SystemEnum.OrderAction.Buy) {
+					newAction = SystemEnum.OrderAction.Sell;
+				} else {
+					newAction = SystemEnum.OrderAction.Buy;
+				}
+				
+				ArrayList<SingleOrderSetting> orderSettingList = null;
+				for(Setting setting : workingSettingList) {
+					if (setting.getSetting().equals(thisSetting)) {
+						orderSettingList = setting.getOrderSettingList();
+						break;
+					}
+				}
+				
+				double newLimitPrice = lastOrder.getProfitLimitPrice();
+				double newStopPrice;
+				if (newAction == SystemEnum.OrderAction.Sell) {
+					newStopPrice = newLimitPrice - orderSettingList.get(0).getProfitLimitChange();
+				} else {
+					newStopPrice = newLimitPrice + orderSettingList.get(0).getProfitLimitChange();
+				}
+				
+				createNewBracketOrder(thisSetting, newAction, newLimitPrice, newStopPrice, orderSettingList.get(0).getTick());
+			}
+			
+			
+		}
+		
 	}
 	
+
 	public FutureTrader getTradeObj() {
 		return tradeObj;
 	}
@@ -709,14 +765,6 @@ public class SettingService implements IBServiceCallbackInterface {
 	public void setSettingRefreshPlan(ArrayList<DailySettingRefresh> settingRefreshPlan) {
 		this.settingRefreshPlan = settingRefreshPlan;
 	}
-	
-	public int getDailyOrderCount() {
-		return dailyOrderCount;
-	}
-
-	public void setDailyOrderCount(int dailyOrderCount) {
-		this.dailyOrderCount = dailyOrderCount;
-	}
 
 	public Map<Integer, String> getParentOrderIdSettingMap() {
 		return parentOrderIdSettingMap;
@@ -733,6 +781,5 @@ public class SettingService implements IBServiceCallbackInterface {
 	public void setDailyFirstPrice(double dailyFirstPrice) {
 		this.dailyFirstPrice = dailyFirstPrice;
 	}
-	
 	
 }

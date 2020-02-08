@@ -6,7 +6,7 @@ public class SignTableItem {
 
 	private SimpleStringProperty time;
 	private SimpleStringProperty ibOrderId;
-	private SimpleStringProperty orderState;
+	private SimpleStringProperty orderStatus;
     private SimpleStringProperty setting;
     private SimpleStringProperty action;
     private SimpleStringProperty limitPrice;
@@ -16,12 +16,12 @@ public class SignTableItem {
     private SimpleStringProperty limitFilledPrice;
 	private SimpleStringProperty profitLimitFilledPrice;
 
-    public SignTableItem(String time, String ibOrderId, String orderState, String setting, 
+    public SignTableItem(String time, String ibOrderId, String orderStatus, String setting, 
     		String action, String limitPrice, String tick, String profitLimitPrice, 
     		String tickProfit, String limitFilledPrice, String profitLimitFilledPrice) {
         this.time = new SimpleStringProperty(time);
         this.ibOrderId = new SimpleStringProperty(ibOrderId);
-        this.orderState = new SimpleStringProperty(orderState);
+        this.orderStatus = new SimpleStringProperty(orderStatus);
         this.setting = new SimpleStringProperty(setting);
         this.action = new SimpleStringProperty(action);
         this.limitPrice = new SimpleStringProperty(limitPrice);
@@ -48,12 +48,12 @@ public class SignTableItem {
     	ibOrderId.set(i);
     }
     
-    public String getOrderState() {
-        return orderState.get();
+    public String getOrderStatus() {
+        return orderStatus.get();
     }
 
-    public void setOrderState(String o) {
-    	orderState.set(o);
+    public void setOrderStatus(String o) {
+    	orderStatus.set(o);
     }
 
 	public String getSetting() {

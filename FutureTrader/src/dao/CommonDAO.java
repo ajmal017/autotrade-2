@@ -21,10 +21,13 @@ public interface CommonDAO {
 	ArrayList<Zone> getAllCloseMonitorZone();
 	
 	void insertNewOrderSign(OrderSign sign);
+	void deleteOrderSign(Integer orderId);
+	void updateOrderSubmittedInfo(Integer orderId, String orderStatus);
 	void updateOrderProfitLimitPrice(Integer orderId, double newProfitLimitPrice);
-	void updateOrderLimitFilledInfo(Integer orderId, String orderState, double limitFilledPrice);
-	void updateOrderProfitLimitFilledInfo(Integer orderId, String orderState, double profitLimitFilledPrice, double tickProfit);
+	void updateOrderLimitFilledInfo(Integer orderId, String orderStatus, double limitFilledPrice);
+	void updateOrderProfitLimitFilledInfo(Integer orderId, String orderStatus, double profitLimitFilledPrice, double tickProfit);
 	ArrayList<OrderSign> getOrderSignListByDate(Date date, String setting);
+	ArrayList<OrderSign> getNewestSignListByDate(Date date, String setting, int oldCount);
 	
 	void cleanSettingActive();
 	void cleanSetting();

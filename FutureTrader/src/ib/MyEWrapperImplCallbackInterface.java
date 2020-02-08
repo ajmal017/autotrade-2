@@ -6,4 +6,5 @@ public interface MyEWrapperImplCallbackInterface {
 //	void ibLogouted();
 	
 	void responseCurrentPrice(double price);
+	void responseOrderStatusUpdate(int parentOrderId, int orderId, String orderStatus, double filledQuantity, double remainingQuantity, double avgFilledPrice);
 }

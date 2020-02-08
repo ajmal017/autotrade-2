@@ -125,10 +125,8 @@ public class MyEWrapperImpl implements EWrapper {
 			
 			//self coding
 			if(getIbServiceInstance() != null) {
-				if(status.contains("Filled") && remaining == 0 && avgFillPrice > 0 && orderId == ibServiceInstance.getCurrentOrderId()-1) {
-					//todo
-					//getIbServiceInstance().updateTradePrice(avgFillPrice);
-				}
+				//todo  check avgprice and lastfillprice
+				getIbServiceInstance().responseOrderStatusUpdate(parentId, orderId, status, filled, remaining, avgFillPrice);
 			}
 		}
 		//! [orderstatus]

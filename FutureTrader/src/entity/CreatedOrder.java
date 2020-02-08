@@ -9,7 +9,7 @@ public class CreatedOrder {
 	
 	private Integer orderIdInIB;
 	private Integer profitLimitOrderIdInIB;
-	private String orderState;
+	private String orderStatus;
 	private Date time;
 	private Enum<SystemEnum.OrderAction> orderAction;
 	private double limitPrice;
@@ -19,7 +19,7 @@ public class CreatedOrder {
 	public CreatedOrder(
 			Integer orderIdInIB, 
 			Integer profitLimitOrderIdInIB,
-			String orderState,
+			String orderStatus,
 			Date time, 
 			Enum<SystemEnum.OrderAction> orderAction, 
 			double limitPrice,  
@@ -27,7 +27,7 @@ public class CreatedOrder {
 			double profitLimitPrice) {
 		setOrderIdInIB(orderIdInIB);
 		setProfitLimitOrderIdInIB(profitLimitOrderIdInIB);
-		setOrderState(orderState);
+		setOrderStatus(orderStatus);
         setTime(time);
         setOrderAction(orderAction);
         setLimitPrice(limitPrice);
@@ -52,11 +52,11 @@ public class CreatedOrder {
 		this.profitLimitOrderIdInIB = profitLimitOrderIdInIB;
 	}
 
-	public String getOrderState() {
-		return orderState;
+	public String getOrderStatus() {
+		return orderStatus;
 	}
-	public void setOrderState(String orderState) {
-		this.orderState = orderState;
+	public void setOrderStatus(String orderStatus) {
+		this.orderStatus = orderStatus;
 	}
 	
 	public Date getTime() {
@@ -97,7 +97,7 @@ public class CreatedOrder {
 	@Override
 	public String toString() {
 		return "CreatedOrder [orderIdInIB=" + orderIdInIB + ", profitLimitOrderIdInIB=" + profitLimitOrderIdInIB
-				+ ", orderState=" + orderState + ", time=" + time + ", orderAction=" + orderAction + ", limitPrice="
+				+ ", orderStatus=" + orderStatus + ", time=" + time + ", orderAction=" + orderAction + ", limitPrice="
 				+ limitPrice + ", tick=" + tick + ", profitLimitPrice=" + profitLimitPrice + "]";
 	}
 
