@@ -58,9 +58,9 @@ public class MainService {
         		int orderIndex = Integer.parseInt(result[3]);
         		double limitChange = Double.parseDouble(result[4]);
         		double tick = Double.parseDouble(result[5]);
-        		double stop_change = Double.parseDouble(result[6]);
+        		double profitLimitChange = Double.parseDouble(result[6]);
         	
-        		commonDao.insertSetting(sname,startTime,endTime,orderIndex,limitChange,tick,stop_change);
+        		commonDao.insertSetting(sname,startTime,endTime,orderIndex,limitChange,tick,profitLimitChange);
         	}
     }
     

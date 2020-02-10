@@ -278,16 +278,16 @@ public class SettingService implements IBServiceCallbackInterface {
     	//buy order
     	createNewBracketOrder(setting, 
     			SystemEnum.OrderAction.Buy, 
-    			dailyFirstPrice - firstSetting.getLimitChange(), 
-    			dailyFirstPrice - firstSetting.getLimitChange() + firstSetting.getProfitLimitChange(), 
+    			dailyFirstPrice + firstSetting.getLimitChange(), 
+    			dailyFirstPrice + firstSetting.getLimitChange() + firstSetting.getProfitLimitChange(), 
     			firstSetting.getTick());
     	
     	
     	//sell order
     	createNewBracketOrder(setting, 
     			SystemEnum.OrderAction.Sell, 
-    			dailyFirstPrice + firstSetting.getLimitChange(), 
-    			dailyFirstPrice + firstSetting.getLimitChange() - firstSetting.getProfitLimitChange(), 
+    			dailyFirstPrice - firstSetting.getLimitChange(), 
+    			dailyFirstPrice - firstSetting.getLimitChange() - firstSetting.getProfitLimitChange(), 
     			firstSetting.getTick());
     }
     
@@ -538,21 +538,19 @@ public class SettingService implements IBServiceCallbackInterface {
 		if (sameSettingPreOrder.getOrderAction() == SystemEnum.OrderAction.Buy) {
 			if (sameSettingPreOrder.getLimitPrice() == sameSettingFirstOrder.getLimitPrice()) {
 				//if only 1 order is in list, now create 2rd order
-				newLimitPrice = sameSettingPreOrder.getLimitPrice() - newOrderSetting.getLimitChange();
-				newProfitLimitPrice = sameSettingPreOrder.getLimitPrice() - newOrderSetting.getProfitLimitChange();
+				newLimitPrice = sameSettingFirstOrder.getLimitPrice() + newOrderSetting.getLimitChange();
 			} else {
-				newLimitPrice = sameSettingPreOrder.getLimitPrice() - newOrderSetting.getLimitChange();
-				newProfitLimitPrice = sameSettingPreOrder.getProfitLimitPrice() - newOrderSetting.getProfitLimitChange();
+				newLimitPrice = sameSettingPreOrder.getLimitPrice() + newOrderSetting.getLimitChange();
 			}
+			newProfitLimitPrice = sameSettingFirstOrder.getLimitPrice() + newOrderSetting.getProfitLimitChange();
 		} else { //sell
 			if (sameSettingPreOrder.getLimitPrice() == sameSettingFirstOrder.getLimitPrice()) {
 				//if only 1 order is in list, now create 2rd order
-				newLimitPrice = sameSettingPreOrder.getLimitPrice() + newOrderSetting.getLimitChange();
-				newProfitLimitPrice = sameSettingPreOrder.getLimitPrice() + newOrderSetting.getProfitLimitChange();
+				newLimitPrice = sameSettingFirstOrder.getLimitPrice() - newOrderSetting.getLimitChange();
 			} else {
-				newLimitPrice = sameSettingPreOrder.getLimitPrice() + newOrderSetting.getLimitChange();
-				newProfitLimitPrice = sameSettingPreOrder.getProfitLimitPrice() + newOrderSetting.getProfitLimitChange();
+				newLimitPrice = sameSettingPreOrder.getLimitPrice() - newOrderSetting.getLimitChange();
 			}
+			newProfitLimitPrice = sameSettingFirstOrder.getLimitPrice() - newOrderSetting.getProfitLimitChange();
 		}
 		createNewBracketOrder(thisSetting, sameSettingPreOrder.getOrderAction(), newLimitPrice, newProfitLimitPrice, newOrderSetting.getTick());
 	}

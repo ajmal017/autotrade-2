@@ -41,6 +41,6 @@ public interface CommonDAO {
 		int orderIndex,
 		double limitChange,
 		double tick,
-		double stopChange);
+		double profitLimitChange);
 	void insertCloseZone(String zone, int x, int y);
 }
