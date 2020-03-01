@@ -96,7 +96,12 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			futureConfig.setExchange(futureConf.getChild("exchange").getText());
 			futureConfig.setCurrency(futureConf.getChild("currency").getText());
 			futureConfig.setContractMonth(futureConf.getChild("contractmonth").getText());
-			
+//			contract.symbol("ES");
+//			contract.secType("FUT");
+//			contract.exchange("GLOBEX");
+//			contract.currency("USD");
+//			contract.lastTradeDateOrContractMonth("202003");
+			//es  e-mini sp 500 index future.ETH 3/20
 		} catch (Exception e) {
         	e.printStackTrace();
         }

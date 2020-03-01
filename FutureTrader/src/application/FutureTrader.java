@@ -86,124 +86,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 		}
 	}
 	
-	private void calledBySecondTimer() {
-		
-		SettingService settingService = SettingService.getInstance();
-		ZoneColorInfoService colorInfoService = ZoneColorInfoService.getInstance();
-		
-		if (settingService.getActiveSettingList().size() == 0) {
-			
-			return;
-		}
-		
-		ibDisConnectAlertTimerCount ++;
-		if(ibDisConnectAlertTimerCount == ibDisConnectAlertTimerCountMax) {
-			IBService ibService = IBService.getInstance();
-			if(ibService.getIbApiConfig().isActive()) {
-				if(ibService.isIBConnecting()) {
-					//System.out.println("IB connected.");
-				} else {
-					playSignAlertMusic();
-				}
-			}
-			ibDisConnectAlertTimerCount = 0;
-		}
-		
-		//every plan passed
-		if (settingService.getPassedSettingRefreshPlanCount() == settingService.getSettingRefreshPlan().size()) {
-
-			//close timer
-			try {
-				if (secTimer != null) secTimer.cancel();
-	        } catch (Exception e) {
-	        	e.printStackTrace();
-	        }
-			//export profit report
-			settingService.exportTodayOrderProfit(); 
-			
-			Alert alert = new Alert(AlertType.INFORMATION);
-			alert.setTitle("Warning");
-			alert.setHeaderText(null);
-			alert.setContentText("every setting is end");
-			alert.showAndWait();
-			
-		} else {
-			
-			boolean orderCountMoreThanOne = false;
-			for(String setting : settingService.getActiveSettingList()) {
-				ArrayList<CreatedOrder> orders = settingService.getCurrentOrderMap().get(setting);
-				if (orders.size() > 0) {
-					orderCountMoreThanOne = true;
-					break;
-				}
-			}
-			
-			//now is a refresh time
-			if(isSettingRefreshTime()) {
-				settingService.updateSettingListByRefreshPlan();
-			}
-			
-			if (settingService.getPassedSettingRefreshPlanCount() == 0) {
-				return;
-			}
-			
-			//update closeZone color
-			colorInfoService.updateCloseMonitorZoneColorByTimer();
-			//check closeZone color
-			ColorCount cc = colorInfoService.getColorCountByCloseZoneList();
-			if (cc.getGreen() > 0 || cc.getRed() > 0) {
-				//close all order
-				if (orderCountMoreThanOne) {
-					settingService.closeAllSetting();
-				}
-				//todo
-				//stop timer and app if law need
-			} else {
-				//if market is open and every working setting need open first order 
-				if (orderCountMoreThanOne) {
-					settingService.closeUnWorkingSettingOrder();
-				} else {
-					if(settingService.getDailyFirstPrice() == 0) {
-						settingService.getCurrentPrice();
-					}
-				}
-			}
-			
-			refreshTbTimerCount ++;
-			if (refreshTbTimerCount == refreshTbTimerCountMax) {
-				refreshTbTimerCount = 0;
-				for (int i = 0; i < settingService.getActiveSettingList().size(); i++) {
-
-					String setting = settingService.getActiveSettingList().get(i);
-
-					@SuppressWarnings("unchecked")
-					ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tableDataHash.get(setting);
-					
-					//get new data from db
-					ArrayList<OrderSign> newestList = CommonDAOFactory.getCommonDAO().getNewestSignListByDate(new Date(),setting,signData.size());
-					
-					for(OrderSign os : newestList) {
-						//insert into table
-						SignTableItem signItem = new SignTableItem(
-								Util.getDateStringByDateAndFormatter(os.getTime(), "HH:mm:ss"),
-								""+os.getParentOrderIdInIB(),
-								""+os.getOrderStatus(), 
-								setting,Util.getActionTextByEnum(os.getOrderAction()), 
-								""+os.getLimitPrice(), 
-								""+os.getTick(), 
-								""+os.getProfitLimitPrice(), 
-								""+os.getTickProfit(), 
-								""+os.getLimitFilledPrice(), 
-								""+os.getProfitLimitFilledPrice());
-
-						signData.add(signItem);
-					}
-				}
-			}
-			
-		}
-		
-	}
+	
 	
 	private void playSignAlertMusic() {
 		
@@ -371,7 +254,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 		Util.createDir(SystemConfig.DOC_PATH + "//trendprofit");
 		
 		if(settingService.getSettingRefreshPlan().size() == 0) {
-			//none scenario plan
+			//none setting plan
 			Alert alert = new Alert(AlertType.INFORMATION);
 			alert.setTitle("Warning");
 			alert.setHeaderText(null);
@@ -418,17 +301,144 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 			//load history order/setting and start trading?
 			
 			
+			//load current plan
+			if (settingService.getPassedSettingRefreshPlanCount() > 0) {
+				
+				DailySettingRefresh refresh = settingService.getSettingRefreshPlan().get(settingService.getPassedSettingRefreshPlanCount()-1);
+				refresh.setPassed(false);
+				settingService.setPassedSettingRefreshPlanCount(settingService.getPassedSettingRefreshPlanCount()-1);
+				settingService.updateSettingListByRefreshPlan();
+			}
 			
-//			secTimer = new Timer ();
-//			secTimer.scheduleAtFixedRate(new TimerTask() {
-//		        public void run() {
-//		        	calledBySecondTimer();
-//		        	
-//		        }
-//			}, 1, timerRefreshMSec);
+			secTimer = new Timer ();
+			secTimer.scheduleAtFixedRate(new TimerTask() {
+		        public void run() {
+		        	calledBySecondTimer();
+		        	
+		        }
+			}, 1, timerRefreshMSec);
 			
 			
 		}
+	}
+	
+	private void calledBySecondTimer() {
+		
+		SettingService settingService = SettingService.getInstance();
+		ZoneColorInfoService colorInfoService = ZoneColorInfoService.getInstance();
+		
+		if (settingService.getActiveSettingList().size() == 0) {
+			
+			return;
+		}
+		
+		ibDisConnectAlertTimerCount ++;
+		if(ibDisConnectAlertTimerCount == ibDisConnectAlertTimerCountMax) {
+			IBService ibService = IBService.getInstance();
+			if(ibService.getIbApiConfig().isActive()) {
+				if(ibService.isIBConnecting()) {
+					//System.out.println("IB connected.");
+				} else {
+					playSignAlertMusic();
+				}
+			}
+			ibDisConnectAlertTimerCount = 0;
+		}
+		
+		//every plan passed
+		if (settingService.getPassedSettingRefreshPlanCount() == settingService.getSettingRefreshPlan().size()) {
+
+			//close timer
+			try {
+				if (secTimer != null) secTimer.cancel();
+	        } catch (Exception e) {
+	        	e.printStackTrace();
+	        }
+			//export profit report
+			settingService.exportTodayOrderProfit(); 
+			
+			Alert alert = new Alert(AlertType.INFORMATION);
+			alert.setTitle("Warning");
+			alert.setHeaderText(null);
+			alert.setContentText("every setting is end");
+			alert.showAndWait();
+			
+		} else {
+			
+			boolean orderCountMoreThanOne = false;
+			for(String setting : settingService.getActiveSettingList()) {
+				ArrayList<CreatedOrder> orders = settingService.getCurrentOrderMap().get(setting);
+				if (orders.size() > 0) {
+					orderCountMoreThanOne = true;
+					break;
+				}
+			}
+			
+			//now is a refresh time
+			if(isSettingRefreshTime()) {
+				settingService.updateSettingListByRefreshPlan();
+			}
+			
+			if (settingService.getPassedSettingRefreshPlanCount() == 0) {
+				return;
+			}
+			
+			//update closeZone color
+			colorInfoService.updateCloseMonitorZoneColorByTimer();
+			//check closeZone color
+			ColorCount cc = colorInfoService.getColorCountByCloseZoneList();
+			if (cc.getGreen() > 0 || cc.getRed() > 0) {
+				//close all order
+				if (orderCountMoreThanOne) {
+					settingService.closeAllSetting();
+				}
+				//todo
+				//stop timer and app if law need
+			} else {
+				//if market is open and every working setting need open first order 
+				if (orderCountMoreThanOne) {
+					settingService.closeUnWorkingSettingOrder();
+				} else {
+					if(settingService.getDailyFirstPrice() == 0) {
+						settingService.getCurrentPrice();
+					}
+				}
+			}
+			
+			refreshTbTimerCount ++;
+			if (refreshTbTimerCount == refreshTbTimerCountMax) {
+				refreshTbTimerCount = 0;
+				for (int i = 0; i < settingService.getActiveSettingList().size(); i++) {
+
+					String setting = settingService.getActiveSettingList().get(i);
+
+					@SuppressWarnings("unchecked")
+					ObservableList<SignTableItem> signData = (ObservableList<SignTableItem>) tableDataHash.get(setting);
+					
+					//get new data from db
+					ArrayList<OrderSign> newestList = CommonDAOFactory.getCommonDAO().getNewestSignListByDate(new Date(),setting,signData.size());
+					
+					for(OrderSign os : newestList) {
+						//insert into table
+						SignTableItem signItem = new SignTableItem(
+								Util.getDateStringByDateAndFormatter(os.getTime(), "HH:mm:ss"),
+								""+os.getParentOrderIdInIB(),
+								""+os.getOrderStatus(), 
+								setting,Util.getActionTextByEnum(os.getOrderAction()), 
+								""+os.getLimitPrice(), 
+								""+os.getTick(), 
+								""+os.getProfitLimitPrice(), 
+								""+os.getTickProfit(), 
+								""+os.getLimitFilledPrice(), 
+								""+os.getProfitLimitFilledPrice());
+
+						signData.add(signItem);
+					}
+				}
+			}
+			
+		}
+		
 	}
 	
 	private void closeAllOrder() {
