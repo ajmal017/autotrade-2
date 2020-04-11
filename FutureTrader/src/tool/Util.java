@@ -420,6 +420,33 @@ public class Util {
             return false;
         }
     }
+    
+    public static double getFinalAvailablePrice(double price) {
+    	
+    	int intPart = 0;
+    	double doublePart = 0;
+		intPart = (int)price;
+    	if (price%1 == 0) {
+    		doublePart = 0;
+		} else {
+			intPart = (int)price;
+			doublePart = price - intPart;
+			if (doublePart >= 0.875) {
+				doublePart = 1;
+			} else if (doublePart >= 0.625) {
+				doublePart = 0.7;
+			} else if (doublePart >= 0.375) {
+				doublePart = 0.5;
+			} else if (doublePart >= 0.125) {
+				doublePart = 0.25;
+			} else {
+				doublePart = 0;
+			} 
+		}
+    	
+    	return intPart + doublePart;
+    }
+    
     /*
     public static Zone setZoneXYByZone(Zone zone) {
     	

@@ -4,6 +4,7 @@ package service;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.Date;
 import java.util.IntSummaryStatistics;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import com.ib.client.Contract;
 import com.ib.client.EClientSocket;
 import com.ib.client.EReader;
 import com.ib.client.EReaderSignal;
+import com.ib.client.MarketDataType;
 import com.ib.client.Order;
 
 import ch.qos.logback.core.joran.conditional.IfAction;
@@ -50,7 +52,9 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	
 	private boolean requestPrice = false;
 	
-	private int reqId = 1001;
+	private int reqId = 10000;
+	
+	public double priceSize = 1;
 	
 	private IBService ()  {
 		
@@ -96,6 +100,8 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			futureConfig.setExchange(futureConf.getChild("exchange").getText());
 			futureConfig.setCurrency(futureConf.getChild("currency").getText());
 			futureConfig.setContractMonth(futureConf.getChild("contractmonth").getText());
+			futureConfig.setPriceSize(Double.valueOf(futureConf.getChild("pricesize").getText()));
+			priceSize = futureConfig.getPriceSize();
 //			contract.symbol("ES");
 //			contract.secType("FUT");
 //			contract.exchange("GLOBEX");
@@ -171,6 +177,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	public void getCurrentPrice() {
 		
 		requestPrice = true;
+		m_client.reqMarketDataType(MarketDataType.DELAYED);
 		m_client.reqMktData(reqId, myContract(), "", false, false, null);
 	};
 	
@@ -263,14 +270,17 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	@Override
 	public void responseCurrentPrice(double price) {
 		
-		if (requestPrice) {
+		if (price > 0) {
 			
-			requestPrice = false;
-			if (settingServiceObj != null) {
-				settingServiceObj.responseCurrentPrice(price);
+			if (requestPrice) {
+				System.out.print("price:"+price + " time:"+(new Date())+"\n");
+				requestPrice = false;
+				if (settingServiceObj != null) {
+					settingServiceObj.responseCurrentPrice(price);
+				}
 			}
+			m_client.cancelMktData(reqId);
 		}
-		m_client.cancelMktData(reqId);
 	}
 	
 	public void responseOrderStatusUpdate(int parentOrderId, int orderId, String orderStatus, double filledQuantity, double remainingQuantity, double filledPrice) {

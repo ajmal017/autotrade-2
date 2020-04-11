@@ -9,6 +9,7 @@ public class FutureConfig {
 	private String exchange; //GLOBEX
 	private String currency;  //USD
 	private String contractMonth;//202003
+	private double priceSize;
 	
 	public FutureConfig () {
 		
@@ -54,4 +55,14 @@ public class FutureConfig {
 		this.contractMonth = contractMonth;
 	}
 
+	public double getPriceSize() {
+		return priceSize;
+	}
+
+	public void setPriceSize(double priceSize) {
+		this.priceSize = priceSize;
+	}
+
+	
+	
 }

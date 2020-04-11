@@ -70,7 +70,7 @@ public class CommonDAOSQL implements CommonDAO {
 	@Override
 	public ArrayList<OrderSign> getNewestSignListByDate(Date date, String setting, int oldCount) {
 		
-		final String sqlString = "select * from order_sign where date = ? and setting = ? and id not in(select top ? id from order_sign where date = ? and setting = ?)";
+		final String sqlString = "select * from order_sign where date = ? and setting = ? and id not in(select id from order_sign where date = ? and setting = ? limit ?)";
 		ArrayList<OrderSign> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -82,9 +82,9 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt = conn.prepareStatement(sqlString);
 			stmt.setString(1, Util.getDateStringByDateAndFormatter(date, "yyyy/MM/dd"));
 			stmt.setString(2, setting);
-			stmt.setInt(3, oldCount);
-			stmt.setString(4, Util.getDateStringByDateAndFormatter(date, "yyyy/MM/dd"));
-			stmt.setString(5, setting);
+			stmt.setString(3, Util.getDateStringByDateAndFormatter(date, "yyyy/MM/dd"));
+			stmt.setString(4, setting);
+			stmt.setInt(5, oldCount);
 			rs = stmt.executeQuery();
 	        while(rs.next()){
 
@@ -350,7 +350,7 @@ public class CommonDAOSQL implements CommonDAO {
 	@Override
 	public ArrayList<Setting> getAllWorkingSettingAtTime(Date time) {
 		
-		final String sqlString = "select (setting,limit_change,tick,profit_limit_change) from setting where start_time <= ? and end_time > ?";
+		final String sqlString = "select setting,limit_change,tick,profit_limit_change from setting where start_time <= ? and end_time > ?";
 		ArrayList<Setting> list = new ArrayList<>();
 
 		Connection conn = null;
@@ -378,6 +378,7 @@ public class CommonDAOSQL implements CommonDAO {
 	        	sos.setLimitChange(rs.getDouble(2));
 	        	sos.setTick(rs.getDouble(3));
 	        	sos.setProfitLimitChange(rs.getDouble(4));
+	        	list.get(list.size()-1).getOrderSettingList().add(sos);
 	        }
 			return list;
 			
@@ -475,8 +476,8 @@ public class CommonDAOSQL implements CommonDAO {
 	}
 
 	@Override
-	public void insertCloseZone(String name, int x, int y) {
-		final String sqlString = "insert into close_zone values (?,?,?)";
+	public void insertCloseZone(String name, int x, int y, int active) {
+		final String sqlString = "insert into close_zone values (?,?,?,?)";
 		
 		Connection conn = null;
         PreparedStatement stmt = null;
@@ -487,6 +488,7 @@ public class CommonDAOSQL implements CommonDAO {
 			stmt.setString(1,name);
 			stmt.setInt(2,x);
 			stmt.setInt(3,y);
+			stmt.setInt(4,active);
 			stmt.executeUpdate();
 			
 		} catch (SQLException e) {

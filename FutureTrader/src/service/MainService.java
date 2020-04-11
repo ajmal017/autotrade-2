@@ -74,7 +74,8 @@ public class MainService {
     		String zone = result[0];
     		int x = Integer.parseInt(result[1]);
     		int y = Integer.parseInt(result[2]);
-    		commonDao.insertCloseZone(zone, x, y);
+    		int active = Integer.parseInt(result[3]);
+    		commonDao.insertCloseZone(zone, x, y, active);
     	}
     }
     

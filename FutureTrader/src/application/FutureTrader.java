@@ -151,12 +151,12 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	        
 	        Button btn1 = new Button();
 	        btn1.setText("Only Close Order");
-	        btn1.setPrefSize(50, 15);
+	        btn1.setPrefSize(200, 15);
 	        btn1.setOnAction(new EventHandler<ActionEvent>() {
 	            @Override
 	            public void handle(ActionEvent event) {
 	                
-	                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Close?");
+	                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Only Close Order?");
 	                Optional<ButtonType> result = confirmation.showAndWait();
 	                if (result.isPresent() && result.get() == ButtonType.OK) {
 	                	closeAllOrder(); 
@@ -166,12 +166,12 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	        
 	        Button btn2 = new Button();
 	        btn2.setText("Close Order And App");
-	        btn2.setPrefSize(50, 15);
+	        btn2.setPrefSize(200, 15);
 	        btn2.setOnAction(new EventHandler<ActionEvent>() {
 	            @Override
 	            public void handle(ActionEvent event) {
 	                
-	                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Close?");
+	                Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION,"Close Order And App?");
 	                Optional<ButtonType> result = confirmation.showAndWait();
 	                if (result.isPresent() && result.get() == ButtonType.OK) {
 	                	closeApplication(); 
@@ -204,7 +204,7 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	        	
 	        	for (int i = 0; i < columTitle.length; i++) {
 	        		TableColumn tc = new TableColumn(columTitle[i]);
-	        		tc.setPrefWidth(65);
+	        		tc.setPrefWidth(100);
 	        		tc.setCellValueFactory(
 		                new PropertyValueFactory<>(valueName[i]));
 		        	trendTable.getColumns().add(tc);
@@ -379,9 +379,9 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 				settingService.updateSettingListByRefreshPlan();
 			}
 			
-			if (settingService.getPassedSettingRefreshPlanCount() == 0) {
-				return;
-			}
+//			if (settingService.getPassedSettingRefreshPlanCount() == 0) {
+//				return;
+//			}
 			
 			//update closeZone color
 			colorInfoService.updateCloseMonitorZoneColorByTimer();
@@ -399,9 +399,16 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 				if (orderCountMoreThanOne) {
 					settingService.closeUnWorkingSettingOrder();
 				} else {
-					if(settingService.getDailyFirstPrice() == 0) {
-						settingService.getCurrentPrice();
+
+					//test
+					settingService.setDailyFirstPrice(3000);
+					for(Setting setting : settingService.getWorkingSettingList()) {
+						settingService.openDailyFirstOrder(setting.getSetting(), setting.getOrderSettingList().get(0));
 					}
+//					if(settingService.getDailyFirstPrice() == 0) {
+//						settingService.getCurrentPrice();
+//					}
+					
 				}
 			}
 			

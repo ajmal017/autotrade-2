@@ -278,16 +278,16 @@ public class SettingService implements IBServiceCallbackInterface {
     	//buy order
     	createNewBracketOrder(setting, 
     			SystemEnum.OrderAction.Buy, 
-    			dailyFirstPrice + firstSetting.getLimitChange(), 
-    			dailyFirstPrice + firstSetting.getLimitChange() + firstSetting.getProfitLimitChange(), 
+    			dailyFirstPrice + IBService.getInstance().priceSize * firstSetting.getLimitChange(), 
+    			dailyFirstPrice + IBService.getInstance().priceSize * (firstSetting.getLimitChange() + firstSetting.getProfitLimitChange()), 
     			firstSetting.getTick());
     	
     	
     	//sell order
     	createNewBracketOrder(setting, 
     			SystemEnum.OrderAction.Sell, 
-    			dailyFirstPrice - firstSetting.getLimitChange(), 
-    			dailyFirstPrice - firstSetting.getLimitChange() - firstSetting.getProfitLimitChange(), 
+    			dailyFirstPrice - IBService.getInstance().priceSize * firstSetting.getLimitChange(), 
+    			dailyFirstPrice - IBService.getInstance().priceSize * (firstSetting.getLimitChange() + firstSetting.getProfitLimitChange()), 
     			firstSetting.getTick());
     }
     
@@ -393,8 +393,10 @@ public class SettingService implements IBServiceCallbackInterface {
     }
     
     
-    private void createNewBracketOrder (String setting, Enum<SystemEnum.OrderAction> action, double limitPrice, double stopPrice, double tick) {
+    private void createNewBracketOrder (String setting, Enum<SystemEnum.OrderAction> action, double lP, double sP, double tick) {
     	
+    	double limitPrice = Util.getFinalAvailablePrice(lP);
+    	double stopPrice = Util.getFinalAvailablePrice(sP);
     	OrderSign newSign = new OrderSign(IBService.getInstance().getCurrentOrderId(), 
     			IBService.getInstance().getCurrentOrderId()+1, 
     			SystemConfig.IB_ORDER_STATUS_Submitted, 
@@ -538,19 +540,19 @@ public class SettingService implements IBServiceCallbackInterface {
 		if (sameSettingPreOrder.getOrderAction() == SystemEnum.OrderAction.Buy) {
 			if (sameSettingPreOrder.getLimitPrice() == sameSettingFirstOrder.getLimitPrice()) {
 				//if only 1 order is in list, now create 2rd order
-				newLimitPrice = sameSettingFirstOrder.getLimitPrice() + newOrderSetting.getLimitChange();
+				newLimitPrice = sameSettingFirstOrder.getLimitPrice() + IBService.getInstance().priceSize * newOrderSetting.getLimitChange();
 			} else {
-				newLimitPrice = sameSettingPreOrder.getLimitPrice() + newOrderSetting.getLimitChange();
+				newLimitPrice = sameSettingPreOrder.getLimitPrice() + IBService.getInstance().priceSize * newOrderSetting.getLimitChange();
 			}
-			newProfitLimitPrice = sameSettingFirstOrder.getLimitPrice() + newOrderSetting.getProfitLimitChange();
+			newProfitLimitPrice = sameSettingFirstOrder.getLimitPrice() + IBService.getInstance().priceSize * newOrderSetting.getProfitLimitChange();
 		} else { //sell
 			if (sameSettingPreOrder.getLimitPrice() == sameSettingFirstOrder.getLimitPrice()) {
 				//if only 1 order is in list, now create 2rd order
-				newLimitPrice = sameSettingFirstOrder.getLimitPrice() - newOrderSetting.getLimitChange();
+				newLimitPrice = sameSettingFirstOrder.getLimitPrice() - IBService.getInstance().priceSize * newOrderSetting.getLimitChange();
 			} else {
-				newLimitPrice = sameSettingPreOrder.getLimitPrice() - newOrderSetting.getLimitChange();
+				newLimitPrice = sameSettingPreOrder.getLimitPrice() - IBService.getInstance().priceSize * newOrderSetting.getLimitChange();
 			}
-			newProfitLimitPrice = sameSettingFirstOrder.getLimitPrice() - newOrderSetting.getProfitLimitChange();
+			newProfitLimitPrice = sameSettingFirstOrder.getLimitPrice() - IBService.getInstance().priceSize * newOrderSetting.getProfitLimitChange();
 		}
 		createNewBracketOrder(thisSetting, sameSettingPreOrder.getOrderAction(), newLimitPrice, newProfitLimitPrice, newOrderSetting.getTick());
 	}
@@ -678,9 +680,9 @@ public class SettingService implements IBServiceCallbackInterface {
 				double newLimitPrice = lastOrder.getProfitLimitPrice();
 				double newStopPrice;
 				if (newAction == SystemEnum.OrderAction.Sell) {
-					newStopPrice = newLimitPrice - orderSettingList.get(0).getProfitLimitChange();
+					newStopPrice = newLimitPrice - IBService.getInstance().priceSize * orderSettingList.get(0).getProfitLimitChange();
 				} else {
-					newStopPrice = newLimitPrice + orderSettingList.get(0).getProfitLimitChange();
+					newStopPrice = newLimitPrice + IBService.getInstance().priceSize * orderSettingList.get(0).getProfitLimitChange();
 				}
 				
 				createNewBracketOrder(thisSetting, newAction, newLimitPrice, newStopPrice, orderSettingList.get(0).getTick());

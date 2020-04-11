@@ -42,5 +42,5 @@ public interface CommonDAO {
 		double limitChange,
 		double tick,
 		double profitLimitChange);
-	void insertCloseZone(String zone, int x, int y);
+	void insertCloseZone(String zone, int x, int y, int active);
 }

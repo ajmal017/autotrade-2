@@ -68,6 +68,11 @@ public class MyEWrapperImpl implements EWrapper {
 		public void tickPrice(int tickerId, int field, double price, TickAttrib attribs) {
 			System.out.println("Tick Price. Ticker Id:"+tickerId+", Field: "+field+", Price: "+price+", CanAutoExecute: "+ attribs.canAutoExecute()
 			+ ", pastLimit: " + attribs.pastLimit() + ", pre-open: " + attribs.preOpen());
+			
+			//self coding
+			if(getIbServiceInstance() != null) {
+				getIbServiceInstance().responseCurrentPrice(price);
+			}
 		}
 		//! [tickprice]
 		
