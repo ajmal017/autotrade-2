@@ -401,13 +401,13 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 				} else {
 
 					//test
-					settingService.setDailyFirstPrice(3000);
-					for(Setting setting : settingService.getWorkingSettingList()) {
-						settingService.openDailyFirstOrder(setting.getSetting(), setting.getOrderSettingList().get(0));
-					}
-//					if(settingService.getDailyFirstPrice() == 0) {
-//						settingService.getCurrentPrice();
+//					settingService.setDailyFirstPrice(3000);
+//					for(Setting setting : settingService.getWorkingSettingList()) {
+//						settingService.openDailyFirstOrder(setting.getSetting(), setting.getOrderSettingList().get(0));
 //					}
+					if(settingService.getDailyFirstPrice() == 0) {
+						settingService.getCurrentPrice();
+					}
 					
 				}
 			}

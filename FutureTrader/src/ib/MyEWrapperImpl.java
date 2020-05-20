@@ -66,8 +66,8 @@ public class MyEWrapperImpl implements EWrapper {
 		 //! [tickprice]
 		@Override
 		public void tickPrice(int tickerId, int field, double price, TickAttrib attribs) {
-			System.out.println("Tick Price. Ticker Id:"+tickerId+", Field: "+field+", Price: "+price+", CanAutoExecute: "+ attribs.canAutoExecute()
-			+ ", pastLimit: " + attribs.pastLimit() + ", pre-open: " + attribs.preOpen());
+//			System.out.println("Tick Price. Ticker Id:"+tickerId+", Field: "+field+", Price: "+price+", CanAutoExecute: "+ attribs.canAutoExecute()
+//			+ ", pastLimit: " + attribs.pastLimit() + ", pre-open: " + attribs.preOpen());
 			
 			//self coding
 			if(getIbServiceInstance() != null) {
@@ -79,7 +79,7 @@ public class MyEWrapperImpl implements EWrapper {
 		//! [ticksize]
 		@Override
 		public void tickSize(int tickerId, int field, int size) {
-			System.out.println("Tick Size. Ticker Id:" + tickerId + ", Field: " + field + ", Size: " + size);
+//			System.out.println("Tick Size. Ticker Id:" + tickerId + ", Field: " + field + ", Size: " + size);
 		}
 		//! [ticksize]
 		
@@ -104,7 +104,7 @@ public class MyEWrapperImpl implements EWrapper {
 		//! [tickstring]
 		@Override
 		public void tickString(int tickerId, int tickType, String value) {
-			System.out.println("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + value);
+//			System.out.println("Tick string. Ticker Id:" + tickerId + ", Type: " + tickType + ", Value: " + value);
 		}
 		//! [tickstring]
 		@Override
@@ -121,10 +121,11 @@ public class MyEWrapperImpl implements EWrapper {
 		public void orderStatus(int orderId, String status, double filled,
 				double remaining, double avgFillPrice, int permId, int parentId,
 				double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
-			System.out.println("MyEWrapperImpl OrderStatus. Id: "+orderId+", Status: "+status+", Filled"+filled+", Remaining: "+remaining
-	                +", AvgFillPrice: "+avgFillPrice+", PermId: "+permId+", ParentId: "+parentId+", LastFillPrice: "+lastFillPrice+
-	                ", ClientId: "+clientId+", WhyHeld: "+whyHeld+", MktCapPrice: "+mktCapPrice);
-			
+//			System.out.println("MyEWrapperImpl OrderStatus. Id: "+orderId+", Status: "+status+", Filled"+filled+", Remaining: "+remaining
+//	                +", AvgFillPrice: "+avgFillPrice+", PermId: "+permId+", ParentId: "+parentId+", LastFillPrice: "+lastFillPrice+
+//	                ", ClientId: "+clientId+", WhyHeld: "+whyHeld+", MktCapPrice: "+mktCapPrice);
+			System.out.println("OrderStatus. Id: "+orderId+", Status: "+status+", Filled"+filled+", AvgFillPrice: "+avgFillPrice+", ParentId: "+parentId 
+	               );
 			//定单状态。可能的值包括：
 			
 			
@@ -140,7 +141,8 @@ public class MyEWrapperImpl implements EWrapper {
 		@Override
 		public void openOrder(int orderId, Contract contract, Order order,
 				OrderState orderState) {
-			System.out.println(EWrapperMsgGenerator.openOrder(orderId, contract, order, orderState));
+			//System.out.println(EWrapperMsgGenerator.openOrder(orderId, contract, order, orderState));
+			System.out.println("open order. Id: "+orderId+", action: " + order.action()+", lmtPrice: " + order.lmtPrice());
 		}
 		//! [openorder]
 		
@@ -212,8 +214,8 @@ public class MyEWrapperImpl implements EWrapper {
 		//! [execdetails]
 		@Override
 		public void execDetails(int reqId, Contract contract, Execution execution) {
-			System.out.println("ExecDetails. "+reqId+" - ["+contract.symbol()+"], ["+contract.secType()+"], ["+contract.currency()+"], ["+execution.execId()+
-			        "], ["+execution.orderId()+"], ["+execution.shares()+"]"  + ", [" + execution.lastLiquidity() + "]");
+//			System.out.println("ExecDetails. "+reqId+" - ["+contract.symbol()+"], ["+contract.secType()+"], ["+contract.currency()+"], ["+execution.execId()+
+//			        "], ["+execution.orderId()+"], ["+execution.shares()+"]"  + ", [" + execution.lastLiquidity() + "]");
 		}
 		//! [execdetails]
 		
@@ -339,7 +341,7 @@ public class MyEWrapperImpl implements EWrapper {
 		//! [commissionreport]
 		@Override
 		public void commissionReport(CommissionReport commissionReport) {
-			System.out.println("CommissionReport. ["+commissionReport.m_execId+"] - ["+commissionReport.m_commission+"] ["+commissionReport.m_currency+"] RPNL ["+commissionReport.m_realizedPNL+"]");
+//			System.out.println("CommissionReport. ["+commissionReport.m_execId+"] - ["+commissionReport.m_commission+"] ["+commissionReport.m_currency+"] RPNL ["+commissionReport.m_realizedPNL+"]");
 		}
 		//! [commissionreport]
 		

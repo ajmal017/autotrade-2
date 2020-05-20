@@ -434,7 +434,7 @@ public class Util {
 			if (doublePart >= 0.875) {
 				doublePart = 1;
 			} else if (doublePart >= 0.625) {
-				doublePart = 0.7;
+				doublePart = 0.75;
 			} else if (doublePart >= 0.375) {
 				doublePart = 0.5;
 			} else if (doublePart >= 0.125) {

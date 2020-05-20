@@ -293,7 +293,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 			if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Cancelled)) {
 				settingServiceObj.responseWhenParentOrderCancelled(orderId,orderStatus);
 			} else if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Submitted)) {
-				settingServiceObj.responseWhenParentOrderSubmitted(parentOrderId, orderStatus);
+				settingServiceObj.responseWhenParentOrderSubmitted(orderId, orderStatus);
 			} else if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Filled) && remainingQuantity == 0) {
 				settingServiceObj.responseWhenParentOrderFilled(orderId, orderStatus, filledPrice);
 			}
