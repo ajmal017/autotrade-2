@@ -3,6 +3,8 @@ package service;
 
 
 import java.io.File;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.IntSummaryStatistics;
@@ -29,6 +31,7 @@ import config.SystemConfig;
 import entity.CreatedOrder;
 import entity.FutureConfig;
 import entity.IBApiConfig;
+import entity.IBMsgDelegateLog;
 import entity.IBServerConfig;
 import entity.StockConfig;
 import service.SettingService;
@@ -56,11 +59,15 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 	
 	public double priceSize = 1;
 	
+	
+	private ArrayList<IBMsgDelegateLog> logList;
+	
 	private IBService ()  {
 		
 		ibApiConfig = new IBApiConfig();
 		ibServerConfig = new IBServerConfig();
 		futureConfig = new FutureConfig();
+		logList = new ArrayList<IBMsgDelegateLog>();
 		initConfigs();
     }
 
@@ -215,7 +222,7 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 				order.getLimitPrice(),
 				order.getProfitLimitPrice(),
 				order.getTick());
-		
+		bracket.get(1).transmit(true);
 		m_client.placeOrder(bracket.get(1).orderId(), myContract(), bracket.get(1));
 		
 	}
@@ -250,6 +257,8 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 				actionStr,
 				tick, 
 				limitPrice,profitLimitPrice, 0);
+		bracket.get(0).transmit(true);
+		bracket.get(1).transmit(true);
 		bracket.remove(2);
 		
 		return bracket;
@@ -288,10 +297,19 @@ public class IBService implements MyEWrapperImplCallbackInterface {
 		if (settingServiceObj == null) {
 			return;
 		}
+		
+		for(IBMsgDelegateLog log : logList) {
+			if (log.getOrderId() == orderId && log.getOrderStatus().equals(orderStatus) && log.getRemainingQuantity() == remainingQuantity) {
+				return;
+			}
+		}
+		
+		logList.add(new IBMsgDelegateLog(orderId, orderStatus, remainingQuantity));
+		
 		if (parentOrderId == 0) {
 			//parent order
 			if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Cancelled)) {
-				settingServiceObj.responseWhenParentOrderCancelled(orderId,orderStatus);
+				settingServiceObj.responseWhenParentOrderCancelled(orderId, orderStatus);
 			} else if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Submitted)) {
 				settingServiceObj.responseWhenParentOrderSubmitted(orderId, orderStatus);
 			} else if (orderStatus.equals(SystemConfig.IB_ORDER_STATUS_Filled) && remainingQuantity == 0) {

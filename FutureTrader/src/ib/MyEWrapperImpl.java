@@ -124,8 +124,8 @@ public class MyEWrapperImpl implements EWrapper {
 //			System.out.println("MyEWrapperImpl OrderStatus. Id: "+orderId+", Status: "+status+", Filled"+filled+", Remaining: "+remaining
 //	                +", AvgFillPrice: "+avgFillPrice+", PermId: "+permId+", ParentId: "+parentId+", LastFillPrice: "+lastFillPrice+
 //	                ", ClientId: "+clientId+", WhyHeld: "+whyHeld+", MktCapPrice: "+mktCapPrice);
-			System.out.println("OrderStatus. Id: "+orderId+", Status: "+status+", Filled"+filled+", AvgFillPrice: "+avgFillPrice+", ParentId: "+parentId 
-	               );
+//			System.out.println("OrderStatus. Id: "+orderId+", PermId: "+permId+", Status: "+status+", Filled"+filled+", AvgFillPrice: "+avgFillPrice+", ParentId: "+parentId 
+//	               );
 			//定单状态。可能的值包括：
 			
 			
@@ -142,7 +142,7 @@ public class MyEWrapperImpl implements EWrapper {
 		public void openOrder(int orderId, Contract contract, Order order,
 				OrderState orderState) {
 			//System.out.println(EWrapperMsgGenerator.openOrder(orderId, contract, order, orderState));
-			System.out.println("open order. Id: "+orderId+", action: " + order.action()+", lmtPrice: " + order.lmtPrice());
+			System.out.println("open order. Id: "+orderId+", PermId: "+order.permId()+", action: " + order.action()+", lmtPrice: " + order.lmtPrice());
 		}
 		//! [openorder]
 		
@@ -418,7 +418,7 @@ public class MyEWrapperImpl implements EWrapper {
 		//! [error]
 		@Override
 		public void error(int id, int errorCode, String errorMsg) {
-			System.out.println("Error. Id: " + id + ", Code: " + errorCode + ", Msg: " + errorMsg + "\n");
+//			System.out.println("Error. Id: " + id + ", Code: " + errorCode + ", Msg: " + errorMsg + "\n");
 		}
 		//! [error]
 		@Override

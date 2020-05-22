@@ -199,8 +199,8 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 	        	trendTable.setItems(trendData);
 	        	
 	        	
-	        	String[] columTitle = {"Time","IBOrderId","OrderStatus","Setting","Action","LimitPrice","Tick","ProfitLimitPrice","TickProfit","OpenFilledPrice","CloseFilledPrice"};
-	        	String[] valueName = {"time","ibOrderId","orderStatus","setting","action","limitPrice","tick","profitLimitPrice","tickProfit","openFilledPrice","closeFilledPrice"};
+	        	String[] columTitle = {"Time","IBOrderId","OrderStatus","Setting","Action","LimitPrice","Tick","ProfitLimitPrice","TickProfit","LimitFilledPrice","ProfitLimitFilledPrice"};
+	        	String[] valueName = {"time","ibOrderId","orderStatus","setting","action","limitPrice","tick","profitLimitPrice","tickProfit","limitFilledPrice","profitLimitFilledPrice"};
 	        	
 	        	for (int i = 0; i < columTitle.length; i++) {
 	        		TableColumn tc = new TableColumn(columTitle[i]);
@@ -400,15 +400,9 @@ public class FutureTrader extends Application implements SettingServiceCallbackI
 					settingService.closeUnWorkingSettingOrder();
 				} else {
 
-					//test
-//					settingService.setDailyFirstPrice(3000);
-//					for(Setting setting : settingService.getWorkingSettingList()) {
-//						settingService.openDailyFirstOrder(setting.getSetting(), setting.getOrderSettingList().get(0));
-//					}
-					if(settingService.getDailyFirstPrice() == 0) {
+					if(settingService.getPassedSettingRefreshPlanCount() > 0 && settingService.getDailyFirstPrice() == 0) {
 						settingService.getCurrentPrice();
 					}
-					
 				}
 			}
 			

@@ -466,11 +466,11 @@ public class SettingService implements IBServiceCallbackInterface {
 		}
 		
 		//sometime same order same status msg will return 2 times
-		for(OrderSign os : dailySignMap.get(thisSetting)) {
-			if(os.getParentOrderIdInIB() == parentOrderId && os.getOrderStatus().equals(orderStatus) ) {
-				return;
-			}
-		}
+//		for(OrderSign os : dailySignMap.get(thisSetting)) {
+//			if(os.getParentOrderIdInIB() == parentOrderId && os.getOrderStatus().equals(orderStatus) ) {
+//				return;
+//			}
+//		}
 		System.out.print("responseWhenParentOrderFilled "+ parentOrderId +"\n");
 		for(OrderSign os : dailySignMap.get(thisSetting)) {
 			if(os.getParentOrderIdInIB() == parentOrderId) {
@@ -480,9 +480,11 @@ public class SettingService implements IBServiceCallbackInterface {
 				break;
 			}
 		}
+		Enum<SystemEnum.OrderAction> orderAction = SystemEnum.OrderAction.Default;
 		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
 			if(os.getOrderIdInIB() == parentOrderId) {
 				os.setOrderStatus(orderStatus);
+				orderAction = os.getOrderAction();
 				break;
 			}
 		}
@@ -492,8 +494,9 @@ public class SettingService implements IBServiceCallbackInterface {
 				currentOrderMap.get(thisSetting).get(0).getOrderAction() != 
 				currentOrderMap.get(thisSetting).get(1).getOrderAction()) {
 
+			
 			int shouldCancelOrderId;
-			if (currentOrderMap.get(thisSetting).get(0).getOrderIdInIB() == parentOrderId) {
+			if (currentOrderMap.get(thisSetting).get(0).getOrderAction() == orderAction) {
 				//cancel another
 				shouldCancelOrderId = currentOrderMap.get(thisSetting).get(1).getOrderIdInIB();
 			} else {
@@ -501,14 +504,14 @@ public class SettingService implements IBServiceCallbackInterface {
 				shouldCancelOrderId = currentOrderMap.get(thisSetting).get(0).getOrderIdInIB();
 			}
 			System.out.print("if market first order, cancel another action order, shouldCancelOrderId:"+ shouldCancelOrderId + "\n");
-			IBService.getInstance().cancelOrder(shouldCancelOrderId);
-			
 			for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
-				if(os.getOrderIdInIB() == shouldCancelOrderId) {
+				if(os.getOrderAction() != orderAction) {
 					currentOrderMap.get(thisSetting).remove(os);
 					break;
 				}
 			}
+			IBService.getInstance().cancelOrder(shouldCancelOrderId);
+			
 		}
 		
 
@@ -528,7 +531,7 @@ public class SettingService implements IBServiceCallbackInterface {
 							break;
 						}
 					}
-					System.out.print("change all pre-order's profit limit price\n");
+					System.out.print("change all pre-order "+ preOrder.getOrderIdInIB()  +"  profit limit price " + last.getProfitLimitPrice() + " \n");
 					CommonDAOFactory.getCommonDAO().updateOrderProfitLimitPrice(preOrder.getOrderIdInIB(), preOrder.getProfitLimitPrice());
 					IBService.getInstance().modifyOrderProfitLimitPrice(preOrder);
 				}
@@ -577,19 +580,25 @@ public class SettingService implements IBServiceCallbackInterface {
 			}
 			newProfitLimitPrice = sameSettingFirstOrder.getLimitPrice() - IBService.getInstance().priceSize * newOrderSetting.getProfitLimitChange();
 		}
-		System.out.print("create new same action order\n");
+		System.out.print("create new same action order. newLimitPrice "+newLimitPrice+" newProfitLimitPrice "+newProfitLimitPrice+"\n");
 		createNewBracketOrder(thisSetting, sameSettingPreOrder.getOrderAction(), newLimitPrice, newProfitLimitPrice, newOrderSetting.getTick());
 	}
 	
 	@Override
 	public void responseWhenProfitLimitOrderFilled(Integer parentOrderId, String orderStatus, double filledPrice) {
-		System.out.print("responseWhenProfitLimitOrderFilled "+ parentOrderId +"\n");
+		
 		String thisSetting = parentOrderIdSettingMap.get(parentOrderId+"");
 		if (thisSetting == null) {
 			return;
 		}
-		
-		
+		//sometime same order same status msg will return 2 times
+//		for(OrderSign os : dailySignMap.get(thisSetting)) {
+//			if(os.getParentOrderIdInIB() == parentOrderId && os.getProfitLimitFilledPrice() != 0  ) {
+//				return;
+//			}
+//		}
+		System.out.print("responseWhenProfitLimitOrderFilled "+ parentOrderId +"\n");
+				
 		Enum<SystemEnum.OrderAction> orderAtion = SystemEnum.OrderAction.Default;
 		
 		for(OrderSign os : dailySignMap.get(thisSetting)) {
@@ -605,7 +614,7 @@ public class SettingService implements IBServiceCallbackInterface {
 		
 		for(CreatedOrder os : currentOrderMap.get(thisSetting)) {
 			if(os.getOrderIdInIB() == parentOrderId) {
-				os.setOrderStatus(orderStatus);
+				currentOrderMap.get(thisSetting).remove(os);
 				break;
 			}
 		}
@@ -624,8 +633,9 @@ public class SettingService implements IBServiceCallbackInterface {
 		
 		//cancel last same action no-filled order and create new different action order (only do once time)
 		if (currentOrderMap.get(thisSetting).size() == 1 && currentOrderMap.get(thisSetting).get(0).getOrderAction() == orderAtion) { //all profit limit order have filled
-			System.out.print("cancel last same action no-filled order and create new different action order\n");
+			System.out.print("cancel last same action no-filled order " + currentOrderMap.get(thisSetting).get(0).getOrderIdInIB() +  " and create new different action order \n");
 			IBService.getInstance().cancelOrder(currentOrderMap.get(thisSetting).get(0).getOrderIdInIB());
+			currentOrderMap.get(thisSetting).remove(0);
 			needCreateDiffActionOrderAfterCancelOrder = true;
 		}
 		
@@ -653,11 +663,11 @@ public class SettingService implements IBServiceCallbackInterface {
 		}
 		
 		//sometime same order same status msg will return 2 times
-		for(OrderSign os : dailySignMap.get(thisSetting)) {
-			if(os.getParentOrderIdInIB() == parentOrderId && os.getOrderStatus().equals(orderStatus) ) {
-				return;
-			}
-		}
+//		for(OrderSign os : dailySignMap.get(thisSetting)) {
+//			if(os.getParentOrderIdInIB() == parentOrderId && os.getOrderStatus().equals(orderStatus) ) {
+//				return;
+//			}
+//		}
 		
 		for(OrderSign os : dailySignMap.get(thisSetting)) {
 			if(os.getParentOrderIdInIB() == parentOrderId) {
@@ -717,7 +727,7 @@ public class SettingService implements IBServiceCallbackInterface {
 				} else {
 					newStopPrice = newLimitPrice + IBService.getInstance().priceSize * orderSettingList.get(0).getProfitLimitChange();
 				}
-				System.out.print("create new 1st different action order\n");
+				System.out.print("create new 1st different action order newLimitPrice "+newLimitPrice+"\n");
 				createNewBracketOrder(thisSetting, newAction, newLimitPrice, newStopPrice, orderSettingList.get(0).getTick());
 			}
 			
